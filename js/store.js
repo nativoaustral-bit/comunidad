@@ -901,13 +901,14 @@ class Store {
       category: toolData.category || 'Gestión',
       status: toolData.status || 'disponible',
       url: toolData.url || 'https://humm.cl',
-      icon: toolData.icon || 'box',
+      icon: toolData.icon || '🚀',
       order: toolData.order || (this.data.tools.length + 1),
       isVisible: toolData.isVisible !== false,
       isIncluded: !!toolData.isIncluded
     };
     this.data.tools.push(newTool);
     this.saveState();
+    this.apiSave('tools', newTool, 'save');
     return newTool;
   }
 
@@ -916,9 +917,21 @@ class Store {
     if (idx !== -1) {
       this.data.tools[idx] = { ...this.data.tools[idx], ...updates };
       this.saveState();
+      this.apiSave('tools', this.data.tools[idx], 'save');
       return this.data.tools[idx];
     }
     return null;
+  }
+
+  deleteTool(toolId) {
+    const idx = this.data.tools.findIndex(t => t.id === toolId);
+    if (idx !== -1) {
+      this.data.tools.splice(idx, 1);
+      this.saveState();
+      this.apiSave('tools', { id: toolId }, 'delete');
+      return true;
+    }
+    return false;
   }
 
   toggleWorkspaceTool(workspaceId, toolId) {

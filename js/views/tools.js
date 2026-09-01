@@ -79,8 +79,10 @@ export function renderToolsView(container) {
         <div class="tool-card">
           <div>
             <div class="tool-card-top">
-              <div class="tool-icon-frame">
-                ${categoryIcons[tool.category] || '🚀'}
+              <div class="tool-icon-frame" style="overflow: hidden; padding: 2px;">
+                ${tool.icon && (tool.icon.startsWith('data:image/') || tool.icon.startsWith('http://') || tool.icon.startsWith('https://') || tool.icon.startsWith('/'))
+                  ? `<img src="${tool.icon}" alt="${tool.name}" style="width: 100%; height: 100%; object-fit: contain;" />`
+                  : (tool.icon && tool.icon.length <= 4 ? tool.icon : (categoryIcons[tool.category] || '🚀'))}
               </div>
               <span class="badge ${badgeCfg.class}">
                 <span class="badge-dot"></span>

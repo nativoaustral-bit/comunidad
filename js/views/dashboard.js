@@ -384,7 +384,14 @@ export function renderDashboard(container) {
           ${assignedTools.slice(0, 4).map(tool => `
             <div style="padding: 12px; background-color: var(--bg-surface-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; justify-content: space-between;">
               <div>
-                <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--text-primary); margin-bottom: 2px;">${tool.name}</div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <div style="width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-surface); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0; padding: 2px;">
+                    ${tool.icon && (tool.icon.startsWith('data:image/') || tool.icon.startsWith('http://') || tool.icon.startsWith('https://') || tool.icon.startsWith('/')) 
+                      ? `<img src="${tool.icon}" alt="${tool.name}" style="width: 100%; height: 100%; object-fit: contain;" />` 
+                      : `<span>${(tool.icon && tool.icon.length <= 4) ? tool.icon : '🚀'}</span>`}
+                  </div>
+                  <div style="font-weight: 700; font-size: var(--font-size-sm); color: var(--text-primary); line-height: 1.2;">${tool.name}</div>
+                </div>
                 <div style="font-size: var(--font-size-xs); color: var(--text-muted); line-height: 1.25; margin-bottom: 8px;">${tool.description}</div>
               </div>
               <button class="btn btn-secondary btn-sm btn-open-tool" data-url="${tool.url}" data-name="${tool.name}">

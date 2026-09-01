@@ -357,6 +357,42 @@ try {
                     ':is_featured' => !empty($item['featured'] ?? $item['is_featured']) ? 1 : 0,
                     ':status' => $item['status'] ?? 'active'
                 ]);
+        // -----------------------------------------------------------------
+        // 10. HERRAMIENTAS (tools)
+        // -----------------------------------------------------------------
+        case 'tools':
+            if ($action === 'delete') {
+                $id = $input['id'] ?? '';
+                $stmt = $pdo->prepare('DELETE FROM tools WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
+                $item = $input['item'] ?? $input;
+                $sql = 'INSERT INTO tools (id, name, description, category, status, url, icon, sort_order, is_visible, is_included)
+                        VALUES (:id, :name, :description, :category, :status, :url, :icon, :sort_order, :is_visible, :is_included)
+                        ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        description = VALUES(description),
+                        category = VALUES(category),
+                        status = VALUES(status),
+                        url = VALUES(url),
+                        icon = VALUES(icon),
+                        sort_order = VALUES(sort_order),
+                        is_visible = VALUES(is_visible),
+                        is_included = VALUES(is_included)';
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':id' => $item['id'],
+                    ':name' => $item['name'],
+                    ':description' => $item['description'] ?? '',
+                    ':category' => $item['category'] ?? 'Gestión',
+                    ':status' => $item['status'] ?? 'disponible',
+                    ':url' => $item['url'] ?? '',
+                    ':icon' => $item['icon'] ?? 'tool',
+                    ':sort_order' => (int)($item['sortOrder'] ?? $item['sort_order'] ?? $item['order'] ?? 1),
+                    ':is_visible' => isset($item['isVisible']) ? ($item['isVisible'] ? 1 : 0) : 1,
+                    ':is_included' => isset($item['isIncluded']) ? ($item['isIncluded'] ? 1 : 0) : 1
+                ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
             break;

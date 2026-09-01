@@ -1211,44 +1211,71 @@
 
   <!-- Modal 10: Admin - Crear / Editar Herramienta -->
   <div id="modal-tool-edit" class="modal-backdrop" role="dialog" aria-modal="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 580px;">
       <div class="modal-header">
         <h3 id="modal-tool-header-title">Herramienta Humm</h3>
         <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
       </div>
       <form id="form-admin-tool-edit">
         <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label" for="admin-tool-name">Nombre de la Herramienta *</label>
-            <input type="text" id="admin-tool-name" class="form-control" required placeholder="Ej. Humm Bot" />
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label" for="admin-tool-name">Nombre de la Herramienta *</label>
+              <input type="text" id="admin-tool-name" class="form-control" required placeholder="Ej. Humm Bot, Kinetic Control..." />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="admin-tool-icon">Icono (Emoji opcional)</label>
+              <input type="text" id="admin-tool-icon" class="form-control" placeholder="🚀, 💰, ⚙️, 📊..." value="🚀" />
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="admin-tool-desc">Descripción (frase de beneficio) *</label>
-            <textarea id="admin-tool-desc" class="form-control" rows="2" required></textarea>
+
+          <!-- Subir Logo de la Herramienta (Imagen) -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="admin-tool-logo-file">Logo de la Herramienta (Subir Imagen)</label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div id="admin-tool-logo-preview" style="width: 56px; height: 56px; border-radius: var(--radius-md); border: 1.5px dashed var(--border-strong); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; font-size: 1.6rem;">
+                🚀
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="admin-tool-logo-file" class="form-control" accept="image/png, image/jpeg, image/webp, image/svg+xml" style="font-size: 12px; padding: 6px 10px;" />
+                <span class="form-hint" style="font-size: 11px;">Formatos soportados: PNG, JPG, WebP o SVG (se almacena y adapta automáticamente).</span>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-clear-tool-logo" style="display: none; color: var(--danger); font-size: 11px;" title="Quitar imagen y usar emoji">
+                ✕ Quitar
+              </button>
+            </div>
+            <input type="hidden" id="admin-tool-logo-data" value="" />
           </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-tool-desc">Descripción (Frase de beneficio y propósito) *</label>
+            <textarea id="admin-tool-desc" class="form-control" rows="2" placeholder="Explica claramente en qué ayuda esta solución al negocio del emprendedor..." required></textarea>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="admin-tool-category">Categoría</label>
-              <select id="admin-tool-category" class="form-control">
-                <option value="Ventas">Ventas</option>
-                <option value="Comunicación">Comunicación</option>
-                <option value="Gestión">Gestión</option>
-                <option value="Diagnóstico">Diagnóstico</option>
-                <option value="Financiamiento">Financiamiento</option>
+              <label class="form-label" for="admin-tool-category">Categoría *</label>
+              <select id="admin-tool-category" class="form-control" required>
+                <option value="Ventas">💰 Ventas</option>
+                <option value="Comunicación">📣 Comunicación</option>
+                <option value="Gestión">⚙️ Gestión</option>
+                <option value="Diagnóstico">📊 Diagnóstico</option>
+                <option value="Financiamiento">🌱 Financiamiento</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label" for="admin-tool-status">Estado</label>
-              <select id="admin-tool-status" class="form-control">
-                <option value="disponible">Disponible</option>
-                <option value="proximamente">Próximamente</option>
-                <option value="requiere_activacion">Requiere activación</option>
-                <option value="servicio_adicional">Servicio adicional</option>
+              <label class="form-label" for="admin-tool-status">Estado *</label>
+              <select id="admin-tool-status" class="form-control" required>
+                <option value="disponible">🟢 Disponible</option>
+                <option value="proximamente">🟡 Próximamente</option>
+                <option value="requiere_activacion">🟠 Requiere activación</option>
+                <option value="servicio_adicional">🔵 Servicio adicional</option>
               </select>
             </div>
           </div>
+
           <div class="form-group">
-            <label class="form-label" for="admin-tool-url">Enlace / URL segura</label>
+            <label class="form-label" for="admin-tool-url">Enlace / URL de la Herramienta *</label>
             <input type="url" id="admin-tool-url" class="form-control" placeholder="https://..." required />
           </div>
         </div>

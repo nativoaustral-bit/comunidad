@@ -1191,7 +1191,16 @@ export function renderAdminToolsView(container) {
           ${tools.map(tool => `
             <tr>
               <td>
-                <div style="font-weight: 700;">${tool.name}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0; padding: 2px;">
+                    ${tool.icon && (tool.icon.startsWith('data:image/') || tool.icon.startsWith('http://') || tool.icon.startsWith('https://') || tool.icon.startsWith('/')) 
+                      ? `<img src="${tool.icon}" alt="${tool.name}" style="width: 100%; height: 100%; object-fit: contain;" />` 
+                      : `<span>${(tool.icon && tool.icon.length <= 4) ? tool.icon : '🛠️'}</span>`}
+                  </div>
+                  <div>
+                    <div style="font-weight: 700; color: var(--text-primary);">${tool.name}</div>
+                  </div>
+                </div>
               </td>
               <td>
                 <span class="badge badge-neutral text-xs">${tool.category}</span>
@@ -1208,12 +1217,14 @@ export function renderAdminToolsView(container) {
                 </span>
               </td>
               <td style="text-align: right;">
-                <button class="btn btn-ghost btn-sm btn-edit-tool" data-tool-id="${tool.id}" title="Editar herramienta">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                </button>
+                <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                  <button class="btn btn-ghost btn-sm btn-edit-tool" data-tool-id="${tool.id}" title="Editar herramienta">
+                    ✏️
+                  </button>
+                  <button class="btn btn-ghost btn-sm btn-delete-tool" data-tool-id="${tool.id}" title="Eliminar herramienta" style="color: var(--danger);">
+                    🗑️
+                  </button>
+                </div>
               </td>
             </tr>
           `).join('')}
@@ -1551,7 +1562,29 @@ function attachCommonAdminEvents(container) {
 
   // Crear nueva herramienta
   container.querySelector('#btn-admin-new-tool')?.addEventListener('click', () => {
-    if (window.MiHummApp) window.MiHummApp.openModal('modal-tool-edit');
+    if (window.MiHummApp) window.MiHummApp.openEditToolModal();
+  });
+
+  // Editar herramienta
+  container.querySelectorAll('.btn-edit-tool').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const toolId = btn.getAttribute('data-tool-id');
+      if (window.MiHummApp) window.MiHummApp.openEditToolModal(toolId);
+    });
+  });
+
+  // Eliminar herramienta
+  container.querySelectorAll('.btn-delete-tool').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const toolId = btn.getAttribute('data-tool-id');
+      if (confirm('¿Estás seguro de que deseas eliminar esta herramienta del catálogo?')) {
+        store.deleteTool(toolId);
+        if (window.MiHummApp) {
+          window.MiHummApp.showToast('Herramienta eliminada del catálogo', 'info');
+          renderAdminToolsView(container);
+        }
+      }
+    });
   });
 
   // Editar tutor/ejecutivo asignado a un workspace

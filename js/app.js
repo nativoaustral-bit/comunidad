@@ -872,6 +872,53 @@ class App {
     // Submit de Admin - Herramienta
     const formAdminTool = document.getElementById('form-admin-tool-edit');
     if (formAdminTool) {
+      const fileToolLogo = document.getElementById('admin-tool-logo-file');
+      const previewToolLogo = document.getElementById('admin-tool-logo-preview');
+      const hiddenToolLogoData = document.getElementById('admin-tool-logo-data');
+      const btnClearToolLogo = document.getElementById('btn-clear-tool-logo');
+      const iconToolInput = document.getElementById('admin-tool-icon');
+
+      if (fileToolLogo) {
+        fileToolLogo.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          if (file.size > 3 * 1024 * 1024) {
+            this.showToast('La imagen supera los 3MB. Por favor selecciona una imagen más liviana.', 'warning');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64Data = event.target.result;
+            if (hiddenToolLogoData) hiddenToolLogoData.value = base64Data;
+            if (previewToolLogo) {
+              previewToolLogo.innerHTML = `<img src="${base64Data}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
+            }
+            if (btnClearToolLogo) btnClearToolLogo.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (btnClearToolLogo) {
+        btnClearToolLogo.addEventListener('click', () => {
+          if (fileToolLogo) fileToolLogo.value = '';
+          if (hiddenToolLogoData) hiddenToolLogoData.value = '';
+          btnClearToolLogo.style.display = 'none';
+          const emoji = (iconToolInput && iconToolInput.value.trim()) || '🚀';
+          if (previewToolLogo) previewToolLogo.textContent = emoji;
+        });
+      }
+
+      if (iconToolInput) {
+        iconToolInput.addEventListener('input', () => {
+          if (!hiddenToolLogoData || !hiddenToolLogoData.value) {
+            if (previewToolLogo) previewToolLogo.textContent = iconToolInput.value.trim() || '🚀';
+          }
+        });
+      }
+
       formAdminTool.addEventListener('submit', (e) => {
         e.preventDefault();
         const editId = formAdminTool.getAttribute('data-edit-id');
@@ -880,12 +927,15 @@ class App {
         const category = document.getElementById('admin-tool-category').value;
         const status = document.getElementById('admin-tool-status').value;
         const url = document.getElementById('admin-tool-url').value.trim();
+        const logoData = document.getElementById('admin-tool-logo-data')?.value;
+        const iconVal = document.getElementById('admin-tool-icon')?.value.trim();
+        const icon = logoData || iconVal || '🚀';
 
         if (editId) {
-          store.updateTool(editId, { name, description, category, status, url });
-          this.showToast('Herramienta actualizada', 'success');
+          store.updateTool(editId, { name, description, category, status, url, icon });
+          this.showToast('Herramienta actualizada con éxito', 'success');
         } else {
-          store.createTool({ name, description, category, status, url });
+          store.createTool({ name, description, category, status, url, icon });
           this.showToast('Nueva herramienta agregada al catálogo global', 'success');
         }
 
@@ -1387,20 +1437,48 @@ class App {
     this.openModal('modal-manage-ws-tools');
   }
 
-  openEditToolModal(toolId) {
-    const tool = store.getAllTools().find(t => t.id === toolId);
-    if (!tool) return;
-
+  openEditToolModal(toolId = null) {
     const form = document.getElementById('form-admin-tool-edit');
     if (!form) return;
 
-    form.setAttribute('data-edit-id', tool.id);
-    document.getElementById('modal-tool-header-title').textContent = 'Editar Herramienta';
-    document.getElementById('admin-tool-name').value = tool.name;
-    document.getElementById('admin-tool-desc').value = tool.description;
-    document.getElementById('admin-tool-category').value = tool.category;
-    document.getElementById('admin-tool-status').value = tool.status;
-    document.getElementById('admin-tool-url').value = tool.url;
+    const fileInput = document.getElementById('admin-tool-logo-file');
+    const previewBox = document.getElementById('admin-tool-logo-preview');
+    const hiddenData = document.getElementById('admin-tool-logo-data');
+    const btnClear = document.getElementById('btn-clear-tool-logo');
+    const iconInput = document.getElementById('admin-tool-icon');
+
+    if (fileInput) fileInput.value = '';
+    if (hiddenData) hiddenData.value = '';
+
+    if (toolId) {
+      const tool = store.getAllTools().find(t => t.id === toolId);
+      if (!tool) return;
+
+      form.setAttribute('data-edit-id', tool.id);
+      document.getElementById('modal-tool-header-title').textContent = 'Editar Herramienta';
+      document.getElementById('admin-tool-name').value = tool.name;
+      document.getElementById('admin-tool-desc').value = tool.description;
+      document.getElementById('admin-tool-category').value = tool.category;
+      document.getElementById('admin-tool-status').value = tool.status;
+      document.getElementById('admin-tool-url').value = tool.url;
+      if (iconInput) iconInput.value = (tool.icon && !tool.icon.startsWith('data:image/') && !tool.icon.startsWith('http')) ? tool.icon : '🚀';
+
+      if (tool.icon && (tool.icon.startsWith('data:image/') || tool.icon.startsWith('http://') || tool.icon.startsWith('https://') || tool.icon.startsWith('/'))) {
+        if (hiddenData) hiddenData.value = tool.icon;
+        if (previewBox) previewBox.innerHTML = `<img src="${tool.icon}" alt="${tool.name}" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
+        if (btnClear) btnClear.style.display = 'inline-block';
+      } else {
+        if (previewBox) previewBox.textContent = tool.icon || '🚀';
+        if (btnClear) btnClear.style.display = 'none';
+      }
+    } else {
+      form.removeAttribute('data-edit-id');
+      form.reset();
+      document.getElementById('modal-tool-header-title').textContent = '🛠️ Nueva Herramienta Humm';
+      if (iconInput) iconInput.value = '🚀';
+      if (previewBox) previewBox.textContent = '🚀';
+      if (btnClear) btnClear.style.display = 'none';
+    }
 
     this.openModal('modal-tool-edit');
   }

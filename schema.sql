@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS `tools` (
   `category` VARCHAR(50) NOT NULL,
   `status` ENUM('disponible', 'proximamente', 'mantenimiento') DEFAULT 'disponible',
   `url` VARCHAR(255) NOT NULL,
-  `icon` VARCHAR(50) DEFAULT 'tool',
+  `icon` MEDIUMTEXT DEFAULT NULL,
   `sort_order` INT NOT NULL DEFAULT 1,
   `is_visible` TINYINT(1) DEFAULT 1,
   `is_included` TINYINT(1) DEFAULT 1,
