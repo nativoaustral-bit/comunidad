@@ -9,9 +9,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 
 setApiHeaders();
-$action = $_GET['action'] ?? $_POST['action'] ?? 'session';
-$pdo = DB::getConnection();
 $input = DB::getJsonInput();
+$action = $_GET['action'] ?? $_POST['action'] ?? ($input['action'] ?? 'session');
+$pdo = DB::getConnection();
 
 switch ($action) {
     case 'login':
