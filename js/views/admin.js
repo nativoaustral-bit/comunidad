@@ -1401,7 +1401,11 @@ export function renderAdminDiscountsView(container) {
             <tr>
               <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 1.5rem;">${item.logo || '🎁'}</span>
+                  <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0; padding: 2px;">
+                    ${item.logo && (item.logo.startsWith('data:image/') || item.logo.startsWith('http://') || item.logo.startsWith('https://') || item.logo.startsWith('/')) 
+                      ? `<img src="${item.logo}" alt="${item.companyName}" style="width: 100%; height: 100%; object-fit: contain;" />` 
+                      : `<span>${item.logo || '🎁'}</span>`}
+                  </div>
                   <div>
                     <div style="font-weight: 700; color: var(--text-primary);">${item.companyName}</div>
                     ${item.featured ? `<span class="badge badge-humm text-xs" style="font-size: 10px; padding: 1px 6px;">⭐ Destacado</span>` : ''}

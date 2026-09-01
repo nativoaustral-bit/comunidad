@@ -271,7 +271,7 @@ CREATE TABLE IF NOT EXISTS `support_requests` (
 CREATE TABLE IF NOT EXISTS `company_discounts` (
   `id` VARCHAR(40) NOT NULL,
   `company_name` VARCHAR(150) NOT NULL,
-  `logo` VARCHAR(10) DEFAULT '🎁',
+  `logo` MEDIUMTEXT DEFAULT NULL,
   `discount_title` VARCHAR(200) NOT NULL,
   `category` VARCHAR(100) NOT NULL,
   `description` TEXT NOT NULL,
@@ -326,13 +326,5 @@ INSERT INTO `tools` (`id`, `name`, `description`, `category`, `status`, `url`, `
 ('tool-humm-radar', 'Humm Radar', 'Diagnostica la salud de tu emprendimiento y descubre oportunidades de mejora.', 'Diagnóstico', 'disponible', 'https://radar.humm.cl', 'radar', 4, 1, 1),
 ('tool-humm-link', 'Humm Link', 'Tu vitrina digital y enlace directo con botones de compra para bio y redes.', 'Comunicación', 'disponible', 'https://link.humm.cl', 'link', 5, 1, 1),
 ('tool-orientador', 'Orientador de Financiamiento', 'Descubre fondos concursables, subsidios y opciones de financiamiento para tu etapa.', 'Financiamiento', 'proximamente', 'https://fondos.humm.cl', 'dollar-sign', 6, 1, 0);
-
--- Company Discounts (Convenios Comerciales Activos)
-INSERT INTO `company_discounts` (`id`, `company_name`, `logo`, `discount_title`, `category`, `description`, `code`, `url`, `expires_at`, `is_featured`, `status`) VALUES
-('disc-1', 'Starken Envíos', '🚚', '25% de Descuento en Envíos Nacionales', 'Logística y Envíos', 'Tarifa preferencial para emprendimientos en todos tus envíos estándar y express en sucursales Starken.', 'HUMM-STARKEN25', 'https://www.starken.cl', '2026-12-31', 1, 'active'),
-('disc-2', 'Transbank Webpay', '💳', 'Comisión 1.1% en Ventas Débito y Crédito', 'Medios de Pago', 'Tasa preferencial para miembros de Humm sin costo de mantención durante los primeros 6 meses.', 'TBK-HUMM2026', 'https://www.transbank.cl', '2026-11-30', 1, 'active'),
-('disc-3', 'Canva Pro', '🎨', '3 Meses Gratis de Canva Pro para Equipos', 'Marketing y Diseño', 'Diseña publicaciones, catálogos digitales y papelería corporativa con plantillas premium.', 'CANVA-HUMM-PRO', 'https://www.canva.com', '2026-12-31', 0, 'active'),
-('disc-4', 'Notaría Digital Chile', '✍️', '30% OFF en Firma Electrónica Avanzada', 'Legal y Contable', 'Firma contratos con clientes, poderes y declaraciones juradas 100% online con validez legal.', 'NOTARIA-HUMM30', 'https://www.notariadigital.cl', '2027-01-31', 0, 'active'),
-('disc-5', 'BancoEstado Microempresas', '🏦', 'Cuenta Emprendedor sin Comisión', 'Banca y Financiamiento', 'Apertura preferente de cuenta corriente para persona natural con giro o SpA.', 'BANCO-HUMM-PYME', 'https://www.bancoestado.cl', '2026-12-31', 1, 'active');
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -318,6 +318,47 @@ try {
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
+        // -----------------------------------------------------------------
+        // 9. ALIANZAS Y CONVENIOS (company_discounts)
+        // -----------------------------------------------------------------
+        case 'company_discounts':
+        case 'discounts':
+            if ($action === 'delete') {
+                $id = $input['id'] ?? '';
+                $stmt = $pdo->prepare('DELETE FROM company_discounts WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
+                $item = $input['item'] ?? $input;
+                $sql = 'INSERT INTO company_discounts (id, company_name, logo, discount_title, category, description, code, url, expires_at, is_featured, status)
+                        VALUES (:id, :company_name, :logo, :discount_title, :category, :description, :code, :url, :expires_at, :is_featured, :status)
+                        ON DUPLICATE KEY UPDATE
+                        company_name = VALUES(company_name),
+                        logo = VALUES(logo),
+                        discount_title = VALUES(discount_title),
+                        category = VALUES(category),
+                        description = VALUES(description),
+                        code = VALUES(code),
+                        url = VALUES(url),
+                        expires_at = VALUES(expires_at),
+                        is_featured = VALUES(is_featured),
+                        status = VALUES(status)';
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':id' => $item['id'],
+                    ':company_name' => $item['companyName'] ?? $item['company_name'],
+                    ':logo' => $item['logo'] ?? '🎁',
+                    ':discount_title' => $item['discountTitle'] ?? $item['discount_title'],
+                    ':category' => $item['category'] ?? 'Servicios Generales',
+                    ':description' => $item['description'] ?? '',
+                    ':code' => !empty($item['code']) ? trim($item['code']) : null,
+                    ':url' => !empty($item['url']) ? trim($item['url']) : null,
+                    ':expires_at' => !empty($item['expiresAt'] ?? $item['expires_at']) ? ($item['expiresAt'] ?? $item['expires_at']) : null,
+                    ':is_featured' => !empty($item['featured'] ?? $item['is_featured']) ? 1 : 0,
+                    ':status' => $item['status'] ?? 'active'
+                ]);
+                DB::jsonResponse(true, ['item' => $item]);
+            }
             break;
 
         default:

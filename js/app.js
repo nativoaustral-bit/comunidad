@@ -934,11 +934,61 @@ class App {
     // Submit de Admin - Crear / Editar Descuento de Empresa
     const formDisc = document.getElementById('form-company-discount');
     if (formDisc) {
+      // Subida interactiva de archivo de imagen para logo
+      const fileLogoInput = document.getElementById('admin-disc-logo-file');
+      const previewLogoBox = document.getElementById('admin-disc-logo-preview');
+      const hiddenLogoData = document.getElementById('admin-disc-logo-data');
+      const btnClearLogo = document.getElementById('btn-clear-disc-logo');
+      const emojiLogoInput = document.getElementById('admin-disc-logo');
+
+      if (fileLogoInput) {
+        fileLogoInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          if (file.size > 3 * 1024 * 1024) {
+            this.showToast('La imagen supera los 3MB. Por favor selecciona una imagen más liviana.', 'warning');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64Data = event.target.result;
+            if (hiddenLogoData) hiddenLogoData.value = base64Data;
+            if (previewLogoBox) {
+              previewLogoBox.innerHTML = `<img src="${base64Data}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
+            }
+            if (btnClearLogo) btnClearLogo.style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (btnClearLogo) {
+        btnClearLogo.addEventListener('click', () => {
+          if (fileLogoInput) fileLogoInput.value = '';
+          if (hiddenLogoData) hiddenLogoData.value = '';
+          btnClearLogo.style.display = 'none';
+          const emoji = (emojiLogoInput && emojiLogoInput.value.trim()) || '🎁';
+          if (previewLogoBox) previewLogoBox.textContent = emoji;
+        });
+      }
+
+      if (emojiLogoInput) {
+        emojiLogoInput.addEventListener('input', () => {
+          if (!hiddenLogoData || !hiddenLogoData.value) {
+            if (previewLogoBox) previewLogoBox.textContent = emojiLogoInput.value.trim() || '🎁';
+          }
+        });
+      }
+
       formDisc.addEventListener('submit', (e) => {
         e.preventDefault();
         const editId = formDisc.getAttribute('data-edit-id');
         const companyName = document.getElementById('admin-disc-company').value.trim();
-        const logo = document.getElementById('admin-disc-logo').value.trim() || '🎁';
+        const logoData = document.getElementById('admin-disc-logo-data')?.value;
+        const emojiVal = document.getElementById('admin-disc-logo')?.value.trim();
+        const logo = logoData || emojiVal || '🎁';
         const discountTitle = document.getElementById('admin-disc-title').value.trim();
         const category = document.getElementById('admin-disc-category').value;
         const code = document.getElementById('admin-disc-code').value.trim();
@@ -1434,13 +1484,22 @@ class App {
     const form = document.getElementById('form-company-discount');
     if (!form) return;
 
+    const fileInput = document.getElementById('admin-disc-logo-file');
+    const previewBox = document.getElementById('admin-disc-logo-preview');
+    const hiddenData = document.getElementById('admin-disc-logo-data');
+    const btnClear = document.getElementById('btn-clear-disc-logo');
+    const emojiInput = document.getElementById('admin-disc-logo');
+
+    if (fileInput) fileInput.value = '';
+    if (hiddenData) hiddenData.value = '';
+
     if (discId) {
       const d = store.getCompanyDiscount(discId);
       if (!d) return;
       form.setAttribute('data-edit-id', d.id);
       document.getElementById('modal-disc-header-title').textContent = 'Editar Beneficio de Empresa';
       document.getElementById('admin-disc-company').value = d.companyName || '';
-      document.getElementById('admin-disc-logo').value = d.logo || '🎁';
+      if (emojiInput) emojiInput.value = (d.logo && !d.logo.startsWith('data:image/') && !d.logo.startsWith('http')) ? d.logo : '🎁';
       document.getElementById('admin-disc-title').value = d.discountTitle || '';
       document.getElementById('admin-disc-category').value = d.category || 'Servicios Generales';
       document.getElementById('admin-disc-code').value = d.code || '';
@@ -1448,11 +1507,22 @@ class App {
       document.getElementById('admin-disc-url').value = d.url || '';
       document.getElementById('admin-disc-expires').value = d.expiresAt || '';
       document.getElementById('admin-disc-featured').checked = !!d.featured;
+
+      if (d.logo && (d.logo.startsWith('data:image/') || d.logo.startsWith('http://') || d.logo.startsWith('https://') || d.logo.startsWith('/'))) {
+        if (hiddenData) hiddenData.value = d.logo;
+        if (previewBox) previewBox.innerHTML = `<img src="${d.logo}" alt="${d.companyName}" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
+        if (btnClear) btnClear.style.display = 'inline-block';
+      } else {
+        if (previewBox) previewBox.textContent = d.logo || '🎁';
+        if (btnClear) btnClear.style.display = 'none';
+      }
     } else {
       form.removeAttribute('data-edit-id');
       form.reset();
       document.getElementById('modal-disc-header-title').textContent = '🎁 Beneficio / Convenio de Empresa';
-      document.getElementById('admin-disc-logo').value = '🎁';
+      if (emojiInput) emojiInput.value = '🎁';
+      if (previewBox) previewBox.textContent = '🎁';
+      if (btnClear) btnClear.style.display = 'none';
       document.getElementById('admin-disc-featured').checked = false;
     }
 

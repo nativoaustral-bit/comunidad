@@ -1365,12 +1365,30 @@
           <div class="form-row">
             <div class="form-group" style="flex: 2;">
               <label class="form-label" for="admin-disc-company">Nombre de la Empresa / Aliado *</label>
-              <input type="text" id="admin-disc-company" class="form-control" required placeholder="Ej. Starken, Webpay, Canva..." />
+              <input type="text" id="admin-disc-company" class="form-control" required placeholder="Ej. Starken, Webpay, BancoEstado, Canva..." />
             </div>
             <div class="form-group" style="flex: 1;">
-              <label class="form-label" for="admin-disc-logo">Logo / Icono (Emoji)</label>
-              <input type="text" id="admin-disc-logo" class="form-control" placeholder="🚚, 💳, 🎨, 🏦..." value="🎁" />
+              <label class="form-label" for="admin-disc-logo">Icono (Emoji opcional)</label>
+              <input type="text" id="admin-disc-logo" class="form-control" placeholder="🎁, 🚚, 💳..." value="🎁" />
             </div>
+          </div>
+
+          <!-- Subir Logo de la Empresa Aliada (Imagen) -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="admin-disc-logo-file">Logo Oficial de la Empresa (Subir Imagen)</label>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div id="admin-disc-logo-preview" style="width: 56px; height: 56px; border-radius: var(--radius-md); border: 1.5px dashed var(--border-strong); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; font-size: 1.6rem;">
+                🎁
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="admin-disc-logo-file" class="form-control" accept="image/png, image/jpeg, image/webp, image/svg+xml" style="font-size: 12px; padding: 6px 10px;" />
+                <span class="form-hint" style="font-size: 11px;">Formatos soportados: PNG, JPG, WebP o SVG (se optimiza y almacena automáticamente).</span>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-clear-disc-logo" style="display: none; color: var(--danger); font-size: 11px;" title="Quitar imagen y usar emoji">
+                ✕ Quitar
+              </button>
+            </div>
+            <input type="hidden" id="admin-disc-logo-data" value="" />
           </div>
 
           <div class="form-group">

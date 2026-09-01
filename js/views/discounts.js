@@ -79,8 +79,10 @@ export function renderDiscountsView(container) {
 
               <!-- Logo e Identidad de la Empresa Centrado -->
               <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 10px;">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid var(--border-subtle); margin-bottom: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
-                  ${item.logo || '🎁'}
+                <div style="width: 52px; height: 52px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid var(--border-subtle); margin-bottom: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); overflow: hidden; padding: 3px;">
+                  ${item.logo && (item.logo.startsWith('data:image/') || item.logo.startsWith('http://') || item.logo.startsWith('https://') || item.logo.startsWith('/')) 
+                    ? `<img src="${item.logo}" alt="${item.companyName}" style="width: 100%; height: 100%; object-fit: contain;" />` 
+                    : `<span>${item.logo || '🎁'}</span>`}
                 </div>
                 <h3 style="font-size: var(--font-size-sm); font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.2;">
                   ${item.companyName}

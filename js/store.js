@@ -81,21 +81,14 @@ const INITIAL_TOOLS = [
   }
 ];
 
-const INITIAL_DISCOUNTS = [
-  { id: 'disc-1', companyName: 'Starken Envíos', logo: '🚚', discountTitle: '25% de Descuento en Envíos Nacionales', category: 'Logística y Envíos', description: 'Tarifa preferencial para emprendimientos en todos tus envíos estándar y express en sucursales Starken de todo Chile.', code: 'HUMM-STARKEN25', url: 'https://www.starken.cl', expiresAt: '2026-12-31', status: 'active', featured: true, createdAt: '2026-08-20T10:00:00.000Z' },
-  { id: 'disc-2', companyName: 'Transbank Webpay', logo: '💳', discountTitle: 'Comisión 1.1% en Ventas Débito y Crédito', category: 'Medios de Pago', description: 'Tasa preferencial para miembros de Humm sin costo de mantención durante los primeros 6 meses en terminales POS y pasarela Webpay Plus.', code: 'TBK-HUMM2026', url: 'https://www.transbank.cl', expiresAt: '2026-11-30', status: 'active', featured: true, createdAt: '2026-08-22T11:00:00.000Z' },
-  { id: 'disc-3', companyName: 'Canva Pro', logo: '🎨', discountTitle: '3 Meses Gratis de Canva Pro para Equipos', category: 'Marketing y Diseño', description: 'Diseña publicaciones, catálogos digitales y papelería corporativa con acceso a miles de plantillas premium y herramientas de IA.', code: 'CANVA-HUMM-PRO', url: 'https://www.canva.com', expiresAt: '2026-12-31', status: 'active', featured: false, createdAt: '2026-08-24T14:00:00.000Z' },
-  { id: 'disc-4', companyName: 'Notaría Digital Chile', logo: '✍️', discountTitle: '30% OFF en Firma Electrónica Avanzada y Poderes', category: 'Legal y Contable', description: 'Firma contratos con clientes, poderes y declaraciones juradas 100% online y con validez legal inmediata sin ir a notaría física.', code: 'NOTARIA-HUMM30', url: 'https://www.notariadigital.cl', expiresAt: '2027-01-31', status: 'active', featured: false, createdAt: '2026-08-25T16:00:00.000Z' },
-  { id: 'disc-5', companyName: 'BancoEstado Microempresas', logo: '🏦', discountTitle: 'Cuenta Emprendedor sin Comisión y Crédito Preferente', category: 'Banca y Financiamiento', description: 'Apertura preferente de cuenta corriente para persona natural con giro o SpA, y evaluación prioritaria de créditos de capital de trabajo.', code: 'BANCO-HUMM-PYME', url: 'https://www.bancoestado.cl', expiresAt: '2026-12-31', status: 'active', featured: true, createdAt: '2026-08-27T09:00:00.000Z' },
-  { id: 'disc-6', companyName: 'Google Workspace', logo: '💼', discountTitle: '20% OFF en Correo Corporativo y Google Drive', category: 'Software y Digital', description: 'Profesionaliza tus correos (contacto@tunegocio.cl) y almacenamiento en la nube con soporte oficial.', code: 'GWORKSPACE-HUMM', url: 'https://workspace.google.com', expiresAt: '2026-10-31', status: 'active', featured: false, createdAt: '2026-08-29T12:00:00.000Z' }
-];
+const INITIAL_DISCOUNTS = [];
 
 // Semilla de datos iniciales limpia (Partida de cero en producción)
 const INITIAL_STATE = {
   workspaces: [],
   supportRequests: [],
   broadcasts: [],
-  companyDiscounts: INITIAL_DISCOUNTS,
+  companyDiscounts: [],
   users: [
     {
       id: 'usr-admin',
@@ -200,7 +193,7 @@ class Store {
           opportunities: (parsed.opportunities || []).filter(o => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(o.workspaceId)),
           supportRequests: (parsed.supportRequests || []).filter(sr => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(sr.workspaceId)),
           broadcasts: parsed.broadcasts || [],
-          companyDiscounts: parsed.companyDiscounts || INITIAL_DISCOUNTS,
+          companyDiscounts: (parsed.companyDiscounts || []).filter(d => !['disc-1', 'disc-2', 'disc-3', 'disc-4', 'disc-5', 'disc-6'].includes(d.id)),
           events: (parsed.events || []).filter(e => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(e.workspaceId)),
           calendarSettings: (parsed.calendarSettings || []).filter(cs => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(cs.workspaceId)),
           notes: (parsed.notes || []).filter(n => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(n.workspaceId))
@@ -760,6 +753,7 @@ class Store {
     };
     this.data.companyDiscounts.unshift(newDiscount);
     this.saveState();
+    this.apiSave('company_discounts', newDiscount, 'save');
     return newDiscount;
   }
 
@@ -773,6 +767,7 @@ class Store {
         updatedAt: new Date().toISOString()
       };
       this.saveState();
+      this.apiSave('company_discounts', this.data.companyDiscounts[idx], 'save');
       return this.data.companyDiscounts[idx];
     }
     return null;
@@ -784,6 +779,7 @@ class Store {
     this.data.companyDiscounts = this.data.companyDiscounts.filter(d => d.id !== id);
     if (this.data.companyDiscounts.length !== initialLen) {
       this.saveState();
+      this.apiSave('company_discounts', { id }, 'delete');
       return true;
     }
     return false;
