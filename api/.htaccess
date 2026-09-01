@@ -1,0 +1,15 @@
+# =========================================================================
+# MI HUMM - SEGURIDAD DEL DIRECTORIO API (HOSTGATOR CPANEL APACHE)
+# =========================================================================
+
+Options -Indexes
+ServerSignature Off
+
+# Proteger archivos sensibles
+<FilesMatch "^(config\.php|\.env|\.git|schema\.sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Asegurar cabeceras UTF-8
+AddDefaultCharset UTF-8

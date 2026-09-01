@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Mi Humm - El escritorio digital de tu emprendimiento. Plataforma privada de Comunidad Humm Co-Creation." />
+  <meta name="theme-color" content="#E5383B" />
+  <title>Mi Humm | El escritorio de tu emprendimiento</title>
+
+  <!-- Favicon & Brand Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E5383B'><rect width='24' height='24' rx='6'/><text x='12' y='16' font-family='sans-serif' font-size='12' font-weight='bold' fill='white' text-anchor='middle'>H</text></svg>" />
+
+  <!-- Stylesheets con cache-busting -->
+  <link rel="stylesheet" href="styles/main.css?v=2.5" />
+  <link rel="stylesheet" href="styles/layout.css?v=2.5" />
+  <link rel="stylesheet" href="styles/components.css?v=2.5" />
+</head>
+<body>
+
+  <!-- ==========================================================================
+       1. PANTALLA DE ACCESO (LOGIN BANCARIO)
+       ========================================================================== -->
+  <div id="auth-screen" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-brand">
+          <div class="auth-logo-icon">H</div>
+          <div class="auth-brand-name">Mi <span>Humm</span></div>
+        </div>
+        <h2 class="title-md" style="margin-bottom: 6px;">Bienvenido a tu espacio de trabajo</h2>
+        <p class="auth-subtitle">El escritorio de tu emprendimiento</p>
+      </div>
+
+      <div class="auth-tagline-box">
+        Organiza tus tareas, clientes, ventas y herramientas desde un solo lugar.
+      </div>
+
+      <form id="form-login">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Correo electrónico</label>
+          <input type="email" id="login-email" class="form-control" placeholder="tu@correo.cl" required autocomplete="username" />
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" for="login-password" style="margin-bottom: 0;">Contraseña</label>
+            <a href="#" id="link-forgot-password" class="text-xs" style="color: var(--humm-red-primary); font-weight: 600;">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div class="input-with-action">
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+            <button type="button" id="btn-toggle-password-visibility" class="toggle-btn text-xs font-semibold">
+              Mostrar
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); color: var(--text-secondary); cursor: pointer; user-select: none;">
+            <input type="checkbox" id="login-remember" checked style="accent-color: var(--humm-red-primary); width: 16px; height: 16px;" />
+            Recordar sesión en este dispositivo
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-login">
+          Ingresar a Mi Humm
+        </button>
+      </form>
+
+      <!-- Selector de Cuentas Demo para Evaluación Rápida -->
+      <div class="demo-accounts-pill">
+        <div class="demo-accounts-title">
+          <span>Accesos de Demostración:</span>
+          <span style="font-weight: 500; color: var(--text-muted);">1 clic para ingresar</span>
+        </div>
+        <div class="demo-buttons-grid">
+          <button type="button" class="btn btn-secondary btn-sm btn-demo-login" data-email="carolina@humm.cl" data-pass="humm" onclick="if(window.MiHummApp) window.MiHummApp.loginDemo('carolina@humm.cl', 'humm')" style="justify-content: flex-start; text-align: left; cursor: pointer;">
+            <div style="pointer-events: none;">
+              <div style="font-weight: 700;">Carolina V.</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Taller Austral (Emprendedor)</div>
+            </div>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm btn-demo-login" data-email="admin@humm.cl" data-pass="admin" onclick="if(window.MiHummApp) window.MiHummApp.loginDemo('admin@humm.cl', 'admin')" style="justify-content: flex-start; text-align: left; cursor: pointer;">
+            <div style="pointer-events: none;">
+              <div style="font-weight: 700; color: var(--humm-red-primary);">Admin Humm</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Panel Central (Administración)</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-footer-help">
+        ¿Necesitas ayuda para ingresar? <a id="link-auth-help">Habla con Humm</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       2. APLICACIÓN PRINCIPAL (APP SHELL)
+       ========================================================================== -->
+  <div id="main-app" class="app-layout" style="display: none;">
+    
+    <!-- Sidebar Overlay (Móvil) -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Menú Lateral Izquierdo (Escritorio & Móvil Drawer) -->
+    <aside id="app-sidebar" class="sidebar">
+      <!-- Encabezado Sidebar -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo-icon">H</div>
+          <div class="sidebar-brand-text">
+            <h1>Mi Humm</h1>
+            <span>Comunidad Co-Creation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navegación Principal -->
+      <div class="sidebar-nav-container">
+        <!-- Navegación Exclusiva del Emprendedor -->
+        <div id="sidebar-section-entrepreneur">
+          <div class="nav-section-title">Tu Escritorio</div>
+          <nav class="sidebar-nav">
+            <button class="nav-item-btn active" data-view="inicio">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-item-text">Inicio</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="tareas">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4"></path>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Tareas</span>
+              <span class="nav-badge-count" id="badge-count-tasks"></span>
+            </button>
+
+            <button class="nav-item-btn" data-view="calendario">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-item-text">Calendario</span>
+              <span class="nav-badge-count" id="badge-count-events"></span>
+            </button>
+
+            <button class="nav-item-btn" data-view="notas">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </span>
+              <span class="nav-item-text">Bloc de Notas</span>
+              <span class="nav-badge-count" id="badge-count-notes"></span>
+            </button>
+
+            <button class="nav-item-btn" data-view="ventas">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Ventas</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="clientes">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Clientes</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="oportunidades">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="12 6 12 12 16 14"></polygon>
+                </svg>
+              </span>
+              <span class="nav-item-text">Oportunidades</span>
+              <span class="nav-badge-count" id="badge-count-opps"></span>
+            </button>
+
+            <button class="nav-item-btn" data-view="herramientas">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Herramientas Humm</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="beneficios">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                  <rect x="2" y="7" width="20" height="5"></rect>
+                  <line x1="12" y1="22" x2="12" y2="7"></line>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Beneficios & Descuentos</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="cuenta">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Mi cuenta</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Navegación Exclusiva del Administrador Humm -->
+        <div id="sidebar-section-admin" style="display: none;">
+          <div class="nav-section-title">Administración Central</div>
+          <nav class="sidebar-nav">
+            <button class="nav-item-btn active" data-view="admin-dashboard">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="9"></rect>
+                  <rect x="14" y="3" width="7" height="5"></rect>
+                  <rect x="14" y="12" width="7" height="9"></rect>
+                  <rect x="3" y="16" width="7" height="5"></rect>
+                </svg>
+              </span>
+              <span class="nav-item-text">Dashboard Comunidad</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-users">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Usuarios de la Comunidad</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-members">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </span>
+              <span class="nav-item-text">Emprendimientos</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-subscriptions">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Ventas y Suscripciones</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-alerts">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </span>
+              <span class="nav-item-text">Centro de Alertas</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-requests">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Solicitudes de Apoyo</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-customers">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Clientes de la Red</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-advisors">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Tutores y Ejecutivos</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-broadcasts">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  <line x1="9" y1="10" x2="15" y2="10"></line>
+                </svg>
+              </span>
+              <span class="nav-item-text">Comunicados & Noticias</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-discounts">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                  <rect x="2" y="7" width="20" height="5"></rect>
+                  <line x1="12" y1="22" x2="12" y2="7"></line>
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Alianzas & Descuentos</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-tools">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </span>
+              <span class="nav-item-text">Catálogo Herramientas</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Footer del Menú Lateral -->
+      <div class="sidebar-footer">
+        <!-- Switch Claro / Oscuro -->
+        <div class="theme-toggle-wrapper">
+          <span class="theme-toggle-label">
+            <span>🌓 Modo Oscuro</span>
+          </span>
+          <div class="theme-toggle-btn" title="Cambiar tema">
+            <div class="theme-toggle-thumb"></div>
+          </div>
+        </div>
+
+        <!-- Resumen de Usuario -->
+        <div class="user-profile-summary">
+          <div class="user-avatar" id="sidebar-user-avatar">CV</div>
+          <div class="user-details">
+            <div class="user-name" id="sidebar-user-name">Carolina Valenzuela</div>
+            <div class="user-workspace-name" id="sidebar-workspace-name">Taller Austral</div>
+          </div>
+          <button class="btn-logout-icon btn-logout-action" title="Cerrar sesión">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <div class="main-wrapper">
+      <!-- Encabezado Superior (Topbar) -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobile-menu-toggle-btn" class="mobile-menu-toggle" aria-label="Abrir menú">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div>
+            <div class="greeting-text" id="topbar-greeting-text">
+              Hola, Carolina. Estas son las prioridades de tu emprendimiento.
+            </div>
+            <div class="greeting-subtext" id="topbar-date-text">
+              Lunes, 31 de agosto de 2026
+            </div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="workspace-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--humm-red-primary)" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            </svg>
+            <span id="topbar-workspace-name">Taller Austral</span>
+          </div>
+
+          <button class="btn btn-secondary" id="btn-topbar-request-support" title="Contactar a mi tutor o solicitar reunión/apoyo">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--humm-red-primary)" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Solicitar apoyo Humm
+          </button>
+
+          <button class="btn btn-primary" id="btn-topbar-quick-action">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nueva Tarea
+          </button>
+
+          <button class="btn btn-ghost btn-logout-action" id="btn-topbar-logout" title="Cerrar sesión de Mi Humm" style="color: var(--text-secondary); border: 1px solid var(--border-subtle); padding: 7px 12px; font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Banner de Auditoría de Administrador Humm (Solo al inspeccionar un emprendimiento) -->
+      <div id="admin-audit-banner" style="display: none; background: #fff3cd; color: #856404; border-bottom: 1px solid #ffeeba; padding: 10px 24px; align-items: center; justify-content: space-between; gap: 12px; font-size: var(--font-size-sm); font-weight: 500;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>👀</span>
+          <span><strong>Modo Auditoría / Soporte:</strong> Estás visualizando el espacio de <span id="admin-audit-ws-name" style="font-weight: 700;">Taller Austral</span>.</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-exit-audit-mode" style="background: white; border-color: #ffe8a1; color: #856404; font-weight: 600;">
+          ← Salir y Volver al Panel Administrador
+        </button>
+      </div>
+
+      <!-- Punto de Montaje de Vistas Dinámicas -->
+      <main class="content-body">
+        <div id="view-mount-point"></div>
+      </main>
+    </div>
+
+    <!-- Barra de Navegación Inferior (Móvil) -->
+    <nav class="mobile-bottom-nav">
+      <div class="mobile-bottom-grid">
+        <button class="mobile-nav-item active" data-view="inicio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          </svg>
+          <span>Inicio</span>
+        </button>
+        <button class="mobile-nav-item" data-view="tareas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          <span>Tareas</span>
+        </button>
+        <button class="mobile-nav-item" data-view="clientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+          <span>Clientes</span>
+        </button>
+        <button class="mobile-nav-item" data-view="oportunidades">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="12 6 12 12 16 14"></polygon>
+          </svg>
+          <span>Oportun.</span>
+        </button>
+        <button class="mobile-nav-item" data-view="cuenta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Más</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ==========================================================================
+       3. MODALES ACCESIBLES
+       ========================================================================== -->
+
+  <!-- Modal 1: Crear / Editar Tarea -->
+  <div id="modal-task" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-task-header-title">Nueva Tarea</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-task">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="modal-task-title">Título de la tarea *</label>
+            <input type="text" id="modal-task-title" class="form-control" placeholder="Ej. Entregar pedido o cotizar insumos..." required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-task-desc">Descripción breve (opcional)</label>
+            <textarea id="modal-task-desc" class="form-control" rows="2" placeholder="Detalles de la tarea..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-task-status">Estado</label>
+              <select id="modal-task-status" class="form-control">
+                <option value="todo">Por hacer</option>
+                <option value="in_progress">En proceso</option>
+                <option value="done">Terminada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-task-priority">Prioridad</label>
+              <select id="modal-task-priority" class="form-control">
+                <option value="alta">Alta</option>
+                <option value="media" selected>Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-task-start-date">Fecha de inicio</label>
+              <input type="date" id="modal-task-start-date" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-task-due-date">Fecha de vencimiento</label>
+              <input type="date" id="modal-task-due-date" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-task-tag">Etiqueta (opcional)</label>
+            <input type="text" id="modal-task-tag" class="form-control" placeholder="Ej. Ventas, Producción, Taller, Envíos" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-task-customer">Cliente relacionado</label>
+              <select id="modal-task-customer" class="form-control">
+                <option value="">(Opcional) Ninguno</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-task-opp">Oportunidad relacionada</label>
+              <select id="modal-task-opp" class="form-control">
+                <option value="">(Opcional) Ninguna</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Registrar / Editar Venta Mensual -->
+  <div id="modal-sale" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-sale-header-title">Registrar Venta</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-sale">
+        <div class="modal-body">
+          <p class="text-xs text-muted" style="margin-bottom: 16px;">
+            Registra una venta con fecha exacta, cliente asociado y estado de pago para hacer seguimiento de cobranza.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-sale-date">Fecha de la venta *</label>
+              <input type="date" id="modal-sale-date" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" for="modal-sale-customer" style="margin-bottom: 0;">Cliente asociado</label>
+                <button type="button" id="btn-quick-new-client-from-sale" class="text-xs" style="color: var(--humm-red-primary); font-weight: 700; background: none; border: none; cursor: pointer; padding: 0;" title="Crear un nuevo cliente sin salir de esta venta">
+                  + Crear nuevo cliente
+                </button>
+              </div>
+              <select id="modal-sale-customer" class="form-control">
+                <option value="">(Opcional / Venta a público general)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-sale-amount">Monto total ($ CLP) *</label>
+              <div class="input-with-icon">
+                <span class="input-icon" style="font-weight: 700;">$</span>
+                <input type="text" id="modal-sale-amount" class="form-control" placeholder="1.500.000" required />
+              </div>
+              <span class="form-hint">Ingresa el valor total en pesos chilenos.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="modal-sale-payment-status">Estado del pago *</label>
+              <select id="modal-sale-payment-status" class="form-control">
+                <option value="por_facturar">📄 Por Facturar / Emitir Boleta</option>
+                <option value="pagado" selected>✅ Pagado al contado / Transferido</option>
+                <option value="pendiente">⏳ Pendiente de pago (Por cobrar)</option>
+                <option value="abono">💳 Pago parcial / Abonado</option>
+                <option value="vencido">⚠️ Pago atrasado / En cobranza</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="row-sale-due-date">
+            <label class="form-label" for="modal-sale-due-date">Fecha límite o promesa de pago (opcional)</label>
+            <input type="date" id="modal-sale-due-date" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-sale-notes">Detalle de la venta / N° Boleta / Factura / Observaciones</label>
+            <textarea id="modal-sale-notes" class="form-control" rows="3" placeholder="Detalla los productos o servicios vendidos, número de boleta/factura, acuerdos de pago o notas relevantes..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar venta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Crear / Editar Cliente -->
+  <div id="modal-customer" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-cust-header-title">Nuevo Cliente</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-customer">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-name">Nombre *</label>
+              <input type="text" id="modal-cust-name" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-lastname">Apellido</label>
+              <input type="text" id="modal-cust-lastname" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-cust-company">Empresa o Emprendimiento (opcional)</label>
+            <input type="text" id="modal-cust-company" class="form-control" placeholder="Nombre de empresa si aplica" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-phone">Teléfono / WhatsApp *</label>
+              <input type="tel" id="modal-cust-phone" class="form-control" placeholder="+569..." required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-email">Correo electrónico</label>
+              <input type="email" id="modal-cust-email" class="form-control" placeholder="cliente@correo.cl" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-city">Ciudad / Comuna</label>
+              <input type="text" id="modal-cust-city" class="form-control" placeholder="Ej. Frutillar" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-channel">Canal de origen</label>
+              <select id="modal-cust-channel" class="form-control">
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Correo electrónico">Correo electrónico</option>
+                <option value="Recomendación" selected>Recomendación</option>
+                <option value="Página web">Página web</option>
+                <option value="Actividad o feria">Actividad o feria</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-cust-status">Estado del cliente</label>
+            <select id="modal-cust-status" class="form-control">
+              <option value="active" selected>Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-cust-notes">Notas breves</label>
+            <textarea id="modal-cust-notes" class="form-control" rows="2" placeholder="Gustos, preferencias o detalles clave..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Crear / Editar Oportunidad -->
+  <div id="modal-opportunity" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-opp-header-title">Nueva Oportunidad</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-opp">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="modal-opp-title">Nombre de la oportunidad *</label>
+            <input type="text" id="modal-opp-title" class="form-control" placeholder="Ej. Pedido de 20 recuerdos corporativos" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-contact">Persona o Empresa *</label>
+              <input type="text" id="modal-opp-contact" class="form-control" placeholder="Nombre de contacto" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-phone">Teléfono / WhatsApp</label>
+              <input type="tel" id="modal-opp-phone" class="form-control" placeholder="+569..." />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-email">Correo electrónico</label>
+              <input type="email" id="modal-opp-email" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-product">Producto / Servicio de interés</label>
+              <input type="text" id="modal-opp-product" class="form-control" placeholder="Ej. Tablas de madera de mañío" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-amount">Monto estimado ($ CLP)</label>
+              <div class="input-with-icon">
+                <span class="input-icon" style="font-weight: 700;">$</span>
+                <input type="text" id="modal-opp-amount" class="form-control" placeholder="450.000" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-status">Estado</label>
+              <select id="modal-opp-status" class="form-control">
+                <option value="nuevo" selected>Nuevo contacto</option>
+                <option value="contactado">Contactado</option>
+                <option value="interesado">Interesado</option>
+                <option value="propuesta">Propuesta enviada</option>
+                <option value="ganada">Venta lograda</option>
+                <option value="no_concretado">No concretado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-next-action">Próxima acción</label>
+              <input type="text" id="modal-opp-next-action" class="form-control" placeholder="Ej. Enviar cotización por WhatsApp" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-opp-date">Fecha de seguimiento</label>
+              <input type="date" id="modal-opp-date" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-opp-channel">Canal de origen</label>
+            <select id="modal-opp-channel" class="form-control">
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Correo electrónico">Correo electrónico</option>
+              <option value="Recomendación">Recomendación</option>
+              <option value="Página web" selected>Página web</option>
+              <option value="Actividad o feria">Actividad o feria</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-opp-notes">Notas</label>
+            <textarea id="modal-opp-notes" class="form-control" rows="2" placeholder="Detalles de la conversación..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar oportunidad</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Celebración de Venta Lograda & Puente a Ventas -->
+  <div id="modal-won-celebration" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body won-celebration-box">
+        <div class="celebration-icon-glow">🎉</div>
+        <h3 class="title-md" style="margin-bottom: 6px;">¡Felicitaciones!</h3>
+        <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;" id="won-opp-title">Oportunidad ganada</p>
+        <p style="font-size: var(--font-size-md); font-weight: 800; color: var(--success); margin-bottom: 16px;" id="won-opp-amount"></p>
+        <p class="text-xs text-secondary" style="margin-bottom: 24px; line-height: 1.4;">
+          ¡Muy bien! ¿Quieres actualizar las ventas de este mes con este monto?
+        </p>
+
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-won-to-sales">
+          Registrar venta mensual
+        </button>
+        <button type="button" class="btn btn-ghost btn-block btn-sm modal-cancel-btn" style="margin-top: 8px;">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Recuperar Contraseña -->
+  <div id="modal-forgot-password" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>Recuperar Contraseña</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-forgot-password">
+        <div class="modal-body">
+          <p class="text-xs text-secondary" style="margin-bottom: 16px;">
+            Ingresa tu correo registrado y te enviaremos las instrucciones para restablecer tu acceso.
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="forgot-email">Correo electrónico</label>
+            <input type="email" id="forgot-email" class="form-control" placeholder="tu@correo.cl" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Enviar enlace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Ayuda y Soporte Humm -->
+  <div id="modal-auth-help" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>Soporte Comunidad Humm</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm text-secondary" style="margin-bottom: 16px; line-height: 1.45;">
+          Si tienes problemas para ingresar a tu cuenta de <strong>Mi Humm</strong> o necesitas activar tu membresía, nuestro equipo está disponible para asistirte de inmediato.
+        </p>
+        <div style="background-color: var(--bg-surface-secondary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 16px;">
+          <div class="text-xs text-muted font-medium">Canales oficiales:</div>
+          <div style="font-weight: 700; margin-top: 4px;">soporte@humm.cl</div>
+          <div style="font-size: var(--font-size-xs); color: var(--text-secondary);">Horario: Lun a Vie 9:00 - 18:00 hrs</div>
+        </div>
+        <a href="https://wa.me/56987654321?text=Hola%20Humm,%20necesito%20ayuda%20con%20el%20acceso%20a%20Mi%20Humm" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-block">
+          Hablar por WhatsApp con un Asesor
+        </a>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-block modal-cancel-btn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7.5: Solicitar Apoyo / Requerimiento a Humm (Formulario Popup para Emprendedor) -->
+  <div id="modal-request-support" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Solicitar Apoyo a Humm</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-request-support">
+        <div class="modal-body">
+          <!-- Banner con información del tutor asignado -->
+          <div style="background-color: var(--bg-surface-secondary); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 18px;">
+            <div class="text-xs text-muted font-semibold">Tu Ejecutivo / Tutor Humm Asignado:</div>
+            <div style="font-weight: 700; font-size: var(--font-size-base); color: var(--text-primary); margin-top: 2px;" id="req-support-advisor-name">
+              Valentina Castro
+            </div>
+            <div style="font-size: var(--font-size-xs); color: var(--humm-red-primary);" id="req-support-advisor-email">
+              valentina@humm.cl
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              Tu requerimiento le llegará directamente con copia a <strong>contacto@humm.cl</strong>.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="req-type">Tipo de Requerimiento *</label>
+            <select id="req-type" class="form-control" required>
+              <option value="Reunión de asesoría">📅 Agendar reunión / asesoría virtual</option>
+              <option value="Consulta sobre ventas y herramientas">❓ Consulta sobre herramientas o ventas</option>
+              <option value="Problema o duda técnica">🛠️ Reportar un problema o duda técnica</option>
+              <option value="Orientación comercial">💡 Orientación sobre mi negocio o clientes</option>
+              <option value="Otro requerimiento">📝 Otro requerimiento</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="req-subject">Asunto o Título breve *</label>
+            <input type="text" id="req-subject" class="form-control" placeholder="Ej. Duda con configuración de WhatsApp o reunión para revisar ventas..." required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="req-description">Detalle de tu solicitud o consulta *</label>
+            <textarea id="req-description" class="form-control" rows="4" placeholder="Explícanos con tus palabras qué necesitas, qué problema tienes o qué te gustaría revisar con tu tutor..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="req-contact-pref">Preferencia de respuesta</label>
+            <select id="req-contact-pref" class="form-control">
+              <option value="Responder por correo">Responder por correo electrónico</option>
+              <option value="Coordinar reunión virtual">Coordinar reunión virtual (Zoom / Meet)</option>
+              <option value="Contactar por WhatsApp">Contactar por WhatsApp</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-support-req">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Enviar solicitud a Humm
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8: Admin - Crear Emprendimiento -->
+  <div id="modal-create-ws" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Crear Espacio de Emprendimiento</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-create-ws">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label" for="admin-ws-name">Nombre del Emprendimiento *</label>
+              <input type="text" id="admin-ws-name" class="form-control" required placeholder="Ej. Tostaduría Patagonia" />
+            </div>
+            <div class="form-group" style="flex: 1.2;">
+              <label class="form-label" for="admin-ws-rut">RUT del Emprendimiento (opcional)</label>
+              <input type="text" id="admin-ws-rut" class="form-control" placeholder="76.123.456-7" />
+            </div>
+          </div>
+
+          <!-- DATOS DEL TITULAR -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-owner-name">Nombre del Titular *</label>
+              <input type="text" id="admin-ws-owner-name" class="form-control" required placeholder="Ej. Pedro" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-owner-lastname">Apellido del Titular *</label>
+              <input type="text" id="admin-ws-owner-lastname" class="form-control" required placeholder="Ej. Morales Valdés" />
+            </div>
+          </div>
+
+          <!-- CONTACTO -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-email">Correo Electrónico *</label>
+              <input type="email" id="admin-ws-email" class="form-control" required placeholder="contacto@tostaduria.cl" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-phone">Teléfono / WhatsApp</label>
+              <input type="tel" id="admin-ws-phone" class="form-control" placeholder="+56987654321" />
+            </div>
+          </div>
+
+          <!-- UBICACIÓN GEOGRÁFICA -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-region">Región *</label>
+              <select id="admin-ws-region" class="form-control" required>
+                <option value="" disabled selected>Selecciona una región...</option>
+                <option value="Arica y Parinacota">Arica y Parinacota</option>
+                <option value="Tarapacá">Tarapacá</option>
+                <option value="Antofagasta">Antofagasta</option>
+                <option value="Atacama">Atacama</option>
+                <option value="Coquimbo">Coquimbo</option>
+                <option value="Valparaíso">Valparaíso</option>
+                <option value="Metropolitana de Santiago">Metropolitana de Santiago</option>
+                <option value="Libertador G. Bernardo O'Higgins">Libertador G. Bernardo O'Higgins</option>
+                <option value="Maule">Maule</option>
+                <option value="Ñuble">Ñuble</option>
+                <option value="Biobío">Biobío</option>
+                <option value="La Araucanía">La Araucanía</option>
+                <option value="Los Ríos">Los Ríos</option>
+                <option value="Los Lagos">Los Lagos</option>
+                <option value="Aysén del G. Carlos Ibáñez del Campo">Aysén del G. Carlos Ibáñez del Campo</option>
+                <option value="Magallanes y de la Antártica Chilena">Magallanes y de la Antártica Chilena</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-comuna">Comuna *</label>
+              <select id="admin-ws-comuna" class="form-control" required disabled>
+                <option value="">Primero selecciona una región...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-locality">Localidad</label>
+              <input type="text" id="admin-ws-locality" class="form-control" placeholder="Ej. Niebla, Sector Centro, Valle Grande..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-address">Dirección</label>
+              <input type="text" id="admin-ws-address" class="form-control" placeholder="Ej. Av. Costanera 1420, Taller 4" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-ws-industry">Rubro / Industria</label>
+            <input type="text" id="admin-ws-industry" class="form-control" placeholder="Ej. Gastronomía, Artesanía, Cosmética, Tecnología..." />
+          </div>
+
+          <!-- TUTOR ASIGNADO -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-advisor-name">Tutor / Ejecutivo Humm Asignado</label>
+              <input type="text" id="admin-ws-advisor-name" class="form-control" placeholder="Ej. Valentina Castro" value="Valentina Castro" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-ws-advisor-email">Correo de Apoyo Humm</label>
+              <input type="email" id="admin-ws-advisor-email" class="form-control" value="valentina@humm.cl" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-ws-desc">Descripción</label>
+            <textarea id="admin-ws-desc" class="form-control" rows="2" placeholder="Breve descripción del negocio o productos..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Emprendimiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 8.5: Admin - Asignar Tutor / Ejecutivo a Usuario o Emprendimiento -->
+  <div id="modal-edit-ws-advisor" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="modal-advisor-header-title">👔 Asignar Tutor / Ejecutivo Humm</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-edit-advisor">
+        <div class="modal-body">
+          <p class="text-xs text-secondary" style="margin-bottom: 16px;">
+            Asigna un tutor o ejecutivo exclusivo para guiar y brindar soporte directo a este usuario o emprendimiento:
+          </p>
+
+          <div class="form-group" id="group-advisor-target-user">
+            <label class="form-label" for="edit-advisor-target-user">Usuario / Emprendimiento de la Comunidad *</label>
+            <select id="edit-advisor-target-user" class="form-control">
+              <!-- Cargado dinámicamente con usuarios y sus negocios -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-advisor-select">Seleccionar Tutor / Ejecutivo *</label>
+            <select id="edit-advisor-select" class="form-control">
+              <option value="Valentina Castro|valentina@humm.cl">Valentina Castro (valentina@humm.cl)</option>
+              <option value="Rodrigo Merino|rodrigo@humm.cl">Rodrigo Merino (rodrigo@humm.cl)</option>
+              <option value="Camila Fuentes|camila@humm.cl">Camila Fuentes (camila@humm.cl)</option>
+              <option value="custom">✏️ Ingresar otro tutor / ejecutivo...</option>
+            </select>
+          </div>
+
+          <div id="advisor-custom-fields" style="display: none; padding: 12px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 10px;">
+            <div class="form-group" style="margin-bottom: 8px;">
+              <label class="form-label" for="edit-advisor-name">Nombre del Tutor / Ejecutivo *</label>
+              <input type="text" id="edit-advisor-name" class="form-control" placeholder="Ej. Valentina Castro" value="Valentina Castro" />
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="edit-advisor-email">Correo de Apoyo Humm *</label>
+              <input type="email" id="edit-advisor-email" class="form-control" placeholder="valentina@humm.cl" value="valentina@humm.cl" />
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; padding: 10px 12px; background: rgba(229, 56, 59, 0.05); border-left: 3px solid var(--humm-red-primary); border-radius: var(--radius-xs);">
+            <p class="text-xs" style="margin: 0; color: var(--text-secondary);">
+              💡 <strong>Impacto:</strong> A este correo llegarán las notificaciones y requerimientos de soporte que el emprendedor genere en su plataforma.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-advisor-assign">Guardar Asignación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9: Admin - Crear / Editar Usuario & Asignar Herramientas -->
+  <div id="modal-create-user" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="modal-user-header-title">Crear Usuario de la Comunidad</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-create-user">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-user-name">Nombre Completo *</label>
+              <input type="text" id="admin-user-name" class="form-control" required placeholder="Ej. Andrea Soto" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-user-email">Correo Electrónico de Acceso *</label>
+              <input type="email" id="admin-user-email" class="form-control" required placeholder="andrea@humm.cl" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-user-password">Contraseña</label>
+              <input type="text" id="admin-user-password" class="form-control" placeholder="Contraseña de acceso" />
+              <span class="text-xs text-muted" id="admin-user-password-hint">Por defecto: humm2026</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-user-role">Rol en la Comunidad</label>
+              <select id="admin-user-role" class="form-control">
+                <option value="entrepreneur" selected>Emprendedor (Acceso a su Negocio)</option>
+                <option value="advisor">Asesor / Tutor Humm</option>
+                <option value="admin">Administrador Central</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="admin-user-ws-group">
+            <label class="form-label" for="admin-user-workspace">Emprendimiento Vinculado</label>
+            <select id="admin-user-workspace" class="form-control">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+
+          <!-- ASIGNACIÓN DE HERRAMIENTAS HUMM -->
+          <div class="form-group" style="margin-top: 14px; padding: 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div>
+                <label class="form-label" style="margin-bottom: 2px; font-weight: 700;">🛠️ Herramientas Humm Habilitadas</label>
+                <p class="text-xs text-muted" style="margin-bottom: 0;">Selecciona las soluciones a las que este usuario tendrá acceso.</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-ghost btn-xs" id="btn-select-all-user-tools" style="font-size: 11px; padding: 2px 6px;">Marcar todas</button>
+                <button type="button" class="btn btn-ghost btn-xs" id="btn-unselect-all-user-tools" style="font-size: 11px; padding: 2px 6px;">Desmarcar todas</button>
+              </div>
+            </div>
+            <div id="admin-user-tools-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;">
+              <!-- Checkboxes generados dinámicamente -->
+            </div>
+          </div>
+
+          <!-- ESTADO DE LA CUENTA (ACTIVO / DESACTIVADO) -->
+          <div class="form-group" style="margin-top: 14px; padding: 12px 14px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="admin-user-is-active" style="width: 18px; height: 18px; accent-color: var(--success);" checked />
+              <div>
+                <span style="font-weight: 700; color: var(--text-primary);">Usuario Activo</span>
+                <p class="text-xs text-muted" style="margin: 2px 0 0 0;">Si se desmarca, el usuario no podrá ingresar a la plataforma (acceso bloqueado).</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-admin-user">Guardar Usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 10: Admin - Crear / Editar Herramienta -->
+  <div id="modal-tool-edit" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-tool-header-title">Herramienta Humm</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-tool-edit">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="admin-tool-name">Nombre de la Herramienta *</label>
+            <input type="text" id="admin-tool-name" class="form-control" required placeholder="Ej. Humm Bot" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="admin-tool-desc">Descripción (frase de beneficio) *</label>
+            <textarea id="admin-tool-desc" class="form-control" rows="2" required></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-tool-category">Categoría</label>
+              <select id="admin-tool-category" class="form-control">
+                <option value="Ventas">Ventas</option>
+                <option value="Comunicación">Comunicación</option>
+                <option value="Gestión">Gestión</option>
+                <option value="Diagnóstico">Diagnóstico</option>
+                <option value="Financiamiento">Financiamiento</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-tool-status">Estado</label>
+              <select id="admin-tool-status" class="form-control">
+                <option value="disponible">Disponible</option>
+                <option value="proximamente">Próximamente</option>
+                <option value="requiere_activacion">Requiere activación</option>
+                <option value="servicio_adicional">Servicio adicional</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="admin-tool-url">Enlace / URL segura</label>
+            <input type="url" id="admin-tool-url" class="form-control" placeholder="https://..." required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Herramienta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 11: Admin - Asignar Herramientas a Emprendimiento -->
+  <div id="modal-manage-ws-tools" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-ws-tools-title">Herramientas Asignadas</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-xs text-muted" style="margin-bottom: 16px;">
+          Selecciona las herramientas que estarán activadas y visibles para este emprendimiento:
+        </p>
+        <div id="ws-tools-checkboxes-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-block modal-cancel-btn">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 12: Admin - Enviar Comunicado Masivo / Noticias / Ofertas -->
+  <div id="modal-create-broadcast" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📢 Enviar Comunicado a la Comunidad</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-create-broadcast">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="broadcast-title">Título del Comunicado o Asunto *</label>
+            <input type="text" id="broadcast-title" class="form-control" required placeholder="Ej. 🎉 Nueva Oferta / Taller Online / Convocatoria..." />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="broadcast-category">Tipo de Mensaje *</label>
+              <select id="broadcast-category" class="form-control" required>
+                <option value="Noticia de la Comunidad">📢 Noticia de la Comunidad</option>
+                <option value="Oferta / Beneficio">🎁 Oferta o Beneficio Exclusivo</option>
+                <option value="Taller / Evento">📅 Taller o Evento Humm</option>
+                <option value="Alerta Importante">⚠️ Alerta o Aviso Importante</option>
+                <option value="Oportunidad Comercial">💼 Oportunidad Comercial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="broadcast-audience">Destinatarios *</label>
+              <select id="broadcast-audience" class="form-control" required>
+                <option value="Todos los Emprendedores">🏢 Todos los Emprendedores Miembros</option>
+                <option value="Todos los Clientes de la Red">👥 Todos los Clientes de la Red</option>
+                <option value="Toda la Comunidad (Emprendedores + Clientes)">🌐 Toda la Comunidad (Emprendedores + Clientes)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="broadcast-content">Contenido del Mensaje *</label>
+            <textarea id="broadcast-content" class="form-control" rows="5" placeholder="Escribe el detalle del comunicado, instrucciones, fechas o condiciones de la oferta..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Canales de Difusión</label>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px;">
+              <label style="font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="channel-desk" checked disabled />
+                <span>🖥️ Notificación en Mi Humm (Tablón)</span>
+              </label>
+              <label style="font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="channel-email" checked />
+                <span>📧 Envío masivo por Correo</span>
+              </label>
+              <label style="font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="channel-whatsapp" />
+                <span>💬 Mensaje por WhatsApp</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Publicar y Difundir
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13: Admin - Crear / Editar Descuento y Convenio de Empresa -->
+  <div id="modal-company-discount" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-disc-header-title">🎁 Beneficio / Convenio de Empresa</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-company-discount">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label" for="admin-disc-company">Nombre de la Empresa / Aliado *</label>
+              <input type="text" id="admin-disc-company" class="form-control" required placeholder="Ej. Starken, Webpay, Canva..." />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="admin-disc-logo">Logo / Icono (Emoji)</label>
+              <input type="text" id="admin-disc-logo" class="form-control" placeholder="🚚, 💳, 🎨, 🏦..." value="🎁" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-disc-title">Título del Descuento / Beneficio *</label>
+            <input type="text" id="admin-disc-title" class="form-control" required placeholder="Ej. 25% de Descuento en Envíos Nacionales" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-category">Categoría del Servicio *</label>
+              <select id="admin-disc-category" class="form-control" required>
+                <option value="Logística y Envíos">🚚 Logística y Envíos</option>
+                <option value="Medios de Pago">💳 Medios de Pago</option>
+                <option value="Marketing y Diseño">🎨 Marketing y Diseño</option>
+                <option value="Legal y Contable">⚖️ Legal y Contable</option>
+                <option value="Banca y Financiamiento">🏦 Banca y Financiamiento</option>
+                <option value="Software y Digital">💻 Software y Digital</option>
+                <option value="Servicios Generales">📦 Servicios Generales</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-code">Código de Cupón / Promoción</label>
+              <input type="text" id="admin-disc-code" class="form-control" placeholder="Ej. HUMM-STARKEN25" style="text-transform: uppercase;" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-disc-desc">Descripción del Beneficio y Condiciones *</label>
+            <textarea id="admin-disc-desc" class="form-control" rows="3" placeholder="Explica claramente en qué consiste el beneficio, cómo se activa y qué condiciones aplican..." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-url">Sitio Web / Enlace de Canje</label>
+              <input type="url" id="admin-disc-url" class="form-control" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-expires">Fecha de Vigencia / Vencimiento</label>
+              <input type="date" id="admin-disc-expires" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="admin-disc-featured" />
+              <span>⭐ Destacar este beneficio en los primeros lugares</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Beneficio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13.5: Admin - Crear / Editar Plan de Venta Mensual -->
+  <div id="modal-admin-plan" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="modal-plan-header-title">🏷️ Plan de Venta Mensual</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-plan">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="admin-plan-name">Nombre del Plan *</label>
+            <input type="text" id="admin-plan-name" class="form-control" required placeholder="Ej. Plan Crecimiento Humm, Plan Pro..." />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-plan-price">Valor de Cobro Mensual (CLP) *</label>
+              <input type="number" id="admin-plan-price" class="form-control" required placeholder="Ej. 34990" min="0" step="1" />
+              <span class="form-hint">Monto de suscripción recurrente cada 30 días.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-plan-trial-days">Período de Prueba Gratis (Días) *</label>
+              <input type="number" id="admin-plan-trial-days" class="form-control" required placeholder="14" min="0" value="14" />
+              <span class="form-hint">Ingresa 0 para cobro inmediato sin días de prueba.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-plan-desc">Descripción Breve *</label>
+            <textarea id="admin-plan-desc" class="form-control" rows="2" placeholder="Resumen del enfoque del plan y a qué tipo de emprendedores va dirigido..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-plan-features">Beneficios y Herramientas Incluidas</label>
+            <textarea id="admin-plan-features" class="form-control" rows="3" placeholder="Ingresa un beneficio por línea:&#10;Todas las herramientas habilitadas&#10;Tutor exclusivo asignado&#10;Descuentos de empresas"></textarea>
+            <span class="form-hint">Ingresa una característica por cada salto de línea.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-plan-status">Estado del Plan</label>
+            <select id="admin-plan-status" class="form-control">
+              <option value="active" selected>🟢 Activo (Disponible para asignar)</option>
+              <option value="paused">⏸️ Pausado / Oculto</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-admin-plan">Guardar Plan de Venta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13.6: Admin - Enviar Link de Pago (WhatsApp / Correo) -->
+  <div id="modal-admin-send-payment-link" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="modal-payment-link-header-title">💳 Enviar Link de Pago y Cobro</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-send-payment-link">
+        <div class="modal-body">
+          <div id="payment-link-recipients-box" style="padding: 12px 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 14px;">
+            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 4px;">Destinatario(s) Seleccionado(s):</div>
+            <div id="payment-link-recipients-summary" style="font-size: 12.5px; color: var(--text-secondary);">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Canal de Envío *</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); cursor: pointer; background: var(--bg-surface);">
+                <input type="radio" name="payment_channel" value="whatsapp" checked style="accent-color: var(--success);" />
+                <span style="font-weight: 700; font-size: 12.5px;">📱 WhatsApp</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); cursor: pointer; background: var(--bg-surface);">
+                <input type="radio" name="payment_channel" value="email" style="accent-color: var(--humm-red-primary);" />
+                <span style="font-weight: 700; font-size: 12.5px;">✉️ Correo</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); cursor: pointer; background: var(--bg-surface);">
+                <input type="radio" name="payment_channel" value="both" style="accent-color: #3B82F6;" />
+                <span style="font-weight: 700; font-size: 12.5px;">🔄 Ambos</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="payment-link-custom-message">Mensaje del Cobro (Personalizable)</label>
+            <textarea id="payment-link-custom-message" class="form-control" rows="4" style="font-size: 12.5px; line-height: 1.4;"></textarea>
+            <div class="text-xs text-muted" style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
+              <span>Variables automáticas:</span>
+              <code style="background: var(--bg-body); padding: 1px 4px; border-radius: 3px;">{NOMBRE}</code>
+              <code style="background: var(--bg-body); padding: 1px 4px; border-radius: 3px;">{PLAN}</code>
+              <code style="background: var(--bg-body); padding: 1px 4px; border-radius: 3px;">{MONTO}</code>
+              <code style="background: var(--bg-body); padding: 1px 4px; border-radius: 3px;">{LINK_PAGO}</code>
+              <code style="background: var(--bg-body); padding: 1px 4px; border-radius: 3px;">{FECHA_CORTE}</code>
+            </div>
+          </div>
+
+          <!-- Vista Previa -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-weight: 700; font-size: 12px;">Vista Previa del Mensaje</label>
+            <div id="payment-link-preview-box" style="padding: 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); font-size: 12.5px; color: #166534; line-height: 1.45; white-space: pre-wrap;">
+              <!-- Vista previa en tiempo real -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-send-payment-link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Emitir y Enviar Link de Pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13.7: Admin - Configurar y Editar Suscripción de Cliente -->
+  <div id="modal-admin-edit-subscription" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 id="modal-sub-edit-header-title">⚙️ Configurar Suscripción y Cobro</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-edit-subscription">
+        <div class="modal-body">
+          <div style="padding: 10px 14px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div id="admin-sub-client-name" style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Carolina Valenzuela</div>
+              <div id="admin-sub-client-email" class="text-xs text-muted">carolina@talleraustral.cl</div>
+            </div>
+            <span id="admin-sub-client-badge" class="badge badge-primary text-xs">Taller Austral</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-plan-select">Plan de Venta Asignado *</label>
+              <select id="admin-sub-plan-select" class="form-control">
+                <!-- Cargado dinámicamente -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-price">Valor de Cobro Mensual (CLP) *</label>
+              <input type="number" id="admin-sub-price" class="form-control" required min="0" step="1" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-status">Condición de la Cuenta *</label>
+              <select id="admin-sub-status" class="form-control">
+                <option value="active">🟢 Suscripción Activa (Pagando)</option>
+                <option value="trial">🟡 Período de Prueba Gratuito</option>
+                <option value="overdue">🔴 Pago Pendiente / Vencido</option>
+                <option value="cancelled">⚪ Suscripción Cancelada / Pausada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-trial-days">Días Restantes de Prueba</label>
+              <input type="number" id="admin-sub-trial-days" class="form-control" min="0" value="0" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-payment-status">Estado de Pago del Mes</label>
+              <select id="admin-sub-payment-status" class="form-control">
+                <option value="paid">🟢 Al día (Pagado este mes)</option>
+                <option value="pending">🟡 Pendiente de Cobro</option>
+                <option value="overdue">🔴 Vencido / Atrasado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-phone">Teléfono / WhatsApp de Cobro</label>
+              <input type="text" id="admin-sub-phone" class="form-control" placeholder="+56912345678" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-joined-date">Fecha de Ingreso a la Plataforma</label>
+              <input type="date" id="admin-sub-joined-date" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-sub-next-billing">Próxima Fecha de Cobro</label>
+              <input type="date" id="admin-sub-next-billing" class="form-control" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-admin-sub">Guardar Condiciones de Cobro</button>
+        </div>
+      </form>
+    </div>
+  <!-- Modal 14: Crear / Editar Evento & Reunión -->
+  <div id="modal-event" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-event-header-title">Agendar Reunión o Evento</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-event">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="modal-event-title">Título del Evento o Compromiso *</label>
+            <input type="text" id="modal-event-title" class="form-control" placeholder="Ej. Reunión de coordinación, Visita a taller, Entrega de pedido..." required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-event-type">Tipo de Compromiso *</label>
+              <select id="modal-event-type" class="form-control">
+                <option value="reunion">🤝 Reunión con Cliente</option>
+                <option value="visita">🚗 Visita a Terreno / Proveedor</option>
+                <option value="mentoria">🎓 Sesión de Mentoría Humm</option>
+                <option value="entrega">📦 Entrega de Pedido / Despacho</option>
+                <option value="comercial">💼 Gestión Comercial / Cobro</option>
+                <option value="otro">📌 Otro Compromiso</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="form-label" for="modal-event-customer" style="margin-bottom: 0;">Cliente relacionado</label>
+                <button type="button" id="btn-quick-new-client-from-event" class="text-xs" style="color: var(--humm-red-primary); font-weight: 700; background: none; border: none; cursor: pointer; padding: 0;" title="Crear cliente rápido">
+                  + Crear cliente
+                </button>
+              </div>
+              <select id="modal-event-customer" class="form-control">
+                <option value="">(Opcional) Ninguno</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-event-date">Fecha *</label>
+              <input type="date" id="modal-event-date" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-event-start-time">Hora Inicio</label>
+              <input type="time" id="modal-event-start-time" class="form-control" value="10:00" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-event-end-time">Hora Fin</label>
+              <input type="time" id="modal-event-end-time" class="form-control" value="11:00" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-event-location">Lugar / Dirección física (opcional)</label>
+              <input type="text" id="modal-event-location" class="form-control" placeholder="Ej. Taller, Oficina cliente, Café..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-event-meet-url">Enlace Virtual (Google Meet / Zoom)</label>
+              <input type="url" id="modal-event-meet-url" class="form-control" placeholder="https://meet.google.com/..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-event-desc">Temario / Notas de la Reunión</label>
+            <textarea id="modal-event-desc" class="form-control" rows="3" placeholder="Puntos a tratar, acuerdos previos, requerimientos..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar en Calendario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 15: Conectar Calendarios Externos (Google Calendar, Outlook, Apple iCal) -->
+  <div id="modal-calendar-sync" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>🔗 Conectar con tus Calendarios</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-xs text-muted" style="margin-bottom: 20px;">
+          Sincroniza tus tareas, reuniones y compromisos de Mi Humm con tu app de calendario favorita en tu teléfono o computador.
+        </p>
+
+        <!-- Integración 1: Google Calendar -->
+        <div class="sync-provider-card" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 12px; background: var(--bg-card);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #E8F0FE; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              📅
+            </div>
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">Google Calendar</div>
+              <div class="text-xs text-muted" id="google-sync-status-text">Sincronización activa con Google Calendar</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" id="btn-toggle-google-sync">
+            🟢 Conectado
+          </button>
+        </div>
+
+        <!-- Integración 2: Microsoft Outlook / Office 365 -->
+        <div class="sync-provider-card" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 12px; background: var(--bg-card);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: #EBF3FC; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+              ✉️
+            </div>
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">Microsoft Outlook & Teams</div>
+              <div class="text-xs text-muted" id="outlook-sync-status-text">Conecta tu cuenta Microsoft / Outlook</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline" id="btn-toggle-outlook-sync">
+            Conectar
+          </button>
+        </div>
+
+        <!-- Integración 3: Apple Calendar / iCal Feed Universal -->
+        <div class="sync-provider-card" style="padding: 14px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 16px; background: var(--bg-card);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 8px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                🍎
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--text-primary);">Apple Calendar & Suscripción iCal (.ICS)</div>
+                <div class="text-xs text-muted">Compatible con iPhone, iPad, Mac, Thunderbird y Android</div>
+              </div>
+            </div>
+            <span class="badge badge-success text-xs">Feed Activo</span>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <label class="form-label text-xs">Enlace de suscripción en vivo (iCalendar Feed):</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="input-ical-feed-url" class="form-control text-xs" readonly value="https://mi.humm.cl/feed/calendar/ws-taller-austral.ics" />
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-ical-feed">
+                Copiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opciones de sincronización -->
+        <div style="background: var(--bg-body); padding: 12px 14px; border-radius: var(--radius-md);">
+          <div style="font-weight: 700; font-size: var(--font-size-xs); margin-bottom: 8px;">Preferencias de Agenda:</div>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); cursor: pointer; margin-bottom: 6px;">
+            <input type="checkbox" id="chk-sync-tasks" checked />
+            <span>Incluir tareas con fecha límite automáticamente en mi calendario</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); cursor: pointer;">
+            <input type="checkbox" id="chk-sync-reminders" checked />
+            <span>Recordatorio 15 minutos antes en Google/Outlook</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary modal-cancel-btn">Listo / Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 16: Detalle de Evento o Tarea Agendada -->
+  <div id="modal-event-detail" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="event-detail-title">Detalle del Compromiso</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body" id="event-detail-content">
+        <!-- Renderizado dinámico -->
+      </div>
+      <div class="modal-footer" id="event-detail-footer">
+        <button type="button" class="btn btn-secondary modal-cancel-btn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 17: Crear o Editar Nota Rápida -->
+  <div id="modal-note" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-note-header-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-note-header-title">Nueva Nota Rápida</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-modal-note">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="modal-note-title">Título de la Nota *</label>
+            <input type="text" id="modal-note-title" class="form-input" placeholder="Ej: Ideas de empaque navideño" required />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="modal-note-category">Categoría</label>
+              <select id="modal-note-category" class="form-select">
+                <option value="general">📝 General</option>
+                <option value="ideas">💡 Ideas</option>
+                <option value="tareas">📋 Listas / Tareas</option>
+                <option value="clientes">👥 Clientes</option>
+                <option value="proveedores">🌲 Proveedores</option>
+                <option value="finanzas">💰 Finanzas</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="modal-note-color">Color de la Tarjeta</label>
+              <select id="modal-note-color" class="form-select">
+                <option value="yellow">🟡 Amarillo Pastel</option>
+                <option value="green">🟢 Verde Menta</option>
+                <option value="blue">🔵 Azul Cielo</option>
+                <option value="purple">🟣 Morado Lavanda</option>
+                <option value="rose">🔴 Rosa Suave</option>
+                <option value="slate">⚪ Gris Neutro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="modal-note-content">Contenido / Apuntes *</label>
+            <textarea id="modal-note-content" class="form-input" rows="8" placeholder="Escribe tus notas, números de contacto, listas de verificación o ideas de negocio..." style="line-height: 1.6; font-size: 14px;" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); cursor: pointer;">
+              <input type="checkbox" id="modal-note-pinned" />
+              <span>📌 Fijar esta nota en la parte superior</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Nota</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contenedor Global de Toasts -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- Script Principal de la App (ES6 Module con cache-busting) -->
+  <script type="module" src="js/app.js?v=2.5"></script>
+</body>
+</html>

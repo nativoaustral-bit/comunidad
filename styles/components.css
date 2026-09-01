@@ -1,0 +1,1191 @@
+/* ==========================================================================
+   MI HUMM - COMPONENTES VISUALES
+   Comunidad Humm Co-Creation
+   ========================================================================== */
+
+/* ==========================================================================
+   1. TARJETAS DE MÉTRICAS (KPIS)
+   ========================================================================== */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
+}
+
+.metric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.metric-card-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.metric-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--humm-red-subtle);
+  color: var(--humm-red-primary);
+}
+
+.metric-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.metric-comparison {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.comparison-positive {
+  color: var(--success);
+}
+
+.comparison-negative {
+  color: var(--danger);
+}
+
+.comparison-neutral {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   2. TABLERO KANBAN DE TAREAS
+   ========================================================================== */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .kanban-board {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban-column {
+    min-width: 290px;
+    width: 290px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+}
+
+.kanban-column {
+  background-color: var(--kanban-bg-col);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.column-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.column-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-todo {
+  background-color: #3B82F6;
+}
+
+.dot-progress {
+  background-color: #F59E0B;
+}
+
+.dot-done {
+  background-color: var(--success);
+}
+
+.dot-info {
+  background-color: #06B6D4;
+}
+
+.dot-warning {
+  background-color: #F97316;
+}
+
+.dot-purple {
+  background-color: #8B5CF6;
+}
+
+.dot-pink {
+  background-color: #EC4899;
+}
+
+.kanban-column-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kanban-counter-pill {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.kanban-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+  flex: 1;
+}
+
+.kanban-card {
+  background-color: var(--kanban-bg-card);
+  border: 1px solid var(--kanban-card-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-subtle);
+  transition: all var(--transition-fast);
+  cursor: grab;
+  position: relative;
+  user-select: none;
+}
+
+.kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
+}
+
+.kanban-card.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.kanban-card.card-overdue {
+  border-left: 3px solid var(--danger);
+}
+
+.kanban-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kanban-card-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.card-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-date-badge.is-overdue {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.card-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-btn-action {
+  padding: 4px;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.card-btn-action:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-muted);
+}
+
+/* Mobile Quick Status Dropdown on Cards */
+.mobile-status-select {
+  display: none;
+  width: 100%;
+  margin-top: 8px;
+  font-size: var(--font-size-xs);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface-secondary);
+}
+
+@media (max-width: 768px) {
+  .mobile-status-select {
+    display: block;
+  }
+}
+
+/* ==========================================================================
+   3. GRÁFICO DE VENTAS (CUSTOM SVG/CANVAS RESPONSIVE)
+   ========================================================================== */
+.chart-container-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 24px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-title-area h3 {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chart-title-area p {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.chart-canvas-wrap {
+  width: 100%;
+  height: 240px;
+  position: relative;
+}
+
+.chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Chart Tooltip */
+.chart-tooltip {
+  position: absolute;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  box-shadow: var(--shadow-popover);
+  pointer-events: none;
+  font-size: var(--font-size-xs);
+  z-index: 100;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  opacity: 0;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+}
+
+.chart-tooltip.visible {
+  opacity: 1;
+}
+
+.chart-tooltip-month {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.chart-tooltip-amount {
+  font-weight: 800;
+  color: var(--humm-red-primary);
+  font-size: var(--font-size-sm);
+}
+
+/* ==========================================================================
+   4. TABLAS DE DATOS & TARJETAS ADAPTATIVAS
+   ========================================================================== */
+.data-table-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table-toolbar {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.table-search-box {
+  flex: 1;
+  max-width: 360px;
+  min-width: 200px;
+}
+
+.table-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--font-size-sm);
+}
+
+.data-table th {
+  background-color: var(--bg-surface-secondary);
+  padding: 12px 18px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--bg-surface-secondary);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Responsive Cards Grid for Mobile Tables */
+.responsive-cards-grid {
+  display: none;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+
+@media (max-width: 768px) {
+  .data-table {
+    display: none;
+  }
+  .responsive-cards-grid {
+    display: grid;
+  }
+}
+
+.adaptive-item-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adaptive-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.adaptive-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.adaptive-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  gap: 8px;
+}
+
+/* ==========================================================================
+   5. CATÁLOGO DE HERRAMIENTAS HUMM
+   ========================================================================== */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.tool-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  position: relative;
+}
+
+.tool-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
+}
+
+.tool-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-icon-frame {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--humm-red-subtle), var(--bg-surface-secondary));
+  border: 1px solid var(--border-subtle);
+  color: var(--humm-red-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+}
+
+.tool-info h4 {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.tool-info p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.tool-category-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* Category Filter Tabs */
+.filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-tab-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.filter-tab-btn:hover {
+  background-color: var(--bg-surface-secondary);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.filter-tab-btn.active {
+  background-color: var(--humm-red-primary);
+  border-color: var(--humm-red-primary);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   6. MODALES Y DIÁLOGOS
+   ========================================================================== */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-backdrop.active {
+  display: flex;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 540px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-dialog.modal-lg {
+  max-width: 720px;
+}
+
+.modal-dialog.modal-sm {
+  max-width: 400px;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-header h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: var(--bg-surface-secondary);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   7. ESTADOS VACÍOS ORIENTADORES (EMPTY STATES)
+   ========================================================================== */
+.empty-state {
+  text-align: center;
+  padding: 40px 24px;
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.empty-state-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--humm-red-subtle);
+  color: var(--humm-red-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.empty-state-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.empty-state-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   8. CELEBRACIÓN DE VENTA LOGRADA
+   ========================================================================== */
+.won-celebration-box {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.celebration-icon-glow {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.05) 70%);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 2.2rem;
+  animation: pulseSuccess 2s infinite;
+}
+
+@keyframes pulseSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   9. TARJETAS DE BENEFICIOS Y CONVENIOS (FORMATO RETRATO / VERTICAL)
+   ========================================================================== */
+.discount-portrait-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--border-strong);
+}
+
+/* ==========================================================================
+   10. MÓDULO CALENDARIO & AGENDA CONECTABLE (DISEÑO PROFESIONAL & ELEGANTE)
+   ========================================================================== */
+.calendar-board-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-board-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(115px, 1fr));
+  width: 100%;
+  background: var(--border-color);
+  gap: 1.5px;
+}
+
+.calendar-header-cell {
+  background: var(--bg-muted);
+  padding: 13px 8px;
+  text-align: center;
+  font-weight: 800;
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  user-select: none;
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.calendar-day-box {
+  background: var(--bg-surface);
+  min-height: 125px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.calendar-day-box.is-current-month {
+  cursor: pointer;
+}
+
+.calendar-day-box.is-current-month:hover {
+  background-color: var(--bg-hover);
+}
+
+.calendar-day-box.is-other-month {
+  background: var(--bg-body);
+  opacity: 0.55;
+  cursor: default;
+}
+
+.calendar-day-box.is-today {
+  background: rgba(229, 56, 59, 0.04);
+  box-shadow: inset 0 0 0 2px var(--humm-red-primary);
+}
+
+.calendar-day-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.calendar-date-number {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.calendar-day-box.is-today .calendar-date-number {
+  background: var(--humm-red-primary);
+  color: #FFFFFF !important;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(227, 6, 19, 0.35);
+}
+
+.calendar-day-add-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background: none;
+  border: none;
+  color: var(--humm-red-primary);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.calendar-day-box:hover .calendar-day-add-btn {
+  opacity: 1;
+}
+
+.calendar-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.calendar-chip {
+  padding: 4px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.calendar-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  filter: brightness(0.96);
+}
+
+/* Tipos de chips */
+.chip-reunion {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1D4ED8;
+  border-left: 3px solid #2563EB;
+}
+
+.chip-mentoria {
+  background: rgba(227, 6, 19, 0.1);
+  color: #B91C1C;
+  border-left: 3px solid var(--humm-red-primary);
+}
+
+.chip-visita {
+  background: rgba(245, 158, 11, 0.15);
+  color: #B45309;
+  border-left: 3px solid #D97706;
+}
+
+.chip-entrega {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+  border-left: 3px solid #059669;
+}
+
+.chip-comercial {
+  background: rgba(139, 92, 246, 0.15);
+  color: #6D28D9;
+  border-left: 3px solid #7C3AED;
+}
+
+.chip-task {
+  background: rgba(100, 116, 139, 0.12);
+  color: #334155;
+  border-left: 3px solid #64748B;
+}
+
+.chip-otro {
+  background: rgba(107, 114, 128, 0.15);
+  color: #374151;
+  border-left: 3px solid #4B5563;
+}
+
+/* Semana y Agenda */
+.calendar-week-container {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+  width: 100%;
+}
+
+.agenda-item-card {
+  transition: all 0.15s ease;
+}
+
+.agenda-item-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.sync-provider-card {
+  transition: all 0.15s ease;
+}
+
+.sync-provider-card:hover {
+  border-color: var(--border-strong);
+}
+
+/* ==========================================================================
+   11. MÓDULO BLOC DE NOTAS RÁPIDAS (DISEÑO POST-IT MODERNO)
+   ========================================================================== */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.note-card {
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+}
+
+.note-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.note-card.is-pinned {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.note-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.note-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.35;
+  color: inherit;
+}
+
+.btn-note-pin {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.35;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  padding: 2px 4px;
+}
+
+.note-card:hover .btn-note-pin,
+.btn-note-pin.active {
+  opacity: 1;
+}
+
+.btn-note-pin.active {
+  transform: scale(1.15);
+}
+
+.note-card-body {
+  flex: 1;
+  margin-bottom: 12px;
+}
+
+.note-card-content {
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-line;
+  margin: 0;
+  color: inherit;
+  opacity: 0.92;
+  word-break: break-word;
+}
+
+.note-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+  margin-top: auto;
+}
+
+[data-theme="dark"] .note-card-footer {
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.note-card-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.note-card:hover .note-card-actions {
+  opacity: 1;
+}
+
+.note-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background-color 0.12s ease;
+}
+
+.note-action-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .note-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Paleta de Colores de Notas - Tema Claro */
+.note-color-yellow {
+  background: #FEF9C3;
+  border: 1px solid #FDE047;
+  color: #713F12;
+}
+
+.note-color-green {
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+  color: #14532D;
+}
+
+.note-color-blue {
+  background: #DBEAFE;
+  border: 1px solid #93C5FD;
+  color: #1E3A8A;
+}
+
+.note-color-purple {
+  background: #F3E8FF;
+  border: 1px solid #D8B4FE;
+  color: #581C87;
+}
+
+.note-color-rose {
+  background: #FFE4E6;
+  border: 1px solid #FDA4AF;
+  color: #881337;
+}
+
+.note-color-slate {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #1E293B;
+}
+
+/* Paleta de Colores de Notas - Tema Oscuro */
+[data-theme="dark"] .note-color-yellow {
+  background: rgba(254, 240, 138, 0.08);
+  border: 1px solid rgba(254, 240, 138, 0.28);
+  color: #FEF08A;
+}
+
+[data-theme="dark"] .note-color-green {
+  background: rgba(134, 239, 172, 0.08);
+  border: 1px solid rgba(134, 239, 172, 0.28);
+  color: #86EFAC;
+}
+
+[data-theme="dark"] .note-color-blue {
+  background: rgba(147, 197, 253, 0.08);
+  border: 1px solid rgba(147, 197, 253, 0.28);
+  color: #93C5FD;
+}
+
+[data-theme="dark"] .note-color-purple {
+  background: rgba(216, 180, 254, 0.08);
+  border: 1px solid rgba(216, 180, 254, 0.28);
+  color: #D8B4FE;
+}
+
+[data-theme="dark"] .note-color-rose {
+  background: rgba(253, 164, 175, 0.08);
+  border: 1px solid rgba(253, 164, 175, 0.28);
+  color: #FDA4AF;
+}
+
+[data-theme="dark"] .note-color-slate {
+  background: rgba(203, 213, 225, 0.08);
+  border: 1px solid rgba(203, 213, 225, 0.28);
+  color: #CBD5E1;
+}
+
+
+
