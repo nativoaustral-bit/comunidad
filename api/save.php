@@ -357,6 +357,10 @@ try {
                     ':is_featured' => !empty($item['featured'] ?? $item['is_featured']) ? 1 : 0,
                     ':status' => $item['status'] ?? 'active'
                 ]);
+                DB::jsonResponse(true, ['item' => $item]);
+            }
+            break;
+
         // -----------------------------------------------------------------
         // 10. HERRAMIENTAS (tools)
         // -----------------------------------------------------------------
