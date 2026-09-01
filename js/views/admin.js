@@ -2227,18 +2227,18 @@ function openSendPaymentLinkModalDirect(subIds = [], container = null) {
       const sub = targetSubs[0];
       recipientsSummary.innerHTML = `
         <strong>${sub.clientName}</strong> (${sub.businessName}) &bull; Tel: <code>${sub.clientPhone}</code> &bull; Correo: <code>${sub.clientEmail}</code>
-        <div style="margin-top: 4px; font-weight: 700; color: var(--humm-red-primary);">Plan: ${sub.planName} &bull; ${formatCLP(sub.monthlyPrice)} / mes</div>
+        <div style="margin-top: 4px; font-weight: 700; color: var(--humm-red-primary);">Plan: ${sub.planName} &bull; ${formatCLP(sub.monthlyPrice)} / mes +IVA</div>
       `;
     } else {
       recipientsSummary.innerHTML = `
         <strong>${targetSubs.length} clientes seleccionados:</strong> ${targetSubs.map(s => s.clientName).join(', ')}
-        <div style="margin-top: 4px; font-weight: 700; color: var(--humm-red-primary);">Monto total estimado: ${formatCLP(targetSubs.reduce((acc, s) => acc + s.monthlyPrice, 0))}</div>
+        <div style="margin-top: 4px; font-weight: 700; color: var(--humm-red-primary);">Monto total estimado: ${formatCLP(targetSubs.reduce((acc, s) => acc + s.monthlyPrice, 0))} +IVA</div>
       `;
     }
   }
 
   // Plantilla por defecto
-  const defaultTemplate = `Hola {NOMBRE}! Te compartimos el link de pago para tu suscripción a {PLAN} en Mi Humm por {MONTO}.\n\nPuedes realizar tu pago seguro aquí:\n{LINK_PAGO}\n\nFecha de corte: {FECHA_CORTE}.\n¡Muchas gracias por formar parte de la comunidad Humm!`;
+  const defaultTemplate = `Hola {NOMBRE}! Te compartimos el link de pago para tu suscripción a {PLAN} en Mi Humm por {MONTO} +IVA.\n\nPuedes realizar tu pago seguro aquí:\n{LINK_PAGO}\n\nFecha de corte: {FECHA_CORTE}.\n¡Muchas gracias por formar parte de la comunidad Humm!`;
   if (messageInput) {
     messageInput.value = defaultTemplate;
   }
@@ -2250,7 +2250,7 @@ function openSendPaymentLinkModalDirect(subIds = [], container = null) {
     const previewText = messageInput.value
       .replace(/{NOMBRE}/g, sampleSub.clientName)
       .replace(/{PLAN}/g, sampleSub.planName)
-      .replace(/{MONTO}/g, formatCLP(sampleSub.monthlyPrice))
+      .replace(/{MONTO}/g, `${formatCLP(sampleSub.monthlyPrice)} +IVA`)
       .replace(/{LINK_PAGO}/g, sampleSub.paymentLink)
       .replace(/{FECHA_CORTE}/g, formatDateCL(sampleSub.nextBillingDate));
     previewBox.textContent = previewText;
@@ -2273,7 +2273,6 @@ function openSendPaymentLinkModalDirect(subIds = [], container = null) {
     });
 
     if (results.length === 1 && (selectedChannel === 'whatsapp' || selectedChannel === 'both')) {
-      // Abrir WhatsApp directamente en nueva pestaña para cliente individual
       window.open(results[0].waUrl, '_blank');
     }
 
@@ -2323,7 +2322,7 @@ function openEditSubscriptionModalDirect(subId, container = null) {
 
   if (planSelect) {
     planSelect.innerHTML = plans.map(p => `
-      <option value="${p.id}" ${p.id === sub.planId ? 'selected' : ''}>${p.name} (${formatCLP(p.price)}/mes)</option>
+      <option value="${p.id}" ${p.id === sub.planId ? 'selected' : ''}>${p.name} (${formatCLP(p.price)}/mes +IVA)</option>
     `).join('');
 
     planSelect.onchange = () => {
@@ -2354,8 +2353,12 @@ function openEditSubscriptionModalDirect(subId, container = null) {
     const joinedDate = joinedDateInput.value;
     const nextBillingDate = nextBillingInput.value;
 
+    const selectedPlan = plans.find(p => p.id === planId);
+    const planName = selectedPlan ? selectedPlan.name : sub.planName;
+
     store.updateClientSubscription(sub.id, {
       planId,
+      planName,
       monthlyPrice,
       status,
       trialDaysLeft,
@@ -2475,7 +2478,7 @@ export function renderAdminSubscriptionsView(container) {
 
                 <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px;">
                   <span style="font-size: 1.6rem; font-weight: 800; color: var(--humm-red-primary);">${formatCLP(plan.price)}</span>
-                  <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">/ mes</span>
+                  <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">/ mes +IVA</span>
                 </div>
 
                 <div style="margin-bottom: 12px;">
@@ -2719,7 +2722,7 @@ export function renderAdminSubscriptionsView(container) {
                       ${sub.planName}
                     </span>
                     <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">
-                      ${formatCLP(sub.monthlyPrice)} <span style="font-size: 10.5px; font-weight: normal; color: var(--text-muted);">/ mes</span>
+                      ${formatCLP(sub.monthlyPrice)} <span style="font-size: 10.5px; font-weight: normal; color: var(--text-muted);">/ mes +IVA</span>
                     </div>
                   </div>
                 </td>
