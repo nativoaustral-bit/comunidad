@@ -1701,6 +1701,8 @@ function openAdminUserModalDirect(userId = null, container = null) {
     `;
   }
 
+  const welcomeOptions = document.getElementById('admin-user-welcome-options');
+
   if (userId) {
     const user = store.getUser(userId);
     if (!user) return;
@@ -1718,6 +1720,7 @@ function openAdminUserModalDirect(userId = null, container = null) {
     if (wsSelect) wsSelect.value = user.workspaceId || '';
     if (activeCheckbox) activeCheckbox.checked = user.isActive !== false;
     if (submitBtn) submitBtn.textContent = 'Guardar Cambios';
+    if (welcomeOptions) welcomeOptions.style.display = 'none';
 
     // Herramientas asignadas
     const assigned = user.assignedToolIds || [];
@@ -1744,6 +1747,7 @@ function openAdminUserModalDirect(userId = null, container = null) {
     if (roleSelect) roleSelect.value = 'entrepreneur';
     if (activeCheckbox) activeCheckbox.checked = true;
     if (submitBtn) submitBtn.textContent = 'Crear Usuario';
+    if (welcomeOptions) welcomeOptions.style.display = 'block';
 
     if (toolsContainer) {
       toolsContainer.innerHTML = allTools.map(t => {
@@ -1795,24 +1799,81 @@ function openAdminUserModalDirect(userId = null, container = null) {
       if (window.MiHummApp && window.MiHummApp.showToast) {
         window.MiHummApp.showToast(`Usuario "${name}" actualizado con éxito`, 'success');
       }
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (container) renderAdminUsersView(container);
     } else {
+      const sendWelcome = document.getElementById('admin-user-send-welcome') ? document.getElementById('admin-user-send-welcome').checked : true;
+      const mustChangePass = document.getElementById('admin-user-must-change-pass') ? document.getElementById('admin-user-must-change-pass').checked : true;
+      const initialPass = password || 'humm2026';
+
       store.createUser({
         name,
         email,
-        password: password || 'humm2026',
+        password: initialPass,
         role,
         workspaceId,
         isActive,
-        assignedToolIds
+        assignedToolIds,
+        mustChangePassword: mustChangePass
       });
+
       if (window.MiHummApp && window.MiHummApp.showToast) {
         window.MiHummApp.showToast(`Usuario "${name}" creado con éxito`, 'success');
       }
-    }
 
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-    if (container) renderAdminUsersView(container);
+      // Despacho de correo de bienvenida real
+      if (sendWelcome) {
+        fetch('api/mail.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'welcome',
+            email,
+            name,
+            password: initialPass,
+            loginUrl: window.location.origin
+          })
+        }).catch(err => console.warn('Welcome email dispatch notice:', err));
+      }
+
+      // Poblar y abrir modal de bienvenida/éxito
+      const emailTarget = document.getElementById('created-user-email-target');
+      const nameDisplay = document.getElementById('created-user-name-display');
+      const emailDisplay = document.getElementById('created-user-email-display');
+      const passDisplay = document.getElementById('created-user-pass-display');
+      const btnCopy = document.getElementById('btn-copy-user-credentials');
+      const btnWhatsapp = document.getElementById('btn-whatsapp-user-credentials');
+
+      if (emailTarget) emailTarget.textContent = email;
+      if (nameDisplay) nameDisplay.textContent = name;
+      if (emailDisplay) emailDisplay.textContent = email;
+      if (passDisplay) passDisplay.textContent = initialPass;
+
+      if (btnCopy) {
+        btnCopy.onclick = () => {
+          const credText = `🎉 ¡Bienvenido/a a la Comunidad Humm!\n\nTu cuenta ha sido creada exitosamente:\n🔗 Plataforma: https://comunidad.humm.cl\n👤 Usuario: ${email}\n🔑 Contraseña inicial: ${initialPass}\n\nPuedes cambiar tu clave ingresando a Mi Cuenta o a través del enlace de tu correo de bienvenida.`;
+          navigator.clipboard.writeText(credText).then(() => {
+            if (window.MiHummApp) window.MiHummApp.showToast('Datos de acceso copiados al portapapeles', 'success');
+          });
+        };
+      }
+
+      if (btnWhatsapp) {
+        const ws = workspaceId ? store.getWorkspace(workspaceId) : null;
+        const phone = ws && ws.phone ? ws.phone.replace(/[^0-9]/g, '') : '';
+        const waText = encodeURIComponent(`Hola ${name}! Te damos la bienvenida a la Comunidad Humm Co-Creation.\n\nYa tienes acceso a tu plataforma:\n🔗 https://comunidad.humm.cl\n👤 Usuario: ${email}\n🔑 Contraseña: ${initialPass}`);
+        btnWhatsapp.href = phone ? `https://wa.me/${phone}?text=${waText}` : `https://wa.me/?text=${waText}`;
+      }
+
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      if (container) renderAdminUsersView(container);
+
+      if (window.MiHummApp && window.MiHummApp.openModal) {
+        window.MiHummApp.openModal('modal-user-created-success');
+      }
+    }
   };
 
   // Abrir modal

@@ -861,8 +861,12 @@ class Store {
   updateUser(userId, updates) {
     const idx = this.data.users.findIndex(u => u.id === userId);
     if (idx !== -1) {
+      if (updates.password) {
+        updates.mustChangePassword = 0;
+      }
       this.data.users[idx] = { ...this.data.users[idx], ...updates };
       this.saveState();
+      this.apiSave('users', this.data.users[idx], 'save');
       return this.data.users[idx];
     }
     return null;
@@ -882,11 +886,26 @@ class Store {
       lastAccess: null,
       isActive: userData.isActive !== undefined ? !!userData.isActive : true,
       assignedToolIds: Array.isArray(userData.assignedToolIds) ? userData.assignedToolIds : [],
+      mustChangePassword: userData.mustChangePassword !== undefined ? (userData.mustChangePassword ? 1 : 0) : 1,
       createdAt: new Date().toISOString()
     };
     this.data.users.push(newUser);
     this.saveState();
+    this.apiSave('users', newUser, 'save');
     return newUser;
+  }
+
+  resetUserPassword(email, newPassword) {
+    const cleanEmail = email.trim().toLowerCase();
+    const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (user) {
+      user.password = newPassword.trim();
+      user.mustChangePassword = 0;
+      this.saveState();
+      this.apiSave('users', user, 'save');
+      return { success: true, user };
+    }
+    return { success: false, message: 'Usuario no encontrado con ese correo.' };
   }
 
   toggleUserStatus(userId) {
@@ -894,6 +913,7 @@ class Store {
     if (user) {
       user.isActive = !user.isActive;
       this.saveState();
+      this.apiSave('users', user, 'save');
       return user;
     }
     return null;
@@ -904,6 +924,7 @@ class Store {
     this.data.users = this.data.users.filter(u => u.id !== userId);
     if (this.data.users.length !== prevLen) {
       this.saveState();
+      this.apiSave('users', { id: userId }, 'delete');
       return true;
     }
     return false;

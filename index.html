@@ -863,6 +863,39 @@
     </div>
   </div>
 
+  <!-- Modal 6.5: Cambiar / Restablecer Contraseña Directamente -->
+  <div id="modal-reset-password" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>🔐 Cambiar mi Contraseña</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-reset-password">
+        <div class="modal-body">
+          <p class="text-xs text-secondary" style="margin-bottom: 16px;">
+            Ingresa tu nueva contraseña para acceder a la Comunidad Humm:
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="reset-pass-email">Correo Registrado *</label>
+            <input type="email" id="reset-pass-email" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reset-pass-new">Nueva Contraseña *</label>
+            <input type="password" id="reset-pass-new" class="form-control" minlength="4" required placeholder="Mínimo 4 caracteres" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reset-pass-confirm">Confirmar Contraseña *</label>
+            <input type="password" id="reset-pass-confirm" class="form-control" minlength="4" required placeholder="Repite tu nueva contraseña" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-new-pass">Guardar y Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal 7: Ayuda y Soporte Humm -->
   <div id="modal-auth-help" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-sm">
@@ -1206,6 +1239,21 @@
               </div>
             </label>
           </div>
+
+          <!-- OPCIONES DE BIENVENIDA Y SEGURIDAD -->
+          <div id="admin-user-welcome-options" class="form-group" style="margin-top: 12px; padding: 12px 14px; background: rgba(229, 56, 59, 0.04); border: 1px solid rgba(229, 56, 59, 0.15); border-radius: var(--radius-md);">
+            <div style="font-size: var(--font-size-xs); font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+              ✉️ Correo de Bienvenida & Contraseña
+            </div>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-bottom: 6px;">
+              <input type="checkbox" id="admin-user-send-welcome" style="accent-color: var(--humm-red-primary);" checked />
+              <span style="font-size: 13px; color: var(--text-primary);">Enviar correo de bienvenida con credenciales de acceso</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="admin-user-must-change-pass" style="accent-color: var(--humm-red-primary);" checked />
+              <span style="font-size: 13px; color: var(--text-primary);">Dar la opción / requerir cambiar contraseña al ingresar</span>
+            </label>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -1213,6 +1261,56 @@
           <button type="submit" class="btn btn-primary" id="btn-save-admin-user">Guardar Usuario</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal 9.5: Confirmación y Envío de Bienvenida a Usuario -->
+  <div id="modal-user-created-success" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header" style="background: var(--bg-surface-secondary);">
+        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+          <span>🎉</span> ¡Usuario Creado con Éxito!
+        </h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div id="created-user-email-status" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(34, 197, 94, 0.08); border-left: 3px solid var(--success); border-radius: var(--radius-xs); margin-bottom: 16px;">
+          <span style="font-size: 20px;">✉️</span>
+          <div>
+            <div style="font-weight: 700; font-size: 13px; color: var(--text-primary);">Correo de bienvenida enviado</div>
+            <div id="created-user-email-desc" style="font-size: 12px; color: var(--text-secondary);">Se han enviado las instrucciones de acceso y cambio de clave a <strong id="created-user-email-target"></strong>.</div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface-secondary); border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.05em;">Credenciales de Acceso</div>
+          
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Nombre:</span>
+            <strong id="created-user-name-display" style="color: var(--text-primary);"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Correo / Usuario:</span>
+            <strong id="created-user-email-display" style="color: var(--text-primary); font-family: monospace;"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Contraseña Inicial:</span>
+            <strong id="created-user-pass-display" style="color: var(--humm-red-primary); font-family: monospace; background: var(--bg-card); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color);"></strong>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-block" id="btn-copy-user-credentials" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📋</span> Copiar Datos de Acceso
+          </button>
+          <a href="#" id="btn-whatsapp-user-credentials" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-block" style="display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none;">
+            <span>💬</span> Compartir por WhatsApp
+          </a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary btn-block modal-cancel-btn">Entendido</button>
+      </div>
     </div>
   </div>
 

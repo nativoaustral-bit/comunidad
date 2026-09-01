@@ -210,6 +210,18 @@ class App {
   // ENRUTADOR (ROUTER)
   // =========================================================================
   handleHashChange() {
+    if (window.location.hash.startsWith('#cambiar-clave')) {
+      const parts = window.location.hash.split('?');
+      if (parts.length > 1) {
+        const urlParams = new URLSearchParams(parts[1]);
+        const emailParam = urlParams.get('email') || '';
+        const emailInput = document.getElementById('reset-pass-email');
+        if (emailInput && emailParam) emailInput.value = emailParam;
+      }
+      this.openModal('modal-reset-password');
+      return;
+    }
+
     if (!auth.isAuthenticated()) return;
 
     const user = auth.getCurrentUser();
@@ -872,21 +884,74 @@ class App {
           if (password) updates.password = password;
           store.updateUser(editId, updates);
           this.showToast(`Usuario "${name}" actualizado con éxito`, 'success');
+          this.closeAllModals();
+          this.refreshCurrentView();
         } else {
+          const sendWelcome = document.getElementById('admin-user-send-welcome') ? document.getElementById('admin-user-send-welcome').checked : true;
+          const mustChangePass = document.getElementById('admin-user-must-change-pass') ? document.getElementById('admin-user-must-change-pass').checked : true;
+          const initialPass = password || 'humm2026';
+
           store.createUser({
             name,
             email,
-            password: password || 'humm2026',
+            password: initialPass,
             role,
             workspaceId,
             isActive,
-            assignedToolIds
+            assignedToolIds,
+            mustChangePassword: mustChangePass
           });
-          this.showToast(`Usuario "${name}" creado con éxito`, 'success');
-        }
 
-        this.closeAllModals();
-        this.refreshCurrentView();
+          this.showToast(`Usuario "${name}" creado con éxito`, 'success');
+
+          // Despacho de correo de bienvenida real vía PHP mail
+          if (sendWelcome) {
+            fetch('api/mail.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'welcome',
+                email,
+                name,
+                password: initialPass,
+                loginUrl: window.location.origin
+              })
+            }).catch(err => console.warn('Welcome email dispatch notice:', err));
+          }
+
+          // Poblado del modal de confirmación y bienvenida
+          const emailTarget = document.getElementById('created-user-email-target');
+          const nameDisplay = document.getElementById('created-user-name-display');
+          const emailDisplay = document.getElementById('created-user-email-display');
+          const passDisplay = document.getElementById('created-user-pass-display');
+          const btnCopy = document.getElementById('btn-copy-user-credentials');
+          const btnWhatsapp = document.getElementById('btn-whatsapp-user-credentials');
+
+          if (emailTarget) emailTarget.textContent = email;
+          if (nameDisplay) nameDisplay.textContent = name;
+          if (emailDisplay) emailDisplay.textContent = email;
+          if (passDisplay) passDisplay.textContent = initialPass;
+
+          if (btnCopy) {
+            btnCopy.onclick = () => {
+              const credText = `🎉 ¡Bienvenido/a a la Comunidad Humm!\n\nTu cuenta ha sido creada exitosamente:\n🔗 Plataforma: https://comunidad.humm.cl\n👤 Usuario: ${email}\n🔑 Contraseña inicial: ${initialPass}\n\nPuedes cambiar tu clave ingresando a Mi Cuenta o a través del enlace de tu correo de bienvenida.`;
+              navigator.clipboard.writeText(credText).then(() => {
+                this.showToast('Datos de acceso copiados al portapapeles', 'success');
+              });
+            };
+          }
+
+          if (btnWhatsapp) {
+            const ws = workspaceId ? store.getWorkspace(workspaceId) : null;
+            const phone = ws && ws.phone ? ws.phone.replace(/[^0-9]/g, '') : '';
+            const waText = encodeURIComponent(`Hola ${name}! Te damos la bienvenida a la Comunidad Humm Co-Creation.\n\nYa tienes acceso a tu plataforma:\n🔗 https://comunidad.humm.cl\n👤 Usuario: ${email}\n🔑 Contraseña: ${initialPass}`);
+            btnWhatsapp.href = phone ? `https://wa.me/${phone}?text=${waText}` : `https://wa.me/?text=${waText}`;
+          }
+
+          this.closeAllModals();
+          this.refreshCurrentView();
+          this.openModal('modal-user-created-success');
+        }
       });
 
       // Botones rápidos: marcar / desmarcar todas las herramientas
@@ -1545,6 +1610,8 @@ class App {
         document.getElementById('admin-user-is-active').checked = user.isActive !== false;
       }
       document.getElementById('btn-save-admin-user').textContent = 'Guardar Cambios';
+      const welcomeOptions = document.getElementById('admin-user-welcome-options');
+      if (welcomeOptions) welcomeOptions.style.display = 'none';
 
       // Checkboxes de herramientas
       const assigned = user.assignedToolIds || [];
@@ -1570,6 +1637,8 @@ class App {
         document.getElementById('admin-user-is-active').checked = true;
       }
       document.getElementById('btn-save-admin-user').textContent = 'Crear Usuario';
+      const welcomeOptions = document.getElementById('admin-user-welcome-options');
+      if (welcomeOptions) welcomeOptions.style.display = 'block';
 
       // Por defecto todas marcadas
       if (toolsContainer) {
@@ -1879,6 +1948,43 @@ class App {
         this.closeAllModals();
       } else {
         this.showToast(res.message, 'danger');
+      }
+    });
+
+    // Formulario de cambio directo de contraseña desde enlace de correo
+    document.getElementById('form-reset-password')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('reset-pass-email').value.trim();
+      const passNew = document.getElementById('reset-pass-new').value.trim();
+      const passConfirm = document.getElementById('reset-pass-confirm').value.trim();
+
+      if (passNew !== passConfirm) {
+        this.showToast('Las contraseñas no coinciden. Por favor verifica.', 'danger');
+        return;
+      }
+
+      if (passNew.length < 4) {
+        this.showToast('La nueva contraseña debe tener al menos 4 caracteres.', 'danger');
+        return;
+      }
+
+      const res = store.resetUserPassword(email, passNew);
+      if (res.success) {
+        this.showToast('¡Contraseña actualizada exitosamente! Iniciando sesión...', 'success');
+        this.closeAllModals();
+        const loginRes = auth.login(email, passNew, true);
+        if (loginRes.success) {
+          const targetHash = loginRes.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+          window.location.hash = targetHash;
+          this.checkAuthenticationState();
+          this.handleHashChange();
+        } else {
+          window.location.hash = '#inicio';
+          this.checkAuthenticationState();
+          this.handleHashChange();
+        }
+      } else {
+        this.showToast(res.message || 'Error al actualizar contraseña', 'danger');
       }
     });
 

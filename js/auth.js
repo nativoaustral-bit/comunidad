@@ -168,10 +168,21 @@ class AuthService {
         message: 'No existe ninguna cuenta asociada a este correo electrónico.'
       };
     }
-    // En el MVP simulamos el envío de correo de restablecimiento seguro
+    
+    // Despacho real de correo de restablecimiento vía PHP
+    fetch('api/mail.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'reset_password',
+        email: user.email,
+        name: user.name
+      })
+    }).catch(err => console.warn('Reset email dispatch notice:', err));
+
     return {
       success: true,
-      message: `Hemos enviado las instrucciones para restablecer tu contraseña al correo ${email}. Revisa tu bandeja de entrada.`
+      message: `Hemos enviado el enlace para cambiar tu contraseña al correo ${email}. Revisa tu bandeja de entrada.`
     };
   }
 

@@ -290,18 +290,21 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
-                $sql = 'INSERT INTO users (id, workspace_id, name, email, password_hash, role, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email)
-                        VALUES (:id, :workspace_id, :name, :email, :password_hash, :role, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email)
+                $sql = 'INSERT INTO users (id, workspace_id, name, email, password_hash, role, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email, must_change_password, reset_token)
+                        VALUES (:id, :workspace_id, :name, :email, :password_hash, :role, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email, :must_change_password, :reset_token)
                         ON DUPLICATE KEY UPDATE
                         name = VALUES(name),
                         email = VALUES(email),
                         workspace_id = VALUES(workspace_id),
+                        password_hash = IF(VALUES(password_hash) != "", VALUES(password_hash), password_hash),
                         role = VALUES(role),
                         avatar = VALUES(avatar),
                         is_active = VALUES(is_active),
                         assigned_tool_ids = VALUES(assigned_tool_ids),
                         advisor_name = VALUES(advisor_name),
-                        advisor_email = VALUES(advisor_email)';
+                        advisor_email = VALUES(advisor_email),
+                        must_change_password = VALUES(must_change_password),
+                        reset_token = VALUES(reset_token)';
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':id' => $item['id'],
@@ -314,7 +317,9 @@ try {
                     ':is_active' => isset($item['isActive']) ? ($item['isActive'] ? 1 : 0) : 1,
                     ':assigned_tool_ids' => json_encode($item['assignedToolIds'] ?? $item['assigned_tool_ids'] ?? [], JSON_UNESCAPED_UNICODE),
                     ':advisor_name' => $item['advisorName'] ?? $item['advisor_name'] ?? null,
-                    ':advisor_email' => $item['advisorEmail'] ?? $item['advisor_email'] ?? null
+                    ':advisor_email' => $item['advisorEmail'] ?? $item['advisor_email'] ?? null,
+                    ':must_change_password' => !empty($item['mustChangePassword'] ?? $item['must_change_password']) ? 1 : 0,
+                    ':reset_token' => $item['resetToken'] ?? $item['reset_token'] ?? null
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
