@@ -305,15 +305,12 @@ CREATE TABLE IF NOT EXISTS `tools` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =========================================================================
--- DATOS SEMILLA INICIALES (SEED DATA)
+-- DATOS SEMILLA INICIALES (PRODUCCIÓN - PARTIDA DE CERO)
 -- =========================================================================
 
--- Workspaces
-INSERT INTO `workspaces` (`id`, `name`, `owner_name`, `email`, `phone`, `city`, `region`, `industry`, `description`, `membership_status`, `membership_type`, `advisor_name`, `advisor_email`, `created_at`) VALUES
-('ws-taller-austral', 'Taller Austral', 'Carolina Valenzuela', 'carolina@talleraustral.cl', '+56987654321', 'Puerto Varas', 'Los Lagos', 'Diseño y Decoración', 'Diseño y producción artesanal sustentable con maderas nativas y lana ovina.', 'active', 'Membresía Humm Pro', 'Valentina Castro', 'valentina@humm.cl', '2026-01-10 10:00:00'),
-('ws-cafe-valle', 'Café del Valle', 'Juan Pérez', 'juan@cafedelvalle.cl', '+56912345678', 'La Serena', 'Coquimbo', 'Gastronomía y Café', 'Cafetería de especialidad y tostaduría artesanal.', 'active', 'Membresía Humm Base', 'Rodrigo Merino', 'rodrigo@humm.cl', '2026-02-01 14:00:00'),
-('ws-patagonia-botanica', 'Patagonia Botánica', 'Ignacia Silva', 'ignacia@patagoniabotanica.cl', '+56998761234', 'Punta Arenas', 'Magallanes', 'Cosmética Natural', 'Cosmética botánica formulada con flora endémica de la Patagonia chilena.', 'active', 'Membresía Humm Pro', 'Valentina Castro', 'valentina@humm.cl', '2026-02-15 09:30:00'),
-('ws-conservas-ranco', 'Conservas del Ranco', 'Diego Morales', 'diego@conservasranco.cl', '+56955512345', 'Futrono', 'Los Ríos', 'Alimentos Gourmet', 'Conservas gourmet, mermeladas y mieles de bosque nativo.', 'active', 'Membresía Humm Base', 'Rodrigo Merino', 'rodrigo@humm.cl', '2026-03-01 16:20:00');
+-- Usuario Administrador Central Inicial (admin@humm.cl / admin)
+INSERT INTO `users` (`id`, `workspace_id`, `name`, `email`, `password_hash`, `role`, `avatar`, `is_active`, `assigned_tool_ids`, `advisor_name`, `advisor_email`, `created_at`) VALUES
+('usr-admin', NULL, 'Administrador Humm', 'admin@humm.cl', '$2y$10$wK1F5N8qXN8jLwH6fO6aheJ3bK3Z1xT5jU9vP0mO2sT4qR8wN2h6W', 'admin', 'AH', 1, '[]', NULL, NULL, '2026-01-01 08:00:00');
 
 -- Subscription Plans
 INSERT INTO `subscription_plans` (`id`, `name`, `price`, `trial_days`, `description`, `features`, `status`, `sort_order`) VALUES
@@ -321,25 +318,7 @@ INSERT INTO `subscription_plans` (`id`, `name`, `price`, `trial_days`, `descript
 ('plan-crecimiento', 'Plan Crecimiento Humm', 34990, 30, 'El plan más popular para negocios en expansión. Acceso a todas las herramientas y tutoría.', '["Todas las herramientas Humm habilitadas", "30 días de prueba gratuita", "Tutor y ejecutivo exclusivo", "Descuentos de empresas colaboradoras"]', 'active', 2),
 ('plan-pro', 'Plan Pro Co-Creation', 59990, 0, 'Máximo nivel de acompañamiento con consultoría 1 a 1 y vitrina comercial destacada.', '["Suite completa de soluciones Humm", "Mentorías personalizadas mensuales", "Vitrina y difusión destacada", "Sin periodo de prueba (Pago directo)"]', 'active', 3);
 
--- Users (Contraseña inicial: 'admin' para admin, 'humm' para emprendedores)
-INSERT INTO `users` (`id`, `workspace_id`, `name`, `email`, `password_hash`, `role`, `avatar`, `is_active`, `assigned_tool_ids`, `advisor_name`, `advisor_email`, `created_at`) VALUES
-('usr-admin', NULL, 'Administrador Humm', 'admin@humm.cl', '$2y$10$wK1F5N8qXN8jLwH6fO6aheJ3bK3Z1xT5jU9vP0mO2sT4qR8wN2h6W', 'admin', 'AH', 1, '[]', NULL, NULL, '2025-12-01 08:00:00'),
-('usr-valentina', NULL, 'Valentina Castro', 'valentina@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'advisor', 'VC', 1, '[]', NULL, NULL, '2026-01-05 09:00:00'),
-('usr-carolina', 'ws-taller-austral', 'Carolina Valenzuela', 'carolina@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'entrepreneur', 'CV', 1, '["tool-reloop", "tool-hummailing", "tool-kinetic", "tool-humm-radar", "tool-humm-link"]', 'Valentina Castro', 'valentina@humm.cl', '2026-01-10 10:00:00'),
-('usr-juan', 'ws-cafe-valle', 'Juan Pérez', 'juan@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'entrepreneur', 'JP', 1, '["tool-reloop", "tool-humm-radar", "tool-humm-link"]', 'Rodrigo Merino', 'rodrigo@humm.cl', '2026-02-01 14:00:00'),
-('usr-ignacia', 'ws-patagonia-botanica', 'Ignacia Silva', 'ignacia@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'entrepreneur', 'IS', 1, '["tool-reloop", "tool-hummailing", "tool-kinetic"]', 'Valentina Castro', 'valentina@humm.cl', '2026-02-15 09:30:00'),
-('usr-diego', 'ws-conservas-ranco', 'Diego Morales', 'diego@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'entrepreneur', 'DM', 1, '["tool-reloop", "tool-humm-radar"]', 'Rodrigo Merino', 'rodrigo@humm.cl', '2026-03-01 16:20:00'),
-('usr-patricia', 'ws-taller-austral', 'Patricia Lagos', 'patricia@humm.cl', '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6', 'entrepreneur', 'PL', 0, '["tool-reloop"]', 'Valentina Castro', 'valentina@humm.cl', '2026-05-02 11:00:00');
-
--- Subscriptions
-INSERT INTO `subscriptions` (`id`, `user_id`, `workspace_id`, `client_name`, `client_email`, `client_phone`, `business_name`, `plan_id`, `plan_name`, `monthly_price`, `status`, `trial_days_total`, `trial_days_left`, `is_trial`, `payment_status`, `joined_date`, `last_payment_date`, `next_billing_date`, `payment_method`, `payment_link`) VALUES
-('sub-carolina', 'usr-carolina', 'ws-taller-austral', 'Carolina Valenzuela', 'carolina@talleraustral.cl', '+56987654321', 'Taller Austral', 'plan-crecimiento', 'Plan Crecimiento Humm', 34990, 'active', 30, 0, 0, 'paid', '2026-01-10', '2026-08-28', '2026-09-28', 'Webpay Débito/Crédito', 'https://pagos.humm.cl/checkout?sub=sub-carolina&monto=34990'),
-('sub-juan', 'usr-juan', 'ws-cafe-valle', 'Juan Pérez', 'juan@cafedelvalle.cl', '+56912345678', 'Café del Valle', 'plan-base', 'Plan Emprendedor Base', 19990, 'trial', 14, 6, 1, 'pending', '2026-08-20', NULL, '2026-09-07', 'Por definir (En prueba)', 'https://pagos.humm.cl/checkout?sub=sub-juan&monto=19990'),
-('sub-ignacia', 'usr-ignacia', 'ws-patagonia-botanica', 'Ignacia Silva', 'ignacia@patagoniabotanica.cl', '+56998761234', 'Patagonia Botánica', 'plan-crecimiento', 'Plan Crecimiento Humm', 34990, 'active', 30, 0, 0, 'paid', '2026-02-15', '2026-08-15', '2026-09-15', 'Transferencia Bancaria', 'https://pagos.humm.cl/checkout?sub=sub-ignacia&monto=34990'),
-('sub-diego', 'usr-diego', 'ws-conservas-ranco', 'Diego Morales', 'diego@conservasranco.cl', '+56955512345', 'Conservas del Ranco', 'plan-base', 'Plan Emprendedor Base', 19990, 'overdue', 14, 0, 0, 'overdue', '2026-03-01', '2026-07-28', '2026-08-28', 'Pendiente de Pago', 'https://pagos.humm.cl/checkout?sub=sub-diego&monto=19990'),
-('sub-patricia', 'usr-patricia', 'ws-taller-austral', 'Patricia Lagos', 'patricia@talleraustral.cl', '+56977788990', 'Taller Austral', 'plan-base', 'Plan Emprendedor Base', 19990, 'trial', 14, 11, 1, 'pending', '2026-08-28', NULL, '2026-09-11', 'Por definir (En prueba)', 'https://pagos.humm.cl/checkout?sub=sub-patricia&monto=19990');
-
--- Tools
+-- Tools (Catálogo de Soluciones Humm)
 INSERT INTO `tools` (`id`, `name`, `description`, `category`, `status`, `url`, `icon`, `sort_order`, `is_visible`, `is_included`) VALUES
 ('tool-reloop', 'ReLoop', 'Optimiza tus procesos comerciales, recompra y fidelización de clientes.', 'Ventas', 'disponible', 'https://reloop.humm.cl', 'reloop', 1, 1, 1),
 ('tool-hummailing', 'Hummailing', 'Envía comunicaciones y campañas efectivas y personalizadas a tu lista de clientes.', 'Comunicación', 'disponible', 'https://mailing.humm.cl', 'mail', 2, 1, 1),
@@ -348,7 +327,7 @@ INSERT INTO `tools` (`id`, `name`, `description`, `category`, `status`, `url`, `
 ('tool-humm-link', 'Humm Link', 'Tu vitrina digital y enlace directo con botones de compra para bio y redes.', 'Comunicación', 'disponible', 'https://link.humm.cl', 'link', 5, 1, 1),
 ('tool-orientador', 'Orientador de Financiamiento', 'Descubre fondos concursables, subsidios y opciones de financiamiento para tu etapa.', 'Financiamiento', 'proximamente', 'https://fondos.humm.cl', 'dollar-sign', 6, 1, 0);
 
--- Company Discounts
+-- Company Discounts (Convenios Comerciales Activos)
 INSERT INTO `company_discounts` (`id`, `company_name`, `logo`, `discount_title`, `category`, `description`, `code`, `url`, `expires_at`, `is_featured`, `status`) VALUES
 ('disc-1', 'Starken Envíos', '🚚', '25% de Descuento en Envíos Nacionales', 'Logística y Envíos', 'Tarifa preferencial para emprendimientos en todos tus envíos estándar y express en sucursales Starken.', 'HUMM-STARKEN25', 'https://www.starken.cl', '2026-12-31', 1, 'active'),
 ('disc-2', 'Transbank Webpay', '💳', 'Comisión 1.1% en Ventas Débito y Crédito', 'Medios de Pago', 'Tasa preferencial para miembros de Humm sin costo de mantención durante los primeros 6 meses.', 'TBK-HUMM2026', 'https://www.transbank.cl', '2026-11-30', 1, 'active'),

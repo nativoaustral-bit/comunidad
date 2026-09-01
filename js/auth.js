@@ -93,7 +93,7 @@ class AuthService {
   login(email, password, remember = true) {
     let user = store.getUserByEmail(email);
 
-    // Auto-recuperación de cuentas demo si no existen en localStorage
+    // Auto-recuperación de cuenta admin inicial si la BD está vacía
     if (!user) {
       const cleanEmail = (email || '').trim().toLowerCase();
       if (cleanEmail === 'admin@humm.cl') {
@@ -104,15 +104,6 @@ class AuthService {
           password: 'admin',
           role: 'admin',
           workspaceId: null
-        });
-      } else if (cleanEmail === 'carolina@humm.cl') {
-        user = store.createUser({
-          id: 'usr-carolina',
-          name: 'Carolina Valenzuela',
-          email: 'carolina@humm.cl',
-          password: 'humm',
-          role: 'entrepreneur',
-          workspaceId: 'ws-taller-austral'
         });
       }
     }
@@ -130,9 +121,6 @@ class AuthService {
       if (cleanEmail === 'admin@humm.cl' && password.trim() === 'admin') {
         user.password = 'admin';
         store.updateUser(user.id, { password: 'admin' });
-      } else if (cleanEmail === 'carolina@humm.cl' && password.trim() === 'humm') {
-        user.password = 'humm';
-        store.updateUser(user.id, { password: 'humm' });
       } else {
         return { success: false, message: 'Contraseña incorrecta. Verifica tus datos o solicita restablecerla.' };
       }
