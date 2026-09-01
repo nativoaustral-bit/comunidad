@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-const STORAGE_KEY = 'mi_humm_db_v1';
+const STORAGE_KEY = 'mi_humm_db_prod_v1';
 
 // Catálogo maestro inicial de Herramientas Humm
 const INITIAL_TOOLS = [
@@ -164,33 +164,46 @@ class Store {
   // Carga el estado desde LocalStorage o inicia con la semilla limpia
   loadState() {
     try {
+      // Limpiar versiones anteriores con datos de prueba
+      try {
+        localStorage.removeItem('mi_humm_db_v1');
+        localStorage.removeItem('mi_humm_db_v0');
+      } catch (e) {}
+
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         
-        let loadedUsers = parsed.users || INITIAL_STATE.users;
+        let loadedUsers = (parsed.users || INITIAL_STATE.users).filter(u => 
+          u.email.toLowerCase() === 'admin@humm.cl' || 
+          (!['usr-carolina', 'usr-juan', 'usr-ignacia', 'usr-diego', 'usr-patricia', 'usr-valentina'].includes(u.id) &&
+           !['carolina@humm.cl', 'juan@humm.cl', 'ignacia@humm.cl', 'diego@humm.cl', 'patricia@humm.cl', 'valentina@humm.cl'].includes(u.email.toLowerCase()))
+        );
+
         // Asegurar que el administrador siempre esté disponible
         const adminExists = loadedUsers.some(u => u.email.toLowerCase() === 'admin@humm.cl');
         if (!adminExists) {
           loadedUsers.push(INITIAL_STATE.users[0]);
         }
 
+        const loadedWorkspaces = (parsed.workspaces || []).filter(w => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(w.id));
+
         return {
-          workspaces: parsed.workspaces || [],
+          workspaces: loadedWorkspaces,
           users: loadedUsers,
           subscriptionPlans: parsed.subscriptionPlans || INITIAL_STATE.subscriptionPlans,
-          subscriptions: parsed.subscriptions || [],
-          tools: parsed.tools || INITIAL_STATE.tools,
-          tasks: parsed.tasks || [],
-          sales: parsed.sales || [],
-          customers: parsed.customers || [],
-          opportunities: parsed.opportunities || [],
-          supportRequests: parsed.supportRequests || [],
+          subscriptions: (parsed.subscriptions || []).filter(s => !['sub-carolina', 'sub-juan', 'sub-ignacia', 'sub-diego', 'sub-patricia'].includes(s.id)),
+          tools: parsed.tools || INITIAL_TOOLS,
+          tasks: (parsed.tasks || []).filter(t => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(t.workspaceId)),
+          sales: (parsed.sales || []).filter(s => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(s.workspaceId)),
+          customers: (parsed.customers || []).filter(c => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(c.workspaceId)),
+          opportunities: (parsed.opportunities || []).filter(o => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(o.workspaceId)),
+          supportRequests: (parsed.supportRequests || []).filter(sr => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(sr.workspaceId)),
           broadcasts: parsed.broadcasts || [],
-          companyDiscounts: parsed.companyDiscounts || INITIAL_STATE.companyDiscounts,
-          events: parsed.events || [],
-          calendarSettings: parsed.calendarSettings || [],
-          notes: parsed.notes || []
+          companyDiscounts: parsed.companyDiscounts || INITIAL_DISCOUNTS,
+          events: (parsed.events || []).filter(e => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(e.workspaceId)),
+          calendarSettings: (parsed.calendarSettings || []).filter(cs => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(cs.workspaceId)),
+          notes: (parsed.notes || []).filter(n => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(n.workspaceId))
         };
       }
     } catch (err) {
@@ -222,19 +235,20 @@ class Store {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          if (json.data.tools && json.data.tools.length > 0) this.data.tools = json.data.tools;
-          if (json.data.company_discounts && json.data.company_discounts.length > 0) this.data.companyDiscounts = json.data.company_discounts;
-          if (json.data.subscription_plans && json.data.subscription_plans.length > 0) this.data.subscriptionPlans = json.data.subscription_plans;
-          if (json.data.users && json.data.users.length > 0) this.data.users = json.data.users;
-          if (json.data.workspaces && json.data.workspaces.length > 0) this.data.workspaces = json.data.workspaces;
-          if (json.data.subscriptions && json.data.subscriptions.length > 0) this.data.subscriptions = json.data.subscriptions;
-          if (json.data.customers && json.data.customers.length > 0) this.data.customers = json.data.customers;
-          if (json.data.sales && json.data.sales.length > 0) this.data.sales = json.data.sales;
-          if (json.data.tasks && json.data.tasks.length > 0) this.data.tasks = json.data.tasks;
-          if (json.data.calendar_events && json.data.calendar_events.length > 0) this.data.calendarEvents = json.data.calendar_events;
-          if (json.data.quick_notes && json.data.quick_notes.length > 0) this.data.quickNotes = json.data.quick_notes;
-          if (json.data.opportunities && json.data.opportunities.length > 0) this.data.opportunities = json.data.opportunities;
+          if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools.length > 0 ? json.data.tools : INITIAL_TOOLS;
+          if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts.length > 0 ? json.data.company_discounts : INITIAL_DISCOUNTS;
+          if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans.length > 0 ? json.data.subscription_plans : INITIAL_STATE.subscriptionPlans;
+          if (Array.isArray(json.data.users)) this.data.users = json.data.users;
+          if (Array.isArray(json.data.workspaces)) this.data.workspaces = json.data.workspaces;
+          if (Array.isArray(json.data.subscriptions)) this.data.subscriptions = json.data.subscriptions;
+          if (Array.isArray(json.data.customers)) this.data.customers = json.data.customers;
+          if (Array.isArray(json.data.sales)) this.data.sales = json.data.sales;
+          if (Array.isArray(json.data.tasks)) this.data.tasks = json.data.tasks;
+          if (Array.isArray(json.data.calendar_events)) this.data.calendarEvents = json.data.calendar_events;
+          if (Array.isArray(json.data.quick_notes)) this.data.quickNotes = json.data.quick_notes;
+          if (Array.isArray(json.data.opportunities)) this.data.opportunities = json.data.opportunities;
           this.saveState();
+          this.notify();
         }
       }
     } catch (e) {
