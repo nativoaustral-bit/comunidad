@@ -1049,15 +1049,24 @@
             <input type="text" id="admin-ws-industry" class="form-control" placeholder="Ej. Gastronomía, Artesanía, Cosmética, Tecnología..." />
           </div>
 
-          <!-- TUTOR ASIGNADO -->
-          <div class="form-row">
+          <!-- TUTOR / EJECUTIVO ASIGNADO -->
+          <div class="form-group" style="margin-top: 4px;">
+            <label class="form-label" for="admin-ws-advisor-select">Tutor / Ejecutivo Humm Asignado</label>
+            <select id="admin-ws-advisor-select" class="form-control">
+              <option value="">-- Sin tutor asignado (Opcional) --</option>
+              <option value="custom">✏️ Ingresar otro tutor / ejecutivo manualmente...</option>
+            </select>
+            <span class="form-hint" style="font-size: 11px;">Al elegir un tutor de la lista, su correo de apoyo se completará automáticamente.</span>
+          </div>
+
+          <div id="admin-ws-advisor-custom-row" class="form-row" style="display: none; margin-top: 8px;">
             <div class="form-group">
-              <label class="form-label" for="admin-ws-advisor-name">Tutor / Ejecutivo Humm Asignado</label>
-              <input type="text" id="admin-ws-advisor-name" class="form-control" placeholder="Ej. Valentina Castro" value="Valentina Castro" />
+              <label class="form-label" for="admin-ws-advisor-name">Nombre del Tutor / Ejecutivo</label>
+              <input type="text" id="admin-ws-advisor-name" class="form-control" placeholder="Ej. Rodrigo Merino" value="" />
             </div>
             <div class="form-group">
               <label class="form-label" for="admin-ws-advisor-email">Correo de Apoyo Humm</label>
-              <input type="email" id="admin-ws-advisor-email" class="form-control" value="valentina@humm.cl" required />
+              <input type="email" id="admin-ws-advisor-email" class="form-control" placeholder="rodrigo@humm.cl" value="" />
             </div>
           </div>
 
@@ -1097,9 +1106,7 @@
           <div class="form-group">
             <label class="form-label" for="edit-advisor-select">Seleccionar Tutor / Ejecutivo *</label>
             <select id="edit-advisor-select" class="form-control">
-              <option value="Valentina Castro|valentina@humm.cl">Valentina Castro (valentina@humm.cl)</option>
-              <option value="Rodrigo Merino|rodrigo@humm.cl">Rodrigo Merino (rodrigo@humm.cl)</option>
-              <option value="Camila Fuentes|camila@humm.cl">Camila Fuentes (camila@humm.cl)</option>
+              <option value="">-- Sin tutor asignado --</option>
               <option value="custom">✏️ Ingresar otro tutor / ejecutivo...</option>
             </select>
           </div>
@@ -1107,11 +1114,11 @@
           <div id="advisor-custom-fields" style="display: none; padding: 12px; background: var(--bg-body); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 10px;">
             <div class="form-group" style="margin-bottom: 8px;">
               <label class="form-label" for="edit-advisor-name">Nombre del Tutor / Ejecutivo *</label>
-              <input type="text" id="edit-advisor-name" class="form-control" placeholder="Ej. Valentina Castro" value="Valentina Castro" />
+              <input type="text" id="edit-advisor-name" class="form-control" placeholder="Ej. Rodrigo Merino" value="" />
             </div>
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" for="edit-advisor-email">Correo de Apoyo Humm *</label>
-              <input type="email" id="edit-advisor-email" class="form-control" placeholder="valentina@humm.cl" value="valentina@humm.cl" />
+              <input type="email" id="edit-advisor-email" class="form-control" placeholder="rodrigo@humm.cl" value="" />
             </div>
           </div>
 

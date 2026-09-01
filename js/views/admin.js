@@ -1552,7 +1552,7 @@ function attachCommonAdminEvents(container) {
 
   // Crear nuevo workspace
   container.querySelector('#btn-admin-create-ws')?.addEventListener('click', () => {
-    if (window.MiHummApp) window.MiHummApp.openModal('modal-create-ws');
+    if (window.MiHummApp) window.MiHummApp.openCreateWorkspaceModal();
   });
 
   // Crear nuevo usuario

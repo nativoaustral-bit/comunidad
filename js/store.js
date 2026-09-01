@@ -300,9 +300,21 @@ class Store {
     if (idx !== -1) {
       this.data.workspaces[idx] = { ...this.data.workspaces[idx], ...updates };
       this.saveState();
+      this.apiSave('workspaces', this.data.workspaces[idx], 'save');
       return this.data.workspaces[idx];
     }
     return null;
+  }
+
+  deleteWorkspace(workspaceId) {
+    const idx = this.data.workspaces.findIndex(w => w.id === workspaceId);
+    if (idx !== -1) {
+      this.data.workspaces.splice(idx, 1);
+      this.saveState();
+      this.apiSave('workspaces', { id: workspaceId }, 'delete');
+      return true;
+    }
+    return false;
   }
 
   createWorkspace(workspaceData) {
@@ -329,14 +341,43 @@ class Store {
       description: workspaceData.description || '',
       membershipStatus: 'active',
       membershipType: workspaceData.membershipType || 'Membresía Humm Co-Creation',
-      advisorName: workspaceData.advisorName || 'Valentina Castro',
-      advisorEmail: workspaceData.advisorEmail || 'valentina@humm.cl',
+      advisorName: (workspaceData.advisorName && workspaceData.advisorName.trim()) ? workspaceData.advisorName.trim() : null,
+      advisorEmail: (workspaceData.advisorEmail && workspaceData.advisorEmail.trim()) ? workspaceData.advisorEmail.trim() : null,
       createdAt: new Date().toISOString(),
       assignedTools: ['tool-reloop', 'tool-hummailing', 'tool-kinetic', 'tool-humm-radar', 'tool-humm-link']
     };
     this.data.workspaces.push(newWs);
     this.saveState();
+    this.apiSave('workspaces', newWs, 'save');
     return newWs;
+  }
+
+  getAvailableAdvisors() {
+    const users = this.getAllUsers();
+    const workspaces = this.getAllWorkspaces();
+    const advisorMap = new Map();
+
+    // 1. Usuarios con rol admin o advisor
+    users.filter(u => u.role === 'admin' || u.role === 'advisor').forEach(u => {
+      if (u.email && !advisorMap.has(u.email.toLowerCase())) {
+        advisorMap.set(u.email.toLowerCase(), {
+          name: u.name,
+          email: u.email
+        });
+      }
+    });
+
+    // 2. Tutores registrados en workspaces existentes
+    workspaces.forEach(w => {
+      if (w.advisorEmail && w.advisorName && !advisorMap.has(w.advisorEmail.toLowerCase())) {
+        advisorMap.set(w.advisorEmail.toLowerCase(), {
+          name: w.advisorName,
+          email: w.advisorEmail
+        });
+      }
+    });
+
+    return Array.from(advisorMap.values());
   }
 
   // =========================================================================

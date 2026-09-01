@@ -318,6 +318,8 @@ try {
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
+            break;
+
         // -----------------------------------------------------------------
         // 9. ALIANZAS Y CONVENIOS (company_discounts)
         // -----------------------------------------------------------------
@@ -396,6 +398,53 @@ try {
                     ':sort_order' => (int)($item['sortOrder'] ?? $item['sort_order'] ?? $item['order'] ?? 1),
                     ':is_visible' => isset($item['isVisible']) ? ($item['isVisible'] ? 1 : 0) : 1,
                     ':is_included' => isset($item['isIncluded']) ? ($item['isIncluded'] ? 1 : 0) : 1
+                ]);
+                DB::jsonResponse(true, ['item' => $item]);
+            }
+            break;
+
+        // -----------------------------------------------------------------
+        // 11. ESPACIOS DE EMPRENDIMIENTO (workspaces)
+        // -----------------------------------------------------------------
+        case 'workspaces':
+        case 'workspace':
+            if ($action === 'delete') {
+                $id = $input['id'] ?? '';
+                $stmt = $pdo->prepare('DELETE FROM workspaces WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
+                $item = $input['item'] ?? $input;
+                $sql = 'INSERT INTO workspaces (id, name, owner_name, email, phone, city, region, industry, description, membership_status, membership_type, advisor_name, advisor_email)
+                        VALUES (:id, :name, :owner_name, :email, :phone, :city, :region, :industry, :description, :membership_status, :membership_type, :advisor_name, :advisor_email)
+                        ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        owner_name = VALUES(owner_name),
+                        email = VALUES(email),
+                        phone = VALUES(phone),
+                        city = VALUES(city),
+                        region = VALUES(region),
+                        industry = VALUES(industry),
+                        description = VALUES(description),
+                        membership_status = VALUES(membership_status),
+                        membership_type = VALUES(membership_type),
+                        advisor_name = VALUES(advisor_name),
+                        advisor_email = VALUES(advisor_email)';
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':id' => $item['id'],
+                    ':name' => $item['name'],
+                    ':owner_name' => $item['ownerName'] ?? $item['owner_name'] ?? 'Titular',
+                    ':email' => $item['email'],
+                    ':phone' => $item['phone'] ?? null,
+                    ':city' => $item['city'] ?? $item['comuna'] ?? null,
+                    ':region' => $item['region'] ?? null,
+                    ':industry' => $item['industry'] ?? null,
+                    ':description' => $item['description'] ?? null,
+                    ':membership_status' => $item['membershipStatus'] ?? $item['membership_status'] ?? 'active',
+                    ':membership_type' => $item['membershipType'] ?? $item['membership_type'] ?? 'Membresía Humm Co-Creation',
+                    ':advisor_name' => !empty($item['advisorName'] ?? $item['advisor_name']) ? ($item['advisorName'] ?? $item['advisor_name']) : null,
+                    ':advisor_email' => !empty($item['advisorEmail'] ?? $item['advisor_email']) ? ($item['advisorEmail'] ?? $item['advisor_email']) : null
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }

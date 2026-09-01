@@ -712,6 +712,35 @@ class App {
     // Submit de Admin - Crear Workspace
     const formAdminWs = document.getElementById('form-admin-create-ws');
     if (formAdminWs) {
+      // Cambio interactivo de tutor asignado
+      const wsAdvisorSelect = document.getElementById('admin-ws-advisor-select');
+      const wsAdvisorName = document.getElementById('admin-ws-advisor-name');
+      const wsAdvisorEmail = document.getElementById('admin-ws-advisor-email');
+      const wsCustomRow = document.getElementById('admin-ws-advisor-custom-row');
+
+      if (wsAdvisorSelect) {
+        wsAdvisorSelect.addEventListener('change', () => {
+          const val = wsAdvisorSelect.value;
+          if (val === 'custom') {
+            if (wsCustomRow) wsCustomRow.style.display = 'flex';
+            if (wsAdvisorName) {
+              wsAdvisorName.value = '';
+              wsAdvisorName.focus();
+            }
+            if (wsAdvisorEmail) wsAdvisorEmail.value = '';
+          } else if (val && val.includes('|')) {
+            const [name, email] = val.split('|');
+            if (wsAdvisorName) wsAdvisorName.value = name;
+            if (wsAdvisorEmail) wsAdvisorEmail.value = email;
+            if (wsCustomRow) wsCustomRow.style.display = 'none';
+          } else {
+            if (wsAdvisorName) wsAdvisorName.value = '';
+            if (wsAdvisorEmail) wsAdvisorEmail.value = '';
+            if (wsCustomRow) wsCustomRow.style.display = 'none';
+          }
+        });
+      }
+
       formAdminWs.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = document.getElementById('admin-ws-name').value.trim();
@@ -725,8 +754,8 @@ class App {
         const locality = document.getElementById('admin-ws-locality')?.value.trim() || '';
         const address = document.getElementById('admin-ws-address')?.value.trim() || '';
         const industry = document.getElementById('admin-ws-industry').value.trim();
-        const advisorName = document.getElementById('admin-ws-advisor-name')?.value.trim() || 'Valentina Castro';
-        const advisorEmail = document.getElementById('admin-ws-advisor-email')?.value.trim() || 'valentina@humm.cl';
+        const advisorName = document.getElementById('admin-ws-advisor-name')?.value.trim() || null;
+        const advisorEmail = document.getElementById('admin-ws-advisor-email')?.value.trim() || null;
         const description = document.getElementById('admin-ws-desc').value.trim();
 
         store.createWorkspace({
@@ -1623,6 +1652,39 @@ class App {
     this.openModal('modal-request-support');
   }
 
+  openCreateWorkspaceModal() {
+    const form = document.getElementById('form-admin-create-ws');
+    if (form) form.reset();
+
+    const comunaSelect = document.getElementById('admin-ws-comuna');
+    if (comunaSelect) {
+      comunaSelect.innerHTML = '<option value="">Primero selecciona una región...</option>';
+      comunaSelect.disabled = true;
+    }
+
+    const advisorSelect = document.getElementById('admin-ws-advisor-select');
+    const advisorNameInput = document.getElementById('admin-ws-advisor-name');
+    const advisorEmailInput = document.getElementById('admin-ws-advisor-email');
+    const customRow = document.getElementById('admin-ws-advisor-custom-row');
+
+    if (advisorSelect) {
+      const advisors = store.getAvailableAdvisors();
+      let optionsHtml = '<option value="">-- Sin tutor asignado (Opcional) --</option>';
+      advisors.forEach(adv => {
+        optionsHtml += `<option value="${adv.name}|${adv.email}">${adv.name} (${adv.email})</option>`;
+      });
+      optionsHtml += '<option value="custom">✏️ Ingresar otro tutor / ejecutivo manualmente...</option>';
+      advisorSelect.innerHTML = optionsHtml;
+      advisorSelect.value = '';
+    }
+
+    if (advisorNameInput) advisorNameInput.value = '';
+    if (advisorEmailInput) advisorEmailInput.value = '';
+    if (customRow) customRow.style.display = 'none';
+
+    this.openModal('modal-create-ws');
+  }
+
   openEditWsAdvisorModal(wsId, wsName, currentAdvisorName, currentAdvisorEmail) {
     const form = document.getElementById('form-admin-edit-advisor');
     if (!form) return;
@@ -1654,10 +1716,18 @@ class App {
     }
 
     if (advisorSelect) {
+      const advisors = store.getAvailableAdvisors();
+      let optionsHtml = '<option value="">-- Sin tutor asignado --</option>';
+      advisors.forEach(adv => {
+        optionsHtml += `<option value="${adv.name}|${adv.email}">${adv.name} (${adv.email})</option>`;
+      });
+      optionsHtml += '<option value="custom">✏️ Ingresar otro tutor / ejecutivo...</option>';
+      advisorSelect.innerHTML = optionsHtml;
+
       if (currentAdvisorName) {
-        const matching = Array.from(advisorSelect.options).find(opt => opt.value.startsWith(currentAdvisorName));
+        const matching = advisors.find(adv => adv.name === currentAdvisorName || adv.email === currentAdvisorEmail);
         if (matching) {
-          advisorSelect.value = matching.value;
+          advisorSelect.value = `${matching.name}|${matching.email}`;
           if (customFields) customFields.style.display = 'none';
         } else {
           advisorSelect.value = 'custom';
@@ -1668,8 +1738,10 @@ class App {
           }
         }
       } else {
-        advisorSelect.value = 'Valentina Castro|valentina@humm.cl';
+        advisorSelect.value = '';
         if (customFields) customFields.style.display = 'none';
+        if (nameInput) nameInput.value = '';
+        if (emailInput) emailInput.value = '';
       }
     }
 
