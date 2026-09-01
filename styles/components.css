@@ -629,7 +629,7 @@
 
 .modal-dialog {
   width: 100%;
-  max-width: 540px;
+  max-width: 560px;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
@@ -639,6 +639,14 @@
   max-height: 90vh;
   overflow: hidden;
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-dialog > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .modal-dialog.modal-lg {
@@ -655,6 +663,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -681,6 +690,7 @@
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -691,6 +701,7 @@
   justify-content: flex-end;
   gap: 12px;
   background-color: var(--bg-surface-secondary);
+  flex-shrink: 0;
 }
 
 @keyframes modalFadeIn {
