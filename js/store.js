@@ -93,8 +93,7 @@ const INITIAL_STATE = {
     {
       id: 'usr-admin',
       name: 'Administrador Humm',
-      email: 'admin@humm.cl',
-      password: 'admin',
+      email: 'contacto@humm.cl',
       role: 'admin',
       workspaceId: null,
       avatar: 'AH',

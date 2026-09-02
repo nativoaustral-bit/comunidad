@@ -241,7 +241,7 @@ class AuthService {
       return { success: false, message: 'Por favor ingresa tu correo y contraseña.' };
     }
 
-    // 1. Intentar autenticación segura con Backend MySQL
+    // 1. Autenticación estricta con Backend MySQL
     if (typeof window !== 'undefined' && window.fetch) {
       try {
         const res = await fetch('api/auth.php', {
@@ -318,49 +318,17 @@ class AuthService {
           await store.syncWithBackend(userObj.role, userObj.workspaceId);
 
           return { success: true, user: userObj };
-        } else if (json.message) {
-          return { success: false, message: json.message };
+        } else {
+          // El servidor rechazó la autenticación con error explícito
+          return { success: false, message: json.error || json.message || 'Credenciales incorrectas o usuario no registrado.' };
         }
       } catch (err) {
-        console.warn('Fallo en autenticación online, intentando fallback:', err);
+        console.error('Error de red al intentar autenticar:', err);
+        return { success: false, message: 'No se pudo conectar con el servidor de autenticación. Verifica tu conexión.' };
       }
     }
 
-    // 2. Fallback offline local
-    let user = store.getUserByEmail(cleanEmail);
-    if (!user) {
-      if (cleanEmail === 'admin@humm.cl' || cleanEmail === 'contacto@humm.cl') {
-        user = store.getAllUsers().find(u => u.role === 'admin');
-      }
-    }
-
-    if (!user) {
-      return { success: false, message: 'El correo electrónico no se encuentra registrado en Comunidad Humm.' };
-    }
-
-    if (!user.isActive) {
-      return { success: false, message: 'Esta cuenta ha sido desactivada. Contacta al equipo de administración.' };
-    }
-
-    if (user.password && user.password !== cleanPass) {
-      return { success: false, message: 'Contraseña incorrecta. Verifica tus datos.' };
-    }
-
-    const now = Date.now();
-    const isAdmin = user.role === 'admin';
-    const maxLifetime = isAdmin ? AUTH_CONFIG.ADMIN_MAX_LIFETIME : AUTH_CONFIG.USER_MAX_LIFETIME;
-
-    this.saveSession({
-      userId: user.id,
-      role: user.role,
-      rememberMe: !!remember,
-      loginTime: now,
-      lastActivityTime: now,
-      expiresAt: now + maxLifetime,
-      impersonatedWorkspaceId: null
-    });
-
-    return { success: true, user };
+    return { success: false, message: 'Servicio de autenticación no disponible.' };
   }
 
   logout(notifyMessage = false, messageText = null) {

@@ -22,13 +22,8 @@ switch ($action) {
             DB::jsonResponse(false, null, 'Debes ingresar correo electrónico y contraseña.', 400);
         }
 
-        if ($email === 'admin@humm.cl') {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email OR (role = 'admin' AND email = 'contacto@humm.cl') LIMIT 1");
-            $stmt->execute([':email' => $email]);
-        } else {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
-            $stmt->execute([':email' => $email]);
-        }
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute([':email' => $email]);
         $user = $stmt->fetch();
 
         if (!$user) {
