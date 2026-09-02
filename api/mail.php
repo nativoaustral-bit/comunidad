@@ -144,6 +144,84 @@ HTML;
 </body>
 </html>
 HTML;
+} elseif ($action === 'benefit_request_notification') {
+    $subject = "Nueva Solicitud de Beneficio en Comunidad Humm: " . ($input['benefitTitle'] ?? 'Convenio');
+    $userName = htmlspecialchars($input['userName'] ?? 'Miembro Humm');
+    $workspaceName = htmlspecialchars($input['workspaceName'] ?? 'Emprendimiento');
+    $benefitTitle = htmlspecialchars($input['benefitTitle'] ?? 'Beneficio');
+    $companyName = htmlspecialchars($input['companyName'] ?? 'Empresa Aliada');
+    $channel = strtoupper(htmlspecialchars($input['channel'] ?? 'WhatsApp'));
+    $personalCode = htmlspecialchars($input['personalCode'] ?? 'HUMM-CODE');
+    $reqDate = date('d/m/Y H:i');
+
+    $htmlBody = <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nueva Solicitud de Beneficio</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f5f7; margin: 0; padding: 20px; color: #1e293b; }
+    .email-container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .header { background: #0f172a; padding: 24px; text-align: center; color: white; }
+    .badge { display: inline-block; background: #e5383b; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 8px; }
+    .content { padding: 28px; line-height: 1.6; }
+    .info-grid { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .label { color: #64748b; font-weight: 600; }
+    .val { color: #0f172a; font-weight: 700; }
+    .code-badge { background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="badge">Contacto Comercial Generado</div>
+      <h2 style="margin:0; font-size: 20px;">Nueva Solicitud de Beneficio</h2>
+    </div>
+    <div class="content">
+      <p>Un miembro de la Comunidad Humm ha iniciado contacto comercial para solicitar un beneficio de la red de alianzas:</p>
+      
+      <div class="info-grid">
+        <div class="info-row">
+          <span class="label">Emprendedor/a:</span>
+          <span class="val">{$userName}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Emprendimiento / Workspace:</span>
+          <span class="val">{$workspaceName}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Empresa Aliada:</span>
+          <span class="val">{$companyName}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Beneficio / Descuento:</span>
+          <span class="val">{$benefitTitle}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Canal de Contacto:</span>
+          <span class="val">{$channel}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Código Personal Humm:</span>
+          <span class="val"><span class="code-badge">{$personalCode}</span></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Fecha y Hora:</span>
+          <span class="val">{$reqDate}</span>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b;">
+        Puedes gestionar y dar seguimiento a este contacto desde el panel de administración en la sección <strong>"Contactos generados por beneficios"</strong>.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+HTML;
 } else {
     DB::jsonResponse(false, null, 'Acción de correo no reconocida.', 400);
 }

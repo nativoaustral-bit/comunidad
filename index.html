@@ -11,9 +11,9 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E5383B'><rect width='24' height='24' rx='6'/><text x='12' y='16' font-family='sans-serif' font-size='12' font-weight='bold' fill='white' text-anchor='middle'>H</text></svg>" />
 
   <!-- Stylesheets con cache-busting -->
-  <link rel="stylesheet" href="styles/main.css?v=2.5" />
-  <link rel="stylesheet" href="styles/layout.css?v=2.5" />
-  <link rel="stylesheet" href="styles/components.css?v=2.5" />
+  <link rel="stylesheet" href="styles/main.css?v=4.0" />
+  <link rel="stylesheet" href="styles/layout.css?v=4.0" />
+  <link rel="stylesheet" href="styles/components.css?v=4.0" />
 </head>
 <body>
 
@@ -326,7 +326,16 @@
                   <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
                 </svg>
               </span>
-              <span class="nav-item-text">Alianzas & Descuentos</span>
+              <span class="nav-item-text">Alianzas & Convenios</span>
+            </button>
+
+            <button class="nav-item-btn" data-view="admin-benefit-requests">
+              <span class="nav-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+              </span>
+              <span class="nav-item-text">Contactos de Beneficios</span>
             </button>
 
             <button class="nav-item-btn" data-view="admin-tools">
@@ -1709,16 +1718,88 @@
             <textarea id="admin-disc-desc" class="form-control" rows="3" placeholder="Explica claramente en qué consiste el beneficio, cómo se activa y qué condiciones aplican..." required></textarea>
           </div>
 
+          <!-- Canales de Contacto Directo con el Aliado -->
+          <div style="background: var(--bg-surface-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+            <div style="font-weight: 700; font-size: 12px; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <span>📞 Canales de Contacto Directo con el Proveedor / Aliado</span>
+              <span class="badge badge-humm text-xs" style="font-size: 9px;">Comercial</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-whatsapp">WhatsApp Oficial (con código país) *</label>
+                <input type="text" id="admin-disc-whatsapp" class="form-control" placeholder="+56912345678" />
+                <span class="form-hint" style="font-size: 10px;">Canal principal. Formato internacional sin espacios.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-instagram">Instagram (@usuario o URL)</label>
+                <input type="text" id="admin-disc-instagram" class="form-control" placeholder="@usuario o https://instagram.com/..." />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-email">Correo Electrónico Comercial</label>
+                <input type="email" id="admin-disc-email" class="form-control" placeholder="ventas@aliado.cl" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-pref-channel">Canal Preferido / Botón Principal</label>
+                <select id="admin-disc-pref-channel" class="form-control">
+                  <option value="whatsapp">💬 WhatsApp (Recomendado)</option>
+                  <option value="instagram">📸 Instagram</option>
+                  <option value="email">✉️ Correo Electrónico</option>
+                  <option value="url">🌐 Sitio Web / Formulario</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-person">Persona de Contacto</label>
+                <input type="text" id="admin-disc-person" class="form-control" placeholder="Ej. Andrea Morales" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="admin-disc-role">Cargo / Área</label>
+                <input type="text" id="admin-disc-role" class="form-control" placeholder="Ej. Encargada de Ventas y Convenios" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Vigencia y Condiciones Comerciales -->
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="admin-disc-url">Sitio Web / Enlace de Canje</label>
-              <input type="url" id="admin-disc-url" class="form-control" placeholder="https://..." />
+              <label class="form-label" for="admin-disc-starts">Fecha de Inicio de Vigencia</label>
+              <input type="date" id="admin-disc-starts" class="form-control" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="admin-disc-expires">Fecha de Vigencia / Vencimiento</label>
+              <label class="form-label" for="admin-disc-expires">Fecha de Término de Vigencia</label>
               <input type="date" id="admin-disc-expires" class="form-control" />
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-url">Sitio Web / Enlace Externo</label>
+              <input type="url" id="admin-disc-url" class="form-control" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-disc-responsible">Responsable Interno Humm</label>
+              <input type="text" id="admin-disc-responsible" class="form-control" placeholder="Ej. Paulo Cisternas / Equipo Alianzas" />
+            </div>
+          </div>
+
+          <!-- Plantillas Personalizadas de Mensaje (Opcional) -->
+          <details style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 14px;">
+            <summary style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); cursor: pointer;">
+              ⚙️ Plantillas de Mensaje Personalizadas (Opcional)
+            </summary>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="admin-disc-wa-template" style="font-size: 11px;">Mensaje WhatsApp (Variables: {{user_name}}, {{workspace_name}}, {{benefit_title}}, {{partner_name}}, {{personal_code}}, {{valid_until}})</label>
+                <textarea id="admin-disc-wa-template" class="form-control" rows="2" style="font-size: 11px;" placeholder="Dejar en blanco para usar la plantilla estándar de la Comunidad Humm"></textarea>
+              </div>
+            </div>
+          </details>
 
           <div class="form-group">
             <label style="font-size: var(--font-size-xs); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -1730,6 +1811,159 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar Beneficio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13.6: Emprendedor - Solicitar Beneficio / Iniciar Contacto Comercial -->
+  <div id="modal-request-benefit" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-secondary) 100%);">
+        <h3 id="modal-req-benefit-title">🎁 Solicitar Beneficio Exclusivo</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;">
+        <!-- Tarjeta Resumen del Beneficio -->
+        <div style="display: flex; gap: 14px; align-items: center; background: var(--bg-surface-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 18px;">
+          <div id="modal-req-logo" style="width: 52px; height: 52px; border-radius: var(--radius-md); background: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0;">
+            🎁
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div id="modal-req-partner" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              Empresa Aliada
+            </div>
+            <div id="modal-req-title" style="font-size: 15px; font-weight: 800; color: var(--humm-red-primary); line-height: 1.25; margin-top: 2px;">
+              Beneficio
+            </div>
+            <div id="modal-req-validity" style="font-size: 11px; color: var(--text-secondary); margin-top: 3px;">
+              Vigencia: Permanente
+            </div>
+          </div>
+        </div>
+
+        <!-- Condiciones Breves -->
+        <div id="modal-req-conditions-box" style="margin-bottom: 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.45; background: var(--bg-surface); border-left: 3px solid var(--humm-red-primary); padding: 8px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">
+          <span id="modal-req-desc">Condiciones del beneficio...</span>
+        </div>
+
+        <!-- Selección de Canal (Si hay múltiples) -->
+        <div id="modal-req-channels-section" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 700; margin-bottom: 8px;">Selecciona el canal para contactar al proveedor:</label>
+          <div id="modal-req-channels-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+            <!-- Renderizado dinámico de botones de canal -->
+          </div>
+          <input type="hidden" id="modal-req-selected-channel" value="whatsapp" />
+        </div>
+
+        <!-- Vista Previa del Mensaje que se enviará -->
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted);">
+              Vista Previa del Mensaje Inicial:
+            </label>
+            <span id="modal-req-channel-badge" class="badge badge-success text-xs" style="font-size: 9px;">WhatsApp</span>
+          </div>
+          <div id="modal-req-msg-preview" style="background: var(--bg-surface-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; font-size: 11.5px; color: var(--text-primary); line-height: 1.45; white-space: pre-wrap; font-family: inherit; max-height: 130px; overflow-y: auto;">
+            Cargando mensaje...
+          </div>
+        </div>
+
+        <!-- Aviso de Privacidad y Consentimiento -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 10px 12px; font-size: 11px; color: #1e40af; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 14px; line-height: 1;">🔒</span>
+          <div>
+            <strong>Privacidad protegida:</strong> Al continuar, autorizas compartir con este aliado tu nombre, emprendimiento y código de miembro para gestionar el beneficio. <u>No compartimos tu RUT ni información privada</u>.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 24px;">
+        <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-benefit-contact" style="padding: 10px 20px; font-weight: 800;">
+          🚀 Contactar y solicitar beneficio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 13.7: Emprendedor - Registrar Beneficio Utilizado / Feedback -->
+  <div id="modal-benefit-feedback-used" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>🎉 Registrar Beneficio Utilizado</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-benefit-feedback-used">
+        <input type="hidden" id="feedback-used-request-id" value="" />
+        <div class="modal-body">
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+            ¡Excelente que hayas aprovechado este beneficio! Cuéntanos brevemente cómo te fue. Esta información ayuda a Humm y al aliado a mejorar los convenios de la comunidad.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="feedback-purchase-amount">Monto de la Compra (CLP Opcional)</label>
+              <input type="number" id="feedback-purchase-amount" class="form-control" placeholder="Ej. 50000" min="0" step="1000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="feedback-discount-amount">Ahorro Obtenido (CLP Opcional)</label>
+              <input type="number" id="feedback-discount-amount" class="form-control" placeholder="Ej. 12500" min="0" step="500" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="feedback-rating">Calificación del Servicio / Aliado</label>
+            <select id="feedback-rating" class="form-control">
+              <option value="5">⭐⭐⭐⭐⭐ Excelente (5/5)</option>
+              <option value="4">⭐⭐⭐⭐ Muy bueno (4/5)</option>
+              <option value="3">⭐⭐⭐ Bueno / Aceptable (3/5)</option>
+              <option value="2">⭐⭐ Regular (2/5)</option>
+              <option value="1">⭐ Malo / No recomendado (1/5)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="feedback-comment">Comentario o Testimonio (Opcional)</label>
+            <textarea id="feedback-comment" class="form-control" rows="3" placeholder="¿Cómo fue la atención del proveedor? ¿Recomiendas este beneficio a otros miembros?"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Experiencia</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 13.8: Emprendedor - Registrar que el Beneficio no se concretó -->
+  <div id="modal-benefit-feedback-not-completed" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Indicar que no se concretó</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-benefit-not-completed">
+        <input type="hidden" id="feedback-nc-request-id" value="" />
+        <div class="modal-body">
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+            Lamentamos que no se haya concretado. Selecciona el motivo principal para ayudarnos a gestionar la calidad de las alianzas:
+          </p>
+
+          <div class="form-group">
+            <label class="form-label" for="feedback-nc-reason">Motivo Principal *</label>
+            <select id="feedback-nc-reason" class="form-control" required>
+              <option value="No recibí respuesta del proveedor">No recibí respuesta del proveedor</option>
+              <option value="Las condiciones o precios no me servían">Las condiciones o precios no me servían</option>
+              <option value="El beneficio ya no estaba disponible">El beneficio ya no estaba disponible</option>
+              <option value="Decidí posponer o no comprar por ahora">Decidí posponer o no comprar por ahora</option>
+              <option value="Tuve inconvenientes de comunicación">Tuve inconvenientes de comunicación</option>
+              <option value="Otro motivo">Otro motivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar</button>
         </div>
       </form>
     </div>
@@ -2184,6 +2418,6 @@
   <div id="toast-container" aria-live="polite"></div>
 
   <!-- Script Principal de la App (ES6 Module con cache-busting) -->
-  <script type="module" src="js/app.js?v=3.9"></script>
+  <script type="module" src="js/app.js?v=4.0"></script>
 </body>
 </html>

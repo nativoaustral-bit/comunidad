@@ -50,6 +50,9 @@ export function renderAdminView(container, viewName = 'admin-dashboard') {
     case 'admin-discounts':
       renderAdminDiscountsView(container);
       break;
+    case 'admin-benefit-requests':
+      renderAdminBenefitRequestsView(container);
+      break;
     case 'admin-tools':
       renderAdminToolsView(container);
       break;
@@ -1387,6 +1390,7 @@ export function renderAdminBroadcastsView(container) {
 // =========================================================================
 export function renderAdminDiscountsView(container) {
   const discounts = store.getCompanyDiscounts();
+  const allReqs = store.getAllBenefitRequests();
 
   container.innerHTML = `
     <div class="view-header">
@@ -1395,9 +1399,12 @@ export function renderAdminDiscountsView(container) {
           <h2>Alianzas y Descuentos de Empresas</h2>
           <span class="badge badge-humm text-xs">${discounts.length} Convenios</span>
         </div>
-        <p>Crea y administra las tarjetas de beneficios y descuentos que visualizan los emprendedores en su plataforma.</p>
+        <p>Crea y administra las tarjetas de convenios, canales de contacto y condiciones comerciales que visualizan los miembros.</p>
       </div>
-      <div class="view-actions">
+      <div class="view-actions" style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary btn-sm" id="btn-admin-goto-benefit-requests">
+          📞 Ver Contactos Generados (${allReqs.length})
+        </button>
         <button class="btn btn-primary btn-sm" id="btn-admin-new-discount">
           🎁 + Nueva Alianza / Descuento
         </button>
@@ -1420,61 +1427,71 @@ export function renderAdminDiscountsView(container) {
             <th>Empresa / Aliado</th>
             <th>Beneficio / Descuento</th>
             <th>Categoría</th>
-            <th>Código Promocional</th>
+            <th>Canales de Contacto</th>
             <th>Vigencia</th>
             <th>Estado</th>
             <th style="text-align: right;">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          ${discounts.length > 0 ? discounts.map(item => `
-            <tr>
-              <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0; padding: 2px;">
-                    ${item.logo && (item.logo.startsWith('data:image/') || item.logo.startsWith('http://') || item.logo.startsWith('https://') || item.logo.startsWith('/')) 
-                      ? `<img src="${item.logo}" alt="${item.companyName}" style="width: 100%; height: 100%; object-fit: contain;" />` 
-                      : `<span>${item.logo || '🎁'}</span>`}
+          ${discounts.length > 0 ? discounts.map(item => {
+            const channels = [];
+            if (item.whatsapp) channels.push(`💬 ${item.whatsapp}`);
+            if (item.instagram) channels.push(`📸 ${item.instagram}`);
+            if (item.email) channels.push(`✉️ ${item.email}`);
+            if (item.url) channels.push(`🌐 Web`);
+
+            return `
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--bg-surface-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border: 1px solid var(--border-subtle); overflow: hidden; flex-shrink: 0; padding: 2px;">
+                      ${item.logo && (item.logo.startsWith('data:image/') || item.logo.startsWith('http://') || item.logo.startsWith('https://') || item.logo.startsWith('/')) 
+                        ? `<img src="${item.logo}" alt="${item.companyName}" style="width: 100%; height: 100%; object-fit: contain;" />` 
+                        : `<span>${item.logo || '🎁'}</span>`}
+                    </div>
+                    <div>
+                      <div style="font-weight: 700; color: var(--text-primary);">${item.companyName}</div>
+                      ${item.featured ? `<span class="badge badge-humm text-xs" style="font-size: 10px; padding: 1px 6px;">⭐ Destacado</span>` : ''}
+                    </div>
                   </div>
-                  <div>
-                    <div style="font-weight: 700; color: var(--text-primary);">${item.companyName}</div>
-                    ${item.featured ? `<span class="badge badge-humm text-xs" style="font-size: 10px; padding: 1px 6px;">⭐ Destacado</span>` : ''}
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--humm-red-primary); font-size: var(--font-size-sm);">${item.discountTitle}</div>
+                  <div class="text-xs text-secondary" style="max-width: 280px; line-height: 1.35; margin-top: 2px;">
+                    ${item.description}
                   </div>
-                </div>
-              </td>
-              <td>
-                <div style="font-weight: 700; color: var(--humm-red-primary); font-size: var(--font-size-sm);">${item.discountTitle}</div>
-                <div class="text-xs text-secondary" style="max-width: 280px; line-height: 1.35; margin-top: 2px;">
-                  ${item.description}
-                </div>
-              </td>
-              <td>
-                <span class="badge badge-neutral text-xs">${item.category}</span>
-              </td>
-              <td>
-                ${item.code ? `<span style="font-family: monospace; font-weight: 700; font-size: 12px; background: var(--bg-surface-secondary); padding: 3px 8px; border-radius: 4px; border: 1px dashed var(--border-strong);">${item.code}</span>` : '<span class="text-xs text-muted">Sin código</span>'}
-              </td>
-              <td>
-                <span class="text-xs text-secondary">${item.expiresAt ? formatDateCL(item.expiresAt) : 'Permanente'}</span>
-              </td>
-              <td>
-                <span class="badge ${item.status === 'active' ? 'badge-success' : 'badge-neutral'}">
-                  <span class="badge-dot"></span>
-                  ${item.status === 'active' ? 'Activo' : 'Inactivo'}
-                </span>
-              </td>
-              <td style="text-align: right;">
-                <div style="display: flex; justify-content: flex-end; gap: 4px;">
-                  <button class="btn btn-ghost btn-sm btn-edit-discount" data-disc-id="${item.id}" title="Editar beneficio">
-                    ✏️
-                  </button>
-                  <button class="btn btn-ghost btn-sm btn-delete-discount" data-disc-id="${item.id}" title="Eliminar beneficio" style="color: var(--danger);">
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('') : `
+                </td>
+                <td>
+                  <span class="badge badge-neutral text-xs">${item.category}</span>
+                </td>
+                <td>
+                  <div style="font-size: 11px; display: flex; flex-direction: column; gap: 2px; color: var(--text-secondary);">
+                    ${channels.length > 0 ? channels.map(c => `<span>${c}</span>`).join('') : '<span class="text-muted">Sin canales</span>'}
+                  </div>
+                </td>
+                <td>
+                  <span class="text-xs text-secondary">${item.expiresAt ? formatDateCL(item.expiresAt) : 'Permanente'}</span>
+                </td>
+                <td>
+                  <span class="badge ${item.status === 'active' ? 'badge-success' : 'badge-neutral'}">
+                    <span class="badge-dot"></span>
+                    ${item.status === 'active' ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                    <button class="btn btn-ghost btn-sm btn-edit-discount" data-disc-id="${item.id}" title="Editar beneficio">
+                      ✏️
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-delete-discount" data-disc-id="${item.id}" title="Eliminar beneficio" style="color: var(--danger);">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('') : `
             <tr>
               <td colspan="7" style="text-align: center; padding: 32px;" class="text-muted">
                 No hay alianzas creadas aún. Haz clic en "+ Nueva Alianza / Descuento" para agregar la primera.
@@ -1485,6 +1502,417 @@ export function renderAdminDiscountsView(container) {
       </table>
     </div>
   `;
+
+  // Attach Events
+  container.querySelector('#btn-admin-new-discount')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.openCompanyDiscountModal();
+  });
+
+  container.querySelector('#btn-admin-goto-benefit-requests')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.navigateTo('admin-benefit-requests');
+  });
+
+  container.querySelectorAll('.btn-edit-discount').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const discId = btn.getAttribute('data-disc-id');
+      if (window.MiHummApp) window.MiHummApp.openCompanyDiscountModal(discId);
+    });
+  });
+
+  container.querySelectorAll('.btn-delete-discount').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const discId = btn.getAttribute('data-disc-id');
+      if (confirm('¿Estás seguro de que deseas eliminar este convenio/descuento?')) {
+        store.deleteCompanyDiscount(discId);
+        if (window.MiHummApp) {
+          window.MiHummApp.showToast('Beneficio eliminado', 'info');
+          renderAdminDiscountsView(container);
+        }
+      }
+    });
+  });
+
+  attachCommonAdminEvents(container);
+}
+
+// =========================================================================
+// 9.5. CONTACTOS GENERADOS POR BENEFICIOS (benefit_requests)
+// =========================================================================
+let adminReqSearchQuery = '';
+let adminReqPartnerFilter = 'all';
+let adminReqChannelFilter = 'all';
+let adminReqStatusFilter = 'all';
+
+export function renderAdminBenefitRequestsView(container) {
+  const requests = store.getAllBenefitRequests();
+  const discounts = store.getCompanyDiscounts();
+  const workspaces = store.getAllWorkspaces();
+  const users = store.data.users || [];
+
+  // Métricas
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+  const totalRequests = requests.length;
+  const requestsThisMonth = requests.filter(r => (r.requestedAt || '').startsWith(currentYearMonth)).length;
+  const usedRequests = requests.filter(r => r.status === 'used').length;
+  const totalSavings = requests.reduce((sum, r) => sum + (r.discountAmount || 0), 0);
+  const notCompleted = requests.filter(r => r.status === 'not_completed').length;
+
+  // Aliados únicos para filtro
+  const partners = ['all', ...new Set(discounts.map(d => d.companyName).filter(Boolean))];
+
+  // Filtrado
+  const filtered = requests.filter(r => {
+    const disc = discounts.find(d => d.id === r.discountId);
+    const ws = workspaces.find(w => w.id === r.workspaceId);
+    const u = users.find(usr => usr.id === r.userId);
+
+    const partnerName = disc ? disc.companyName : '';
+    const wsName = ws ? ws.name : '';
+    const memberName = u ? u.name : '';
+    const memberEmail = u ? u.email : '';
+    const benefitTitle = disc ? disc.discountTitle : '';
+
+    const matchesPartner = adminReqPartnerFilter === 'all' || partnerName === adminReqPartnerFilter;
+    const matchesChannel = adminReqChannelFilter === 'all' || r.channel === adminReqChannelFilter;
+    const matchesStatus = adminReqStatusFilter === 'all' || r.status === adminReqStatusFilter;
+
+    const q = adminReqSearchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      partnerName.toLowerCase().includes(q) ||
+      wsName.toLowerCase().includes(q) ||
+      memberName.toLowerCase().includes(q) ||
+      memberEmail.toLowerCase().includes(q) ||
+      benefitTitle.toLowerCase().includes(q) ||
+      (r.personalCode || '').toLowerCase().includes(q);
+
+    return matchesPartner && matchesChannel && matchesStatus && matchesSearch;
+  });
+
+  container.innerHTML = `
+    <div class="view-header">
+      <div class="view-title-group">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2>Contactos Generados por Beneficios</h2>
+          <span class="badge badge-humm text-xs">${totalRequests} Solicitudes</span>
+        </div>
+        <p>Métricas y trazabilidad en tiempo real de los miembros que conectan comercialmente con empresas y proveedores aliados.</p>
+      </div>
+      <div class="view-actions" style="display: flex; gap: 8px;">
+        <button class="btn btn-secondary btn-sm" id="btn-admin-export-reqs-csv">
+          📥 Exportar CSV
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-admin-manage-discounts">
+          🎁 Administrar Alianzas
+        </button>
+      </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTRICAS KPI -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-card);">
+        <div class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total Solicitudes</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${totalRequests}</div>
+        <div class="text-xs text-secondary" style="margin-top: 2px;">Contactos comerciales</div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-card);">
+        <div class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Solicitudes del Mes</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--humm-red-primary); margin-top: 4px;">${requestsThisMonth}</div>
+        <div class="text-xs text-secondary" style="margin-top: 2px;">En ${now.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })}</div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-card);">
+        <div class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Beneficios Utilizados</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--success); margin-top: 4px;">${usedRequests}</div>
+        <div class="text-xs text-secondary" style="margin-top: 2px;">Compras concretadas</div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-card);">
+        <div class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Ahorro Informado</div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">
+          $${totalSavings.toLocaleString('es-CL')}
+        </div>
+        <div class="text-xs text-secondary" style="margin-top: 2px;">Ahorro total para miembros</div>
+      </div>
+
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-card);">
+        <div class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">No Concretados</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-muted); margin-top: 4px;">${notCompleted}</div>
+        <div class="text-xs text-secondary" style="margin-top: 2px;">Sin acuerdo o cancelados</div>
+      </div>
+    </div>
+
+    <!-- FILTROS Y BÚSQUEDA -->
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 240px;">
+          <input type="text" id="admin-req-search-input" class="form-control" placeholder="🔍 Buscar por miembro, emprendimiento, aliado o código..." value="${adminReqSearchQuery}" />
+        </div>
+        <div style="flex: 1; min-width: 160px;">
+          <select id="admin-req-filter-partner" class="form-control">
+            <option value="all">🏢 Todos los Aliados</option>
+            ${partners.filter(p => p !== 'all').map(p => `
+              <option value="${p}" ${adminReqPartnerFilter === p ? 'selected' : ''}>${p}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <select id="admin-req-filter-channel" class="form-control">
+            <option value="all" ${adminReqChannelFilter === 'all' ? 'selected' : ''}>📡 Todos los Canales</option>
+            <option value="whatsapp" ${adminReqChannelFilter === 'whatsapp' ? 'selected' : ''}>💬 WhatsApp</option>
+            <option value="instagram" ${adminReqChannelFilter === 'instagram' ? 'selected' : ''}>📸 Instagram</option>
+            <option value="email" ${adminReqChannelFilter === 'email' ? 'selected' : ''}>✉️ Correo</option>
+            <option value="url" ${adminReqChannelFilter === 'url' ? 'selected' : ''}>🌐 Sitio Web</option>
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 140px;">
+          <select id="admin-req-filter-status" class="form-control">
+            <option value="all" ${adminReqStatusFilter === 'all' ? 'selected' : ''}>🏷️ Todos los Estados</option>
+            <option value="contact_started" ${adminReqStatusFilter === 'contact_started' ? 'selected' : ''}>Contacto iniciado</option>
+            <option value="in_conversation" ${adminReqStatusFilter === 'in_conversation' ? 'selected' : ''}>En conversación</option>
+            <option value="used" ${adminReqStatusFilter === 'used' ? 'selected' : ''}>✓ Utilizado</option>
+            <option value="not_completed" ${adminReqStatusFilter === 'not_completed' ? 'selected' : ''}>No concretado</option>
+            <option value="cancelled" ${adminReqStatusFilter === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE CONTACTOS GENERADOS -->
+    <div class="data-table-container">
+      <div class="table-toolbar">
+        <div>
+          <div style="font-weight: 700; font-size: var(--font-size-md);">
+            Listado de Contactos Comerciales (${filtered.length})
+          </div>
+          <div class="text-xs text-muted">Auditoría completa de beneficios solicitados por la comunidad</div>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha / Hora</th>
+            <th>Miembro / Emprendedor</th>
+            <th>Emprendimiento (WS)</th>
+            <th>Aliado / Empresa</th>
+            <th>Beneficio Solicitado</th>
+            <th>Código Personal</th>
+            <th>Canal</th>
+            <th>Estado</th>
+            <th>Resultado / Evaluación</th>
+            <th style="text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.length > 0 ? filtered.map(req => {
+            const disc = discounts.find(d => d.id === req.discountId);
+            const ws = workspaces.find(w => w.id === req.workspaceId) || store.getWorkspace(req.workspaceId);
+            const u = users.find(usr => usr.id === req.userId) || (ws ? store.getUser(ws.email) : null);
+
+            const partnerName = disc ? disc.companyName : 'Aliado';
+            const benefitTitle = disc ? disc.discountTitle : 'Beneficio';
+            const wsName = ws ? ws.name : 'Workspace';
+            const memberName = u ? u.name : (ws ? ws.ownerName : 'Emprendedor');
+            const memberEmail = u ? u.email : (ws ? ws.email : '');
+            const memberPhone = u ? u.phone : (ws ? ws.phone : '');
+
+            let channelIcon = '💬 WhatsApp';
+            if (req.channel === 'instagram') channelIcon = '📸 Instagram';
+            else if (req.channel === 'email') channelIcon = '✉️ Correo';
+            else if (req.channel === 'url') channelIcon = '🌐 Web';
+
+            return `
+              <tr>
+                <td>
+                  <span class="text-xs text-muted">${req.requestedAt ? formatDateCL(req.requestedAt) : 'Reciente'}</span>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-primary); font-size: var(--font-size-xs);">${memberName}</div>
+                  <div class="text-xs text-muted">${memberEmail}</div>
+                </td>
+                <td>
+                  <div style="font-size: var(--font-size-xs); font-weight: 600; color: var(--text-secondary);">${wsName}</div>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-primary); font-size: var(--font-size-xs);">${partnerName}</div>
+                </td>
+                <td>
+                  <div style="font-size: var(--font-size-xs); font-weight: 700; color: var(--humm-red-primary);">${benefitTitle}</div>
+                </td>
+                <td>
+                  <span style="font-family: monospace; font-weight: 800; font-size: 11px; background: var(--bg-surface-secondary); padding: 2px 6px; border-radius: 4px; border: 1px dashed var(--border-strong);">
+                    ${req.personalCode}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs text-secondary">${channelIcon}</span>
+                </td>
+                <td>
+                  <select class="form-control form-control-sm admin-change-req-status" data-req-id="${req.id}" style="font-size: 11px; padding: 2px 6px; height: auto;">
+                    <option value="contact_started" ${req.status === 'contact_started' ? 'selected' : ''}>Contacto iniciado</option>
+                    <option value="in_conversation" ${req.status === 'in_conversation' ? 'selected' : ''}>En conversación</option>
+                    <option value="used" ${req.status === 'used' ? 'selected' : ''}>✓ Utilizado</option>
+                    <option value="not_completed" ${req.status === 'not_completed' ? 'selected' : ''}>No concretado</option>
+                    <option value="cancelled" ${req.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+                  </select>
+                </td>
+                <td>
+                  <div style="font-size: 11px; color: var(--text-secondary);">
+                    ${req.status === 'used' ? `
+                      <span style="color: var(--success); font-weight: 700;">
+                        ${req.discountAmount ? `Ahorro: $${req.discountAmount.toLocaleString('es-CL')}` : 'Utilizado'}
+                        ${req.memberRating ? ` (${req.memberRating}⭐)` : ''}
+                      </span>
+                      ${req.memberComment ? `<div class="text-muted" style="font-style: italic; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${req.memberComment}">"${req.memberComment}"</div>` : ''}
+                    ` : (req.status === 'not_completed' ? `
+                      <span class="text-muted">${req.notCompletedReason || 'No concretado'}</span>
+                    ` : '<span class="text-muted">—</span>')}
+                    ${req.adminNotes ? `<div style="font-size: 10px; color: var(--humm-red-primary); margin-top: 2px;">📌 ${req.adminNotes}</div>` : ''}
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                    <button class="btn btn-ghost btn-sm btn-admin-add-req-note" data-req-id="${req.id}" data-current-note="${req.adminNotes || ''}" title="Agregar / Editar Nota Interna">
+                      📝
+                    </button>
+                    ${memberEmail ? `
+                      <a href="mailto:${memberEmail}?subject=${encodeURIComponent('Seguimiento Beneficio Comunidad Humm - ' + benefitTitle)}" class="btn btn-ghost btn-sm" title="Contactar Miembro">
+                        ✉️
+                      </a>
+                    ` : ''}
+                    <button class="btn btn-ghost btn-sm btn-admin-delete-req" data-req-id="${req.id}" title="Eliminar registro" style="color: var(--danger);">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('') : `
+            <tr>
+              <td colspan="10" style="text-align: center; padding: 32px;" class="text-muted">
+                No hay contactos registrados con los filtros seleccionados.
+              </td>
+            </tr>
+          `}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Attach Events
+  const searchInput = container.querySelector('#admin-req-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      adminReqSearchQuery = e.target.value;
+      renderAdminBenefitRequestsView(container);
+      const updatedInput = container.querySelector('#admin-req-search-input');
+      if (updatedInput) {
+        updatedInput.focus();
+        updatedInput.setSelectionRange(updatedInput.value.length, updatedInput.value.length);
+      }
+    });
+  }
+
+  container.querySelector('#admin-req-filter-partner')?.addEventListener('change', (e) => {
+    adminReqPartnerFilter = e.target.value;
+    renderAdminBenefitRequestsView(container);
+  });
+
+  container.querySelector('#admin-req-filter-channel')?.addEventListener('change', (e) => {
+    adminReqChannelFilter = e.target.value;
+    renderAdminBenefitRequestsView(container);
+  });
+
+  container.querySelector('#admin-req-filter-status')?.addEventListener('change', (e) => {
+    adminReqStatusFilter = e.target.value;
+    renderAdminBenefitRequestsView(container);
+  });
+
+  container.querySelector('#btn-admin-manage-discounts')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.navigateTo('admin-discounts');
+  });
+
+  // Cambiar estado
+  container.querySelectorAll('.admin-change-req-status').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const reqId = sel.getAttribute('data-req-id');
+      const newStatus = e.target.value;
+      store.updateBenefitRequestAdmin(reqId, { status: newStatus });
+      if (window.MiHummApp) window.MiHummApp.showToast('Estado actualizado', 'success');
+    });
+  });
+
+  // Agregar / Editar Nota Admin
+  container.querySelectorAll('.btn-admin-add-req-note').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const reqId = btn.getAttribute('data-req-id');
+      const currentNote = btn.getAttribute('data-current-note') || '';
+      const newNote = prompt('Ingresa una nota o apunte interno de seguimiento para esta solicitud:', currentNote);
+      if (newNote !== null) {
+        store.updateBenefitRequestAdmin(reqId, { adminNotes: newNote.trim() });
+        if (window.MiHummApp) {
+          window.MiHummApp.showToast('Nota interna guardada', 'success');
+          renderAdminBenefitRequestsView(container);
+        }
+      }
+    });
+  });
+
+  // Eliminar solicitud
+  container.querySelectorAll('.btn-admin-delete-req').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const reqId = btn.getAttribute('data-req-id');
+      if (confirm('¿Estás seguro de que deseas eliminar este registro de solicitud?')) {
+        store.deleteBenefitRequest(reqId);
+        if (window.MiHummApp) {
+          window.MiHummApp.showToast('Solicitud eliminada', 'info');
+          renderAdminBenefitRequestsView(container);
+        }
+      }
+    });
+  });
+
+  // Exportar CSV
+  container.querySelector('#btn-admin-export-reqs-csv')?.addEventListener('click', () => {
+    const headers = ['ID', 'Fecha', 'Miembro', 'Email Miembro', 'Emprendimiento', 'Aliado', 'Beneficio', 'Codigo Personal', 'Canal', 'Estado', 'Monto Compra', 'Ahorro', 'Rating', 'Comentarios', 'Motivo No Concretado', 'Notas Admin'];
+    const rows = filtered.map(r => {
+      const disc = discounts.find(d => d.id === r.discountId);
+      const ws = workspaces.find(w => w.id === r.workspaceId);
+      const u = users.find(usr => usr.id === r.userId);
+      return [
+        r.id,
+        r.requestedAt || '',
+        u ? u.name : (ws ? ws.ownerName : ''),
+        u ? u.email : (ws ? ws.email : ''),
+        ws ? ws.name : '',
+        disc ? disc.companyName : '',
+        disc ? disc.discountTitle : '',
+        r.personalCode,
+        r.channel,
+        r.status,
+        r.purchaseAmount || 0,
+        r.discountAmount || 0,
+        r.memberRating || '',
+        `"${(r.memberComment || '').replace(/"/g, '""')}"`,
+        `"${(r.notCompletedReason || '').replace(/"/g, '""')}"`,
+        `"${(r.adminNotes || '').replace(/"/g, '""')}"`
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `contactos_beneficios_humm_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    if (window.MiHummApp) window.MiHummApp.showToast('Reporte CSV descargado', 'success');
+  });
 
   attachCommonAdminEvents(container);
 }

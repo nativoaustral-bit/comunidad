@@ -52,9 +52,23 @@ try {
             'discountTitle' => $d['discount_title'] ?? 'Beneficio Exclusivo Humm',
             'category' => $d['category'] ?? 'Servicios Generales',
             'description' => $d['description'] ?? '',
+            'contactPerson' => $d['contact_person'] ?? '',
+            'contactRole' => $d['contact_role'] ?? '',
+            'phone' => $d['phone'] ?? '',
+            'whatsapp' => $d['whatsapp'] ?? '',
+            'instagram' => $d['instagram'] ?? '',
+            'email' => $d['email'] ?? '',
+            'preferredChannel' => $d['preferred_channel'] ?? 'whatsapp',
             'code' => $d['code'] ?? '',
             'url' => $d['url'] ?? '',
+            'startsAt' => $d['starts_at'] ?? null,
             'expiresAt' => $d['expires_at'] ?? null,
+            'minPurchase' => (int)($d['min_purchase'] ?? 0),
+            'maxDiscount' => (int)($d['max_discount'] ?? 0),
+            'whatsappTemplate' => $d['whatsapp_template'] ?? null,
+            'instagramTemplate' => $d['instagram_template'] ?? null,
+            'emailTemplate' => $d['email_template'] ?? null,
+            'hummResponsible' => $d['humm_responsible'] ?? 'Equipo Humm',
             'isFeatured' => (bool)($d['is_featured'] ?? 0),
             'featured' => (bool)($d['is_featured'] ?? 0),
             'status' => $d['status'] ?? 'active',
@@ -199,6 +213,32 @@ try {
             ];
         }
         $data['support_requests'] = $requests;
+
+        $stmtReqs = $pdo->query('SELECT * FROM benefit_requests ORDER BY requested_at DESC');
+        $rawReqs = $stmtReqs->fetchAll();
+        $benefitRequests = [];
+        foreach ($rawReqs as $br) {
+            $benefitRequests[] = [
+                'id' => $br['id'],
+                'discountId' => $br['discount_id'],
+                'userId' => $br['user_id'],
+                'workspaceId' => $br['workspace_id'],
+                'personalCode' => $br['personal_code'],
+                'channel' => $br['channel'] ?? 'whatsapp',
+                'status' => $br['status'] ?? 'contact_started',
+                'requestedAt' => $br['requested_at'] ?? null,
+                'lastContactAt' => $br['last_contact_at'] ?? null,
+                'usedAt' => $br['used_at'] ?? null,
+                'purchaseAmount' => $br['purchase_amount'] !== null ? (int)$br['purchase_amount'] : null,
+                'discountAmount' => $br['discount_amount'] !== null ? (int)$br['discount_amount'] : null,
+                'memberComment' => $br['member_comment'] ?? '',
+                'memberRating' => $br['member_rating'] !== null ? (int)$br['member_rating'] : null,
+                'notCompletedReason' => $br['not_completed_reason'] ?? '',
+                'adminNotes' => $br['admin_notes'] ?? '',
+                'createdAt' => $br['created_at'] ?? null
+            ];
+        }
+        $data['benefit_requests'] = $benefitRequests;
     } elseif (!empty($workspaceId)) {
         // Si no es admin pero tiene workspace asignado
         $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
@@ -404,6 +444,33 @@ try {
             ];
         }
         $data['opportunities'] = $opps;
+
+        $stmtWsReqs = $pdo->prepare('SELECT * FROM benefit_requests WHERE workspace_id = :ws ORDER BY requested_at DESC');
+        $stmtWsReqs->execute([':ws' => $workspaceId]);
+        $rawWsReqs = $stmtWsReqs->fetchAll();
+        $wsBenefitRequests = [];
+        foreach ($rawWsReqs as $br) {
+            $wsBenefitRequests[] = [
+                'id' => $br['id'],
+                'discountId' => $br['discount_id'],
+                'userId' => $br['user_id'],
+                'workspaceId' => $br['workspace_id'],
+                'personalCode' => $br['personal_code'],
+                'channel' => $br['channel'] ?? 'whatsapp',
+                'status' => $br['status'] ?? 'contact_started',
+                'requestedAt' => $br['requested_at'] ?? null,
+                'lastContactAt' => $br['last_contact_at'] ?? null,
+                'usedAt' => $br['used_at'] ?? null,
+                'purchaseAmount' => $br['purchase_amount'] !== null ? (int)$br['purchase_amount'] : null,
+                'discountAmount' => $br['discount_amount'] !== null ? (int)$br['discount_amount'] : null,
+                'memberComment' => $br['member_comment'] ?? '',
+                'memberRating' => $br['member_rating'] !== null ? (int)$br['member_rating'] : null,
+                'notCompletedReason' => $br['not_completed_reason'] ?? '',
+                'adminNotes' => $br['admin_notes'] ?? '',
+                'createdAt' => $br['created_at'] ?? null
+            ];
+        }
+        $data['benefit_requests'] = $wsBenefitRequests;
     }
 
     DB::jsonResponse(true, $data);

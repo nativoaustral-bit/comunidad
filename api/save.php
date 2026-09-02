@@ -411,17 +411,42 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
-                $sql = 'INSERT INTO company_discounts (id, company_name, logo, discount_title, category, description, code, url, expires_at, is_featured, status)
-                        VALUES (:id, :company_name, :logo, :discount_title, :category, :description, :code, :url, :expires_at, :is_featured, :status)
+                $sql = 'INSERT INTO company_discounts (
+                            id, company_name, logo, discount_title, category, description,
+                            contact_person, contact_role, phone, whatsapp, instagram, email,
+                            preferred_channel, code, url, starts_at, expires_at, min_purchase,
+                            max_discount, whatsapp_template, instagram_template, email_template,
+                            humm_responsible, is_featured, status
+                        ) VALUES (
+                            :id, :company_name, :logo, :discount_title, :category, :description,
+                            :contact_person, :contact_role, :phone, :whatsapp, :instagram, :email,
+                            :preferred_channel, :code, :url, :starts_at, :expires_at, :min_purchase,
+                            :max_discount, :whatsapp_template, :instagram_template, :email_template,
+                            :humm_responsible, :is_featured, :status
+                        )
                         ON DUPLICATE KEY UPDATE
                         company_name = VALUES(company_name),
                         logo = VALUES(logo),
                         discount_title = VALUES(discount_title),
                         category = VALUES(category),
                         description = VALUES(description),
+                        contact_person = VALUES(contact_person),
+                        contact_role = VALUES(contact_role),
+                        phone = VALUES(phone),
+                        whatsapp = VALUES(whatsapp),
+                        instagram = VALUES(instagram),
+                        email = VALUES(email),
+                        preferred_channel = VALUES(preferred_channel),
                         code = VALUES(code),
                         url = VALUES(url),
+                        starts_at = VALUES(starts_at),
                         expires_at = VALUES(expires_at),
+                        min_purchase = VALUES(min_purchase),
+                        max_discount = VALUES(max_discount),
+                        whatsapp_template = VALUES(whatsapp_template),
+                        instagram_template = VALUES(instagram_template),
+                        email_template = VALUES(email_template),
+                        humm_responsible = VALUES(humm_responsible),
                         is_featured = VALUES(is_featured),
                         status = VALUES(status)';
                 $discCompany = $item['companyName'] ?? ($item['company_name'] ?? 'Empresa Aliada');
@@ -431,6 +456,7 @@ try {
                 $discDesc = $item['description'] ?? '';
                 $discCode = !empty($item['code']) ? trim((string)$item['code']) : null;
                 $discUrl = !empty($item['url']) ? trim((string)$item['url']) : null;
+                $discStarts = !empty($item['startsAt']) ? $item['startsAt'] : (!empty($item['starts_at']) ? $item['starts_at'] : null);
                 $discExpires = !empty($item['expiresAt']) ? $item['expiresAt'] : (!empty($item['expires_at']) ? $item['expires_at'] : null);
                 $discFeatured = !empty($item['featured']) || !empty($item['is_featured']) ? 1 : 0;
                 $discStatus = $item['status'] ?? 'active';
@@ -443,13 +469,150 @@ try {
                     ':discount_title' => $discTitle,
                     ':category' => $discCat,
                     ':description' => $discDesc,
+                    ':contact_person' => $item['contactPerson'] ?? ($item['contact_person'] ?? null),
+                    ':contact_role' => $item['contactRole'] ?? ($item['contact_role'] ?? null),
+                    ':phone' => $item['phone'] ?? null,
+                    ':whatsapp' => $item['whatsapp'] ?? null,
+                    ':instagram' => $item['instagram'] ?? null,
+                    ':email' => $item['email'] ?? null,
+                    ':preferred_channel' => $item['preferredChannel'] ?? ($item['preferred_channel'] ?? 'whatsapp'),
                     ':code' => $discCode,
                     ':url' => $discUrl,
+                    ':starts_at' => $discStarts,
                     ':expires_at' => $discExpires,
+                    ':min_purchase' => !empty($item['minPurchase'] ?? $item['min_purchase']) ? (int)($item['minPurchase'] ?? $item['min_purchase']) : null,
+                    ':max_discount' => !empty($item['maxDiscount'] ?? $item['max_discount']) ? (int)($item['maxDiscount'] ?? $item['max_discount']) : null,
+                    ':whatsapp_template' => $item['whatsappTemplate'] ?? ($item['whatsapp_template'] ?? null),
+                    ':instagram_template' => $item['instagramTemplate'] ?? ($item['instagram_template'] ?? null),
+                    ':email_template' => $item['emailTemplate'] ?? ($item['email_template'] ?? null),
+                    ':humm_responsible' => $item['hummResponsible'] ?? ($item['humm_responsible'] ?? null),
                     ':is_featured' => $discFeatured,
                     ':status' => $discStatus
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
+            }
+            break;
+
+        // -----------------------------------------------------------------
+        // 9.5. SOLICITUDES DE BENEFICIOS (benefit_requests)
+        // -----------------------------------------------------------------
+        case 'benefit_requests':
+        case 'benefit_request':
+            if ($action === 'delete') {
+                $id = $targetId;
+                $stmt = $pdo->prepare('DELETE FROM benefit_requests WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
+                $item = $input['item'] ?? $input;
+                $discountId = $item['discountId'] ?? ($item['discount_id'] ?? '');
+                $userId = $item['userId'] ?? ($item['user_id'] ?? '');
+                $workspaceId = $item['workspaceId'] ?? ($item['workspace_id'] ?? '');
+
+                // Si no viene id o personal_code, verificar si ya existe solicitud previa
+                if (empty($item['id']) || empty($item['personalCode'])) {
+                    $stmtCheck = $pdo->prepare('SELECT * FROM benefit_requests WHERE workspace_id = :ws AND discount_id = :disc LIMIT 1');
+                    $stmtCheck->execute([':ws' => $workspaceId, ':disc' => $discountId]);
+                    $existing = $stmtCheck->fetch();
+                    if ($existing) {
+                        // Si ya existe, actualizamos last_contact_at y devolvemos la existente
+                        $stmtUp = $pdo->prepare('UPDATE benefit_requests SET last_contact_at = NOW(), channel = :ch WHERE id = :id');
+                        $stmtUp->execute([':ch' => $item['channel'] ?? ($existing['channel'] ?? 'whatsapp'), ':id' => $existing['id']]);
+                        $existing['channel'] = $item['channel'] ?? ($existing['channel'] ?? 'whatsapp');
+                        $existing['last_contact_at'] = date('Y-m-d H:i:s');
+                        DB::jsonResponse(true, ['item' => $existing, 'is_existing' => true]);
+                        exit;
+                    }
+                }
+
+                // Generación de código seguro si no se proveyó
+                $personalCode = $item['personalCode'] ?? ($item['personal_code'] ?? null);
+                if (empty($personalCode)) {
+                    // Obtener nombre del aliado para el prefijo
+                    $stmtAliado = $pdo->prepare('SELECT company_name, discount_title FROM company_discounts WHERE id = :id LIMIT 1');
+                    $stmtAliado->execute([':id' => $discountId]);
+                    $aliado = $stmtAliado->fetch();
+                    $aliasRaw = $aliado ? ($aliado['company_name'] ?: $aliado['discount_title']) : 'BENEFICIO';
+                    // Limpiar alias: solo letras y números, max 8 chars
+                    $alias = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $aliasRaw));
+                    if (empty($alias)) $alias = 'BENEFICIO';
+                    $alias = substr($alias, 0, 8);
+                    
+                    // Generar 4 caracteres aleatorios
+                    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                    $randPart = '';
+                    for ($i = 0; $i < 4; $i++) {
+                        $randPart .= $chars[random_int(0, strlen($chars) - 1)];
+                    }
+                    $personalCode = "HUMM-{$alias}-{$randPart}";
+                }
+
+                $reqId = $item['id'] ?? ('req-' . round(microtime(true) * 1000));
+                $status = $item['status'] ?? 'contact_started';
+                $channel = $item['channel'] ?? 'whatsapp';
+                $usedAt = !empty($item['usedAt']) ? $item['usedAt'] : (!empty($item['used_at']) ? $item['used_at'] : ($status === 'used' ? date('Y-m-d H:i:s') : null));
+
+                $sql = 'INSERT INTO benefit_requests (
+                            id, discount_id, user_id, workspace_id, personal_code, channel, status,
+                            requested_at, last_contact_at, used_at, purchase_amount, discount_amount,
+                            member_comment, member_rating, not_completed_reason, admin_notes
+                        ) VALUES (
+                            :id, :discount_id, :user_id, :workspace_id, :personal_code, :channel, :status,
+                            :requested_at, :last_contact_at, :used_at, :purchase_amount, :discount_amount,
+                            :member_comment, :member_rating, :not_completed_reason, :admin_notes
+                        )
+                        ON DUPLICATE KEY UPDATE
+                        channel = VALUES(channel),
+                        status = VALUES(status),
+                        last_contact_at = VALUES(last_contact_at),
+                        used_at = VALUES(used_at),
+                        purchase_amount = VALUES(purchase_amount),
+                        discount_amount = VALUES(discount_amount),
+                        member_comment = VALUES(member_comment),
+                        member_rating = VALUES(member_rating),
+                        not_completed_reason = VALUES(not_completed_reason),
+                        admin_notes = VALUES(admin_notes)';
+                
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':id' => $reqId,
+                    ':discount_id' => $discountId,
+                    ':user_id' => $userId,
+                    ':workspace_id' => $workspaceId,
+                    ':personal_code' => $personalCode,
+                    ':channel' => $channel,
+                    ':status' => $status,
+                    ':requested_at' => $item['requestedAt'] ?? ($item['requested_at'] ?? date('Y-m-d H:i:s')),
+                    ':last_contact_at' => date('Y-m-d H:i:s'),
+                    ':used_at' => $usedAt,
+                    ':purchase_amount' => !empty($item['purchaseAmount'] ?? $item['purchase_amount']) ? (int)($item['purchaseAmount'] ?? $item['purchase_amount']) : null,
+                    ':discount_amount' => !empty($item['discountAmount'] ?? $item['discount_amount']) ? (int)($item['discountAmount'] ?? $item['discount_amount']) : null,
+                    ':member_comment' => $item['memberComment'] ?? ($item['member_comment'] ?? null),
+                    ':member_rating' => !empty($item['memberRating'] ?? $item['member_rating']) ? (int)($item['memberRating'] ?? $item['member_rating']) : null,
+                    ':not_completed_reason' => $item['notCompletedReason'] ?? ($item['not_completed_reason'] ?? null),
+                    ':admin_notes' => $item['adminNotes'] ?? ($item['admin_notes'] ?? null)
+                ]);
+
+                $savedItem = [
+                    'id' => $reqId,
+                    'discountId' => $discountId,
+                    'userId' => $userId,
+                    'workspaceId' => $workspaceId,
+                    'personalCode' => $personalCode,
+                    'channel' => $channel,
+                    'status' => $status,
+                    'requestedAt' => $item['requestedAt'] ?? ($item['requested_at'] ?? date('Y-m-d H:i:s')),
+                    'lastContactAt' => date('Y-m-d H:i:s'),
+                    'usedAt' => $usedAt,
+                    'purchaseAmount' => !empty($item['purchaseAmount'] ?? $item['purchase_amount']) ? (int)($item['purchaseAmount'] ?? $item['purchase_amount']) : null,
+                    'discountAmount' => !empty($item['discountAmount'] ?? $item['discount_amount']) ? (int)($item['discountAmount'] ?? $item['discount_amount']) : null,
+                    'memberComment' => $item['memberComment'] ?? ($item['member_comment'] ?? null),
+                    'memberRating' => !empty($item['memberRating'] ?? $item['member_rating']) ? (int)($item['memberRating'] ?? $item['member_rating']) : null,
+                    'notCompletedReason' => $item['notCompletedReason'] ?? ($item['not_completed_reason'] ?? null),
+                    'adminNotes' => $item['adminNotes'] ?? ($item['admin_notes'] ?? null)
+                ];
+
+                DB::jsonResponse(true, ['item' => $savedItem]);
             }
             break;
 

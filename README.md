@@ -110,12 +110,16 @@ COMUNIDAD/
 * **Calendario (`#calendario`)**: Hitos comerciales, reuniones virtuales, mentorías y entregas.
 * **Notas Rápidas (`#notas`)**: Tarjetas de notas estilo Post-it con colores personalizables, fijado prioritario y categorías.
 
-### 4. Catálogo de Soluciones y Convenios
+### 4. Catálogo de Soluciones y Red de Convenios Comerciales
 * **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento. Soporte de logos en imagen oficial (`PNG`, `JPG`, `WebP`, `SVG`) o emojis.
-* **Alianzas y Beneficios (`#beneficios`)**: Convenios comerciales con empresas colaboradoras con logo oficial, código de descuento y enlace web directo.
+* **Alianzas y Beneficios (`#beneficios`)**: Convenios comerciales exclusivos con empresas colaboradoras.
+  * **Contacto Comercial Directo**: Conexión inmediata vía WhatsApp (principal), Instagram Direct (con copia automática de mensaje), Correo Electrónico o Sitio Web.
+  * **Generador de Códigos Personales**: Asignación de código único y trazable `HUMM-[ALIAS]-[XXXX]` al momento de solicitar el convenio (sin cupones genéricos expuestos).
+  * **Mis Beneficios Solicitados**: Historial de convenios solicitados por el miembro con opción de retomar conversación, marcar como utilizado (indicando compra y ahorro) o reportar motivo de no concreción.
 
 ### 5. Panel de Administración Central (`#admin-dashboard` / `#admin`)
 * **Métricas Globales**: Ventas totales del ecosistema, número de emprendimientos activos, solicitudes de soporte.
+* **Contactos Generados por Beneficios (`#admin-benefit-requests`)**: Dashboard de trazabilidad comercial con KPIs (solicitudes totales, del mes, compras concretadas, ahorro total informado y no concretadas), filtros multicriterio por aliado, canal y estado, auditoría y exportación a planilla CSV.
 * **Crear Espacio de Emprendimiento**: Formulario con comunas de Chile y selector dinámico de tutor/asesor que autocompleta el correo de apoyo.
 * **Ventas y Suscripciones**: Gestión de planes de venta mensual con formato `/mes +IVA` (Plan Emprendedor Base, Plan Crecimiento Humm, Plan Pro Co-Creation), control de períodos de prueba y emisión de links de pago por WhatsApp y Correo.
 * **Gestión de Tutores y Ejecutivos**: Creación, activación/desactivación y asignación de tutores y asesores de la red Humm.
@@ -126,7 +130,7 @@ COMUNIDAD/
 
 ## 🗄️ Modelo de Datos y Base de Datos (MySQL)
 
-El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sql) define las 14 tablas relacionales:
+El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sql) define las 15 tablas relacionales:
 
 | # | Tabla | Propósito |
 | :--- | :--- | :--- |
@@ -141,9 +145,10 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 | 9 | `calendar_events` | Eventos, reuniones y compromisos agendados en el calendario. |
 | 10 | `quick_notes` | Notas rápidas y recordatorios categorizados. |
 | 11 | `support_requests` | Requerimientos de soporte enviados a tutores o administración. |
-| 12 | `company_discounts` | Convenios y beneficios de empresas aliadas con logos en `MEDIUMTEXT`. |
-| 13 | `tools` | Catálogo de herramientas con logos en `MEDIUMTEXT`, estados y URLs. |
-| 14 | `broadcasts` | Comunicados, noticias y avisos de difusión masiva para la comunidad. |
+| 12 | `company_discounts` | Convenios y beneficios de empresas aliadas con canales de contacto directo (WhatsApp, Instagram, Email, Web) y condiciones comerciales. |
+| 13 | `benefit_requests` | Trazabilidad y solicitudes de beneficios por emprendedor con código personal `HUMM-[ALIAS]-[XXXX]`, canal, estado y feedback de uso. |
+| 14 | `tools` | Catálogo de herramientas con logos en `MEDIUMTEXT`, estados y URLs. |
+| 15 | `broadcasts` | Comunicados, noticias y avisos de difusión masiva para la comunidad. |
 
 ---
 

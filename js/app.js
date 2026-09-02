@@ -269,7 +269,7 @@ class App {
 
     let hash = window.location.hash.replace('#', '');
 
-    const adminViews = ['admin-dashboard', 'admin-users', 'admin-subscriptions', 'admin-sales', 'admin-alerts', 'admin-requests', 'admin-members', 'admin-customers', 'admin-advisors', 'admin-broadcasts', 'admin-discounts', 'admin-tools', 'admin'];
+    const adminViews = ['admin-dashboard', 'admin-users', 'admin-subscriptions', 'admin-sales', 'admin-alerts', 'admin-requests', 'admin-members', 'admin-customers', 'admin-advisors', 'admin-broadcasts', 'admin-discounts', 'admin-benefit-requests', 'admin-tools', 'admin'];
     const entrepreneurViews = ['inicio', 'tareas', 'calendario', 'notas', 'ventas', 'clientes', 'oportunidades', 'herramientas', 'beneficios', 'cuenta'];
 
     if (isDedicatedAdmin) {
@@ -1190,18 +1190,102 @@ class App {
         const expiresAt = document.getElementById('admin-disc-expires').value || null;
         const featured = document.getElementById('admin-disc-featured').checked;
 
+        // Nuevos campos de contacto y condiciones comerciales
+        const contactPerson = document.getElementById('admin-disc-contact-person')?.value.trim() || '';
+        const contactRole = document.getElementById('admin-disc-contact-role')?.value.trim() || '';
+        const phone = document.getElementById('admin-disc-phone')?.value.trim() || '';
+        const whatsapp = document.getElementById('admin-disc-whatsapp')?.value.trim() || '';
+        const instagram = document.getElementById('admin-disc-instagram')?.value.trim() || '';
+        const email = document.getElementById('admin-disc-email')?.value.trim() || '';
+        const preferredChannel = document.getElementById('admin-disc-preferred-channel')?.value || 'whatsapp';
+        const startsAt = document.getElementById('admin-disc-starts-at')?.value || null;
+        const minPurchase = parseFloat(document.getElementById('admin-disc-min-purchase')?.value) || 0;
+        const maxDiscount = parseFloat(document.getElementById('admin-disc-max-discount')?.value) || 0;
+        const whatsappTemplate = document.getElementById('admin-disc-wa-template')?.value || '';
+        const instagramTemplate = document.getElementById('admin-disc-ig-template')?.value || '';
+        const emailTemplate = document.getElementById('admin-disc-email-template')?.value || '';
+        const hummResponsible = document.getElementById('admin-disc-responsible')?.value.trim() || 'Comunidad Humm';
+
+        const payload = {
+          companyName, logo, discountTitle, category, code, description, url, expiresAt, featured,
+          contactPerson, contactRole, phone, whatsapp, instagram, email, preferredChannel,
+          startsAt, minPurchase, maxDiscount, whatsappTemplate, instagramTemplate, emailTemplate, hummResponsible
+        };
+
         if (editId) {
-          store.updateCompanyDiscount(editId, {
-            companyName, logo, discountTitle, category, code, description, url, expiresAt, featured
-          });
-          this.showToast('Beneficio comercial actualizado con éxito', 'success');
+          store.updateCompanyDiscount(editId, payload);
+          this.showToast('Beneficio y canales de contacto actualizados con éxito', 'success');
         } else {
-          store.createCompanyDiscount({
-            companyName, logo, discountTitle, category, code, description, url, expiresAt, featured
-          });
-          this.showToast(`Beneficio con "${companyName}" publicado para los miembros`, 'success');
+          store.createCompanyDiscount(payload);
+          this.showToast(`Convenio con "${companyName}" publicado para los miembros`, 'success');
         }
 
+        this.closeAllModals();
+        this.refreshCurrentView();
+      });
+    }
+
+    // Submit de Miembro - Solicitar Beneficio Comercial
+    const formReqBenefit = document.getElementById('form-request-benefit');
+    if (formReqBenefit) {
+      formReqBenefit.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const discId = document.getElementById('req-benefit-discount-id')?.value;
+        const selectedRadio = formReqBenefit.querySelector('input[name="req_channel_choice"]:checked');
+        const channel = selectedRadio ? selectedRadio.value : 'whatsapp';
+
+        const ws = auth.getCurrentWorkspace();
+        if (!ws) {
+          this.showToast('Debes iniciar sesión con tu cuenta de emprendimiento', 'warning');
+          return;
+        }
+
+        const disc = store.getCompanyDiscount(discId);
+        if (!disc) {
+          this.showToast('Beneficio no encontrado', 'danger');
+          return;
+        }
+
+        // Registrar solicitud de beneficio (o recuperar existente)
+        const req = await store.requestBenefit(ws.id, disc.id, channel);
+        const code = req.personalCode;
+        const msg = this.buildBenefitMessage(disc, channel, ws.ownerName, ws.name, code, ws.rut);
+
+        this.launchChannelAction(channel, disc, msg, code);
+        this.closeAllModals();
+        this.refreshCurrentView();
+      });
+    }
+
+    // Submit de Miembro - Feedback Beneficio Utilizado
+    const formFeedbackUsed = document.getElementById('form-benefit-feedback-used');
+    if (formFeedbackUsed) {
+      formFeedbackUsed.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const reqId = document.getElementById('benefit-feedback-used-req-id')?.value;
+        const purchaseAmount = parseFloat(document.getElementById('feedback-used-purchase-amount')?.value) || 0;
+        const discountAmount = parseFloat(document.getElementById('feedback-used-savings-amount')?.value) || 0;
+        const memberRating = parseInt(document.getElementById('feedback-used-rating')?.value, 10) || 5;
+        const memberComment = document.getElementById('feedback-used-comment')?.value.trim() || '';
+
+        await store.markBenefitUsed(reqId, { purchaseAmount, discountAmount, memberRating, memberComment });
+        this.showToast('¡Muchas gracias! Tu ahorro y evaluación han quedado registrados.', 'success');
+        this.closeAllModals();
+        this.refreshCurrentView();
+      });
+    }
+
+    // Submit de Miembro - Feedback Beneficio No Concretado
+    const formFeedbackNC = document.getElementById('form-benefit-feedback-not-completed');
+    if (formFeedbackNC) {
+      formFeedbackNC.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const reqId = document.getElementById('benefit-feedback-nc-req-id')?.value;
+        const notCompletedReason = document.getElementById('feedback-nc-reason')?.value || 'Otro motivo';
+        const memberComment = document.getElementById('feedback-nc-comment')?.value.trim() || '';
+
+        await store.markBenefitNotCompleted(reqId, { notCompletedReason, memberComment });
+        this.showToast('Reporte recibido. El equipo Humm revisará la alianza.', 'info');
         this.closeAllModals();
         this.refreshCurrentView();
       });
@@ -1842,6 +1926,22 @@ class App {
       document.getElementById('admin-disc-expires').value = d.expiresAt || '';
       document.getElementById('admin-disc-featured').checked = !!d.featured;
 
+      // Contact and commercial fields
+      if (document.getElementById('admin-disc-contact-person')) document.getElementById('admin-disc-contact-person').value = d.contactPerson || '';
+      if (document.getElementById('admin-disc-contact-role')) document.getElementById('admin-disc-contact-role').value = d.contactRole || '';
+      if (document.getElementById('admin-disc-phone')) document.getElementById('admin-disc-phone').value = d.phone || '';
+      if (document.getElementById('admin-disc-whatsapp')) document.getElementById('admin-disc-whatsapp').value = d.whatsapp || '';
+      if (document.getElementById('admin-disc-instagram')) document.getElementById('admin-disc-instagram').value = d.instagram || '';
+      if (document.getElementById('admin-disc-email')) document.getElementById('admin-disc-email').value = d.email || '';
+      if (document.getElementById('admin-disc-preferred-channel')) document.getElementById('admin-disc-preferred-channel').value = d.preferredChannel || 'whatsapp';
+      if (document.getElementById('admin-disc-starts-at')) document.getElementById('admin-disc-starts-at').value = d.startsAt || '';
+      if (document.getElementById('admin-disc-min-purchase')) document.getElementById('admin-disc-min-purchase').value = d.minPurchase || '';
+      if (document.getElementById('admin-disc-max-discount')) document.getElementById('admin-disc-max-discount').value = d.maxDiscount || '';
+      if (document.getElementById('admin-disc-wa-template')) document.getElementById('admin-disc-wa-template').value = d.whatsappTemplate || '';
+      if (document.getElementById('admin-disc-ig-template')) document.getElementById('admin-disc-ig-template').value = d.instagramTemplate || '';
+      if (document.getElementById('admin-disc-email-template')) document.getElementById('admin-disc-email-template').value = d.emailTemplate || '';
+      if (document.getElementById('admin-disc-responsible')) document.getElementById('admin-disc-responsible').value = d.hummResponsible || '';
+
       if (d.logo && (d.logo.startsWith('data:image/') || d.logo.startsWith('http://') || d.logo.startsWith('https://') || d.logo.startsWith('/'))) {
         if (hiddenData) hiddenData.value = d.logo;
         if (previewBox) previewBox.innerHTML = `<img src="${d.logo}" alt="${d.companyName}" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
@@ -1861,6 +1961,215 @@ class App {
     }
 
     this.openModal('modal-company-discount');
+  }
+
+  buildBenefitMessage(disc, channel, memberName, wsName, personalCode, rut = '') {
+    let tpl = '';
+    if (channel === 'whatsapp') {
+      tpl = disc.whatsappTemplate || '¡Hola! Soy {nombre_miembro} de {nombre_emprendimiento}, miembro de la Comunidad Humm. Quisiera consultar y solicitar el beneficio "{beneficio}". Mi código de descuento es {codigo_beneficio}. ¡Muchas gracias!';
+    } else if (channel === 'instagram') {
+      tpl = disc.instagramTemplate || '¡Hola! Soy {nombre_miembro} de {nombre_emprendimiento}, miembro de la Comunidad Humm. Quisiera solicitar el beneficio "{beneficio}". Mi código de descuento es {codigo_beneficio}. ¡Muchas gracias!';
+    } else if (channel === 'email') {
+      tpl = disc.emailTemplate || 'Estimado equipo de {nombre_aliado},\n\nSoy {nombre_miembro} de {nombre_emprendimiento}, miembro activo de la Comunidad Humm.\n\nMe pongo en contacto para solicitar el beneficio: "{beneficio}".\nMi código de convenio Humm es: {codigo_beneficio}.\n\nQuedo atento a su respuesta para coordinar.\n\nSaludos cordiales,\n{nombre_miembro}\n{nombre_emprendimiento}';
+    } else {
+      tpl = 'Beneficio "{beneficio}" - Código: {codigo_beneficio}';
+    }
+
+    return tpl
+      .replace(/{nombre_miembro}/g, memberName || 'Emprendedor Humm')
+      .replace(/{nombre_emprendimiento}/g, wsName || 'Emprendimiento')
+      .replace(/{nombre_aliado}/g, disc.companyName || 'Aliado')
+      .replace(/{codigo_beneficio}/g, personalCode || '')
+      .replace(/{beneficio}/g, disc.discountTitle || 'Beneficio')
+      .replace(/{rut_opcional}/g, rut ? `(RUT: ${rut})` : '');
+  }
+
+  openRequestBenefitModal(discId) {
+    const ws = auth.getCurrentWorkspace();
+    const user = store.getCurrentUser();
+    if (!ws || !user) {
+      this.showToast('Debes iniciar sesión para solicitar beneficios', 'warning');
+      return;
+    }
+
+    const disc = store.getCompanyDiscount(discId);
+    if (!disc) return;
+
+    // Verificar si ya tiene código solicitado
+    const existingReq = store.getBenefitRequestForDiscount(ws.id, disc.id);
+    const code = existingReq ? existingReq.personalCode : (store.generateBenefitCode ? store.generateBenefitCode(disc.companyName) : ('HUMM-' + disc.companyName.toUpperCase().slice(0, 6) + '-' + Math.random().toString(36).substring(2, 6).toUpperCase()));
+
+    document.getElementById('req-benefit-discount-id').value = disc.id;
+    document.getElementById('req-benefit-company-name').textContent = disc.companyName;
+    document.getElementById('req-benefit-badge-category').textContent = disc.category;
+    document.getElementById('req-benefit-title').textContent = disc.discountTitle;
+    document.getElementById('req-benefit-desc').textContent = disc.description;
+    document.getElementById('req-benefit-code-preview').textContent = code;
+
+    const logoEl = document.getElementById('req-benefit-company-logo');
+    if (logoEl) {
+      if (disc.logo && (disc.logo.startsWith('data:image/') || disc.logo.startsWith('http') || disc.logo.startsWith('/'))) {
+        logoEl.innerHTML = `<img src="${disc.logo}" alt="${disc.companyName}" style="width: 100%; height: 100%; object-fit: contain; padding: 2px;" />`;
+      } else {
+        logoEl.textContent = disc.logo || '🎁';
+      }
+    }
+
+    // Configurar canales disponibles
+    const channelsContainer = document.getElementById('req-benefit-channels-container');
+    if (channelsContainer) {
+      const hasWa = !!(disc.whatsapp && disc.whatsapp.trim());
+      const hasIg = !!(disc.instagram && disc.instagram.trim());
+      const hasEmail = !!(disc.email && disc.email.trim());
+      const hasUrl = !!(disc.url && disc.url.trim());
+
+      const preferred = disc.preferredChannel || (hasWa ? 'whatsapp' : (hasIg ? 'instagram' : (hasEmail ? 'email' : 'url')));
+
+      let channelOptionsHTML = '';
+
+      if (hasWa) {
+        channelOptionsHTML += `
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-surface-secondary); border: 1.5px solid ${preferred === 'whatsapp' ? 'var(--humm-red-primary)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); cursor: pointer; flex: 1; min-width: 180px;">
+            <input type="radio" name="req_channel_choice" value="whatsapp" ${preferred === 'whatsapp' ? 'checked' : ''} style="accent-color: var(--humm-red-primary);" />
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">💬 WhatsApp (Principal)</div>
+              <div class="text-xs text-muted">${disc.whatsapp}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (hasIg) {
+        channelOptionsHTML += `
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-surface-secondary); border: 1.5px solid ${preferred === 'instagram' ? 'var(--humm-red-primary)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); cursor: pointer; flex: 1; min-width: 180px;">
+            <input type="radio" name="req_channel_choice" value="instagram" ${preferred === 'instagram' ? 'checked' : ''} style="accent-color: var(--humm-red-primary);" />
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">📸 Instagram Direct</div>
+              <div class="text-xs text-muted">${disc.instagram}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (hasEmail) {
+        channelOptionsHTML += `
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-surface-secondary); border: 1.5px solid ${preferred === 'email' ? 'var(--humm-red-primary)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); cursor: pointer; flex: 1; min-width: 180px;">
+            <input type="radio" name="req_channel_choice" value="email" ${preferred === 'email' ? 'checked' : ''} style="accent-color: var(--humm-red-primary);" />
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">✉️ Correo Electrónico</div>
+              <div class="text-xs text-muted">${disc.email}</div>
+            </div>
+          </label>
+        `;
+      }
+
+      if (hasUrl && !hasWa && !hasIg && !hasEmail) {
+        channelOptionsHTML += `
+          <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-surface-secondary); border: 1.5px solid var(--humm-red-primary); border-radius: var(--radius-md); cursor: pointer; flex: 1; min-width: 180px;">
+            <input type="radio" name="req_channel_choice" value="url" checked style="accent-color: var(--humm-red-primary);" />
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); font-size: 12.5px;">🌐 Sitio Web Oficial</div>
+              <div class="text-xs text-muted">Canje online</div>
+            </div>
+          </label>
+        `;
+      }
+
+      channelsContainer.innerHTML = channelOptionsHTML;
+
+      // Actualizar vista previa del mensaje
+      const updatePreview = () => {
+        const selected = document.querySelector('input[name="req_channel_choice"]:checked')?.value || preferred;
+        const msg = this.buildBenefitMessage(disc, selected, ws.ownerName, ws.name, code, ws.rut);
+        const previewEl = document.getElementById('req-benefit-preview-text');
+        if (previewEl) previewEl.value = msg;
+      };
+
+      updatePreview();
+      channelsContainer.querySelectorAll('input[name="req_channel_choice"]').forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+      });
+    }
+
+    this.openModal('modal-request-benefit');
+  }
+
+  launchChannelAction(channel, disc, msg, code) {
+    if (channel === 'whatsapp') {
+      const cleanPhone = (disc.whatsapp || disc.phone || '').replace(/[^0-9]/g, '');
+      const finalPhone = (cleanPhone.length === 9 && !cleanPhone.startsWith('56')) ? `56${cleanPhone}` : cleanPhone;
+      const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+      this.showToast(`¡Solicitud registrada! Abriendo WhatsApp con ${disc.companyName}...`, 'success');
+    } else if (channel === 'instagram') {
+      const igUser = (disc.instagram || '').replace(/^@/, '').trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(msg);
+      }
+      this.showToast(`¡Mensaje copiado al portapapeles! Pégalo en el chat de @${igUser}`, 'info', 'Instagram Direct');
+      window.open(`https://ig.me/m/${igUser}`, '_blank');
+    } else if (channel === 'email') {
+      const mailUrl = `mailto:${disc.email}?subject=${encodeURIComponent('Solicitud Beneficio Humm - ' + disc.discountTitle)}&body=${encodeURIComponent(msg)}`;
+      window.location.href = mailUrl;
+      this.showToast(`¡Solicitud registrada! Abriendo tu correo...`, 'success');
+    } else if (channel === 'url') {
+      if (disc.url) window.open(disc.url, '_blank');
+      this.showToast(`¡Código personal generado (${code})! Abriendo sitio web...`, 'success');
+    }
+  }
+
+  continueBenefitContact(discId, reqId) {
+    const ws = auth.getCurrentWorkspace();
+    const disc = store.getCompanyDiscount(discId);
+    if (!disc || !ws) return;
+
+    const req = (store.getBenefitRequests(ws.id) || []).find(r => r.id === reqId) || store.getAllBenefitRequests().find(r => r.id === reqId);
+    if (!req) {
+      this.openRequestBenefitModal(discId);
+      return;
+    }
+
+    const msg = this.buildBenefitMessage(disc, req.channel, ws.ownerName, ws.name, req.personalCode, ws.rut);
+    this.launchChannelAction(req.channel, disc, msg, req.personalCode);
+  }
+
+  openBenefitFeedbackUsedModal(reqId) {
+    const ws = auth.getCurrentWorkspace();
+    if (!ws) return;
+
+    const req = (store.getBenefitRequests(ws.id) || []).find(r => r.id === reqId) || store.getAllBenefitRequests().find(r => r.id === reqId);
+    if (!req) return;
+
+    const disc = store.getCompanyDiscount(req.discountId);
+
+    document.getElementById('benefit-feedback-used-req-id').value = req.id;
+    document.getElementById('feedback-used-title').textContent = disc ? disc.discountTitle : 'Beneficio';
+    document.getElementById('feedback-used-company').textContent = disc ? disc.companyName : 'Aliado Humm';
+    document.getElementById('feedback-used-code').textContent = req.personalCode;
+    document.getElementById('feedback-used-purchase-amount').value = req.purchaseAmount || '';
+    document.getElementById('feedback-used-savings-amount').value = req.discountAmount || '';
+    document.getElementById('feedback-used-rating').value = req.memberRating || 5;
+    document.getElementById('feedback-used-comment').value = req.memberComment || '';
+
+    this.openModal('modal-benefit-feedback-used');
+  }
+
+  openBenefitFeedbackNotCompletedModal(reqId) {
+    const ws = auth.getCurrentWorkspace();
+    if (!ws) return;
+
+    const req = (store.getBenefitRequests(ws.id) || []).find(r => r.id === reqId) || store.getAllBenefitRequests().find(r => r.id === reqId);
+    if (!req) return;
+
+    const disc = store.getCompanyDiscount(req.discountId);
+
+    document.getElementById('benefit-feedback-nc-req-id').value = req.id;
+    document.getElementById('feedback-nc-title').textContent = disc ? disc.discountTitle : 'Beneficio';
+    document.getElementById('feedback-nc-company').textContent = disc ? disc.companyName : 'Aliado Humm';
+    document.getElementById('feedback-nc-reason').value = req.notCompletedReason || 'Condiciones no aplicables';
+    document.getElementById('feedback-nc-comment').value = req.memberComment || '';
+
+    this.openModal('modal-benefit-feedback-not-completed');
   }
 
   openRequestSupportModal() {

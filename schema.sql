@@ -305,15 +305,62 @@ CREATE TABLE IF NOT EXISTS `company_discounts` (
   `discount_title` VARCHAR(200) NOT NULL,
   `category` VARCHAR(100) NOT NULL,
   `description` TEXT NOT NULL,
+  `contact_person` VARCHAR(120) DEFAULT NULL,
+  `contact_role` VARCHAR(120) DEFAULT NULL,
+  `phone` VARCHAR(50) DEFAULT NULL,
+  `whatsapp` VARCHAR(50) DEFAULT NULL,
+  `instagram` VARCHAR(100) DEFAULT NULL,
+  `email` VARCHAR(150) DEFAULT NULL,
+  `preferred_channel` VARCHAR(50) DEFAULT 'whatsapp',
   `code` VARCHAR(50) DEFAULT NULL,
   `url` VARCHAR(255) DEFAULT NULL,
+  `starts_at` DATE DEFAULT NULL,
   `expires_at` DATE DEFAULT NULL,
+  `min_purchase` INT UNSIGNED DEFAULT NULL,
+  `max_discount` INT UNSIGNED DEFAULT NULL,
+  `whatsapp_template` TEXT DEFAULT NULL,
+  `instagram_template` TEXT DEFAULT NULL,
+  `email_template` TEXT DEFAULT NULL,
+  `humm_responsible` VARCHAR(120) DEFAULT NULL,
   `is_featured` TINYINT(1) DEFAULT 0,
-  `status` ENUM('active', 'inactive') DEFAULT 'active',
+  `status` VARCHAR(50) DEFAULT 'active',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `idx_disc_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -------------------------------------------------------------------------
+-- 12.5. TABLA: benefit_requests (Solicitudes y Contactos Comerciales de Beneficios)
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `benefit_requests` (
+  `id` VARCHAR(40) NOT NULL,
+  `discount_id` VARCHAR(40) NOT NULL,
+  `user_id` VARCHAR(40) NOT NULL,
+  `workspace_id` VARCHAR(40) NOT NULL,
+  `personal_code` VARCHAR(50) NOT NULL,
+  `channel` VARCHAR(50) NOT NULL DEFAULT 'whatsapp',
+  `status` VARCHAR(50) NOT NULL DEFAULT 'contact_started',
+  `requested_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `last_contact_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `used_at` DATETIME DEFAULT NULL,
+  `purchase_amount` INT UNSIGNED DEFAULT NULL,
+  `discount_amount` INT UNSIGNED DEFAULT NULL,
+  `member_comment` TEXT DEFAULT NULL,
+  `member_rating` TINYINT UNSIGNED DEFAULT NULL,
+  `not_completed_reason` VARCHAR(100) DEFAULT NULL,
+  `admin_notes` TEXT DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_req_discount` (`discount_id`),
+  INDEX `idx_req_user` (`user_id`),
+  INDEX `idx_req_workspace` (`workspace_id`),
+  INDEX `idx_req_code` (`personal_code`),
+  INDEX `idx_req_status` (`status`),
+  CONSTRAINT `fk_req_discount` FOREIGN KEY (`discount_id`) REFERENCES `company_discounts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_req_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_req_workspace` FOREIGN KEY (`workspace_id`) REFERENCES `workspaces` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------------------------

@@ -89,6 +89,7 @@ const INITIAL_STATE = {
   supportRequests: [],
   broadcasts: [],
   companyDiscounts: [],
+  benefitRequests: [],
   users: [
     {
       id: 'usr-admin',
@@ -206,6 +207,7 @@ class Store {
           supportRequests: (parsed.supportRequests || []).filter(sr => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(sr.workspaceId)),
           broadcasts: parsed.broadcasts || [],
           companyDiscounts: (parsed.companyDiscounts || []).filter(d => !['disc-1', 'disc-2', 'disc-3', 'disc-4', 'disc-5', 'disc-6'].includes(d.id)),
+          benefitRequests: parsed.benefitRequests || [],
           events: (parsed.events || []).filter(e => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(e.workspaceId)),
           calendarSettings: (parsed.calendarSettings || []).filter(cs => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(cs.workspaceId)),
           notes: (parsed.notes || []).filter(n => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(n.workspaceId))
@@ -241,6 +243,7 @@ class Store {
         if (json.success && json.data) {
           if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools;
           if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts;
+          if (Array.isArray(json.data.benefit_requests)) this.data.benefitRequests = json.data.benefit_requests;
           if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans;
           if (Array.isArray(json.data.broadcasts)) this.data.broadcasts = json.data.broadcasts;
           if (Array.isArray(json.data.support_requests)) this.data.supportRequests = json.data.support_requests;
@@ -898,15 +901,29 @@ class Store {
       this.data.companyDiscounts = [];
     }
     const newDiscount = {
-      id: 'disc-' + Date.now(),
+      id: discountData.id || ('disc-' + Date.now()),
       companyName: discountData.companyName || 'Empresa Aliada',
       logo: discountData.logo || '🎁',
       discountTitle: discountData.discountTitle || 'Beneficio Exclusivo Humm',
       category: discountData.category || 'Servicios Generales',
       description: discountData.description || '',
+      contactPerson: discountData.contactPerson || '',
+      contactRole: discountData.contactRole || '',
+      phone: discountData.phone || '',
+      whatsapp: discountData.whatsapp || '',
+      instagram: discountData.instagram || '',
+      email: discountData.email || '',
+      preferredChannel: discountData.preferredChannel || 'whatsapp',
       code: (discountData.code || '').trim().toUpperCase(),
       url: discountData.url || '',
+      startsAt: discountData.startsAt || null,
       expiresAt: discountData.expiresAt || null,
+      minPurchase: discountData.minPurchase ? parseInt(discountData.minPurchase, 10) : null,
+      maxDiscount: discountData.maxDiscount ? parseInt(discountData.maxDiscount, 10) : null,
+      whatsappTemplate: discountData.whatsappTemplate || null,
+      instagramTemplate: discountData.instagramTemplate || null,
+      emailTemplate: discountData.emailTemplate || null,
+      hummResponsible: discountData.hummResponsible || 'Equipo Humm',
       status: discountData.status || 'active',
       featured: !!discountData.featured,
       createdAt: new Date().toISOString()
@@ -940,6 +957,168 @@ class Store {
     if (this.data.companyDiscounts.length !== initialLen) {
       this.saveState();
       this.apiSave('company_discounts', { id }, 'delete');
+      return true;
+    }
+    return false;
+  }
+
+  // =========================================================================
+  // SOLICITUDES Y CONTACTOS COMERCIALES DE BENEFICIOS (benefit_requests)
+  // =========================================================================
+  getBenefitRequests(workspaceId = null) {
+    if (!this.data.benefitRequests) this.data.benefitRequests = [];
+    if (!workspaceId) return [...this.data.benefitRequests];
+    return this.data.benefitRequests.filter(r => r.workspaceId === workspaceId);
+  }
+
+  getAllBenefitRequests() {
+    if (!this.data.benefitRequests) this.data.benefitRequests = [];
+    return [...this.data.benefitRequests];
+  }
+
+  getBenefitRequestForDiscount(workspaceId, discountId) {
+    if (!this.data.benefitRequests) return null;
+    return this.data.benefitRequests.find(r => r.workspaceId === workspaceId && r.discountId === discountId) || null;
+  }
+
+  async requestBenefit({ workspaceId, userId, discountId, channel = 'whatsapp', userName = '', workspaceName = '', partnerName = '', benefitTitle = '' }) {
+    if (!this.data.benefitRequests) this.data.benefitRequests = [];
+    
+    // 1. Si ya existe, retornar la existente
+    const existing = this.getBenefitRequestForDiscount(workspaceId, discountId);
+    if (existing) {
+      existing.lastContactAt = new Date().toISOString();
+      existing.channel = channel;
+      this.saveState();
+      this.apiSave('benefit_requests', existing, 'save');
+      return existing;
+    }
+
+    // 2. Generar código provisional optimista
+    const discount = this.getCompanyDiscount(discountId);
+    const aliasRaw = discount ? (discount.companyName || discount.discountTitle) : 'BENEFICIO';
+    const alias = aliasRaw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'BENEFICIO';
+    const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const tempCode = `HUMM-${alias}-${randPart}`;
+
+    const newReq = {
+      id: 'req-' + Date.now(),
+      discountId,
+      userId,
+      workspaceId,
+      personalCode: tempCode,
+      channel,
+      status: 'contact_started',
+      requestedAt: new Date().toISOString(),
+      lastContactAt: new Date().toISOString(),
+      usedAt: null,
+      purchaseAmount: null,
+      discountAmount: null,
+      memberComment: null,
+      memberRating: null,
+      notCompletedReason: null,
+      adminNotes: null,
+      createdAt: new Date().toISOString()
+    };
+
+    this.data.benefitRequests.unshift(newReq);
+    this.saveState();
+
+    // Guardar en MySQL
+    try {
+      const res = await this.apiSave('benefit_requests', newReq, 'save');
+      if (res && res.item && res.item.personalCode) {
+        newReq.personalCode = res.item.personalCode;
+        newReq.id = res.item.id || newReq.id;
+        this.saveState();
+      }
+    } catch (e) {
+      // Continúa con código provisional si está offline
+    }
+
+    // Enviar notificación por correo a Humm en background
+    try {
+      if (typeof window !== 'undefined' && window.fetch) {
+        fetch('api/mail.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'benefit_request_notification',
+            userName: userName || 'Miembro Humm',
+            workspaceName: workspaceName || 'Emprendimiento',
+            benefitTitle: benefitTitle || (discount ? discount.discountTitle : 'Beneficio'),
+            companyName: partnerName || (discount ? discount.companyName : 'Empresa Aliada'),
+            channel,
+            personalCode: newReq.personalCode
+          })
+        }).catch(() => {});
+      }
+    } catch (e) {}
+
+    return newReq;
+  }
+
+  async markBenefitUsed(requestId, feedbackData = {}) {
+    if (!this.data.benefitRequests) return null;
+    const idx = this.data.benefitRequests.findIndex(r => r.id === requestId);
+    if (idx !== -1) {
+      this.data.benefitRequests[idx] = {
+        ...this.data.benefitRequests[idx],
+        status: 'used',
+        usedAt: new Date().toISOString(),
+        purchaseAmount: feedbackData.purchaseAmount ? parseInt(feedbackData.purchaseAmount, 10) : null,
+        discountAmount: feedbackData.discountAmount ? parseInt(feedbackData.discountAmount, 10) : null,
+        memberComment: feedbackData.memberComment || null,
+        memberRating: feedbackData.memberRating ? parseInt(feedbackData.memberRating, 10) : null,
+        updatedAt: new Date().toISOString()
+      };
+      this.saveState();
+      this.apiSave('benefit_requests', this.data.benefitRequests[idx], 'save');
+      return this.data.benefitRequests[idx];
+    }
+    return null;
+  }
+
+  async markBenefitNotCompleted(requestId, reason = '') {
+    if (!this.data.benefitRequests) return null;
+    const idx = this.data.benefitRequests.findIndex(r => r.id === requestId);
+    if (idx !== -1) {
+      this.data.benefitRequests[idx] = {
+        ...this.data.benefitRequests[idx],
+        status: 'not_completed',
+        notCompletedReason: reason || 'No especificado',
+        updatedAt: new Date().toISOString()
+      };
+      this.saveState();
+      this.apiSave('benefit_requests', this.data.benefitRequests[idx], 'save');
+      return this.data.benefitRequests[idx];
+    }
+    return null;
+  }
+
+  async updateBenefitRequestAdmin(requestId, updateData = {}) {
+    if (!this.data.benefitRequests) return null;
+    const idx = this.data.benefitRequests.findIndex(r => r.id === requestId);
+    if (idx !== -1) {
+      this.data.benefitRequests[idx] = {
+        ...this.data.benefitRequests[idx],
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+      this.saveState();
+      this.apiSave('benefit_requests', this.data.benefitRequests[idx], 'save');
+      return this.data.benefitRequests[idx];
+    }
+    return null;
+  }
+
+  async deleteBenefitRequest(requestId) {
+    if (!this.data.benefitRequests) return false;
+    const initialLen = this.data.benefitRequests.length;
+    this.data.benefitRequests = this.data.benefitRequests.filter(r => r.id !== requestId);
+    if (this.data.benefitRequests.length !== initialLen) {
+      this.saveState();
+      this.apiSave('benefit_requests', { id: requestId }, 'delete');
       return true;
     }
     return false;
