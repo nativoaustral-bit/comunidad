@@ -19,6 +19,9 @@ if (empty($entity)) {
     DB::jsonResponse(false, null, 'Entidad no especificada.', 400);
 }
 
+$item = $input['item'] ?? $input;
+$targetId = $input['id'] ?? (is_array($item) ? ($item['id'] ?? '') : $item);
+
 try {
     switch ($entity) {
         // -----------------------------------------------------------------
@@ -26,7 +29,7 @@ try {
         // -----------------------------------------------------------------
         case 'sales':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM sales WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -63,7 +66,7 @@ try {
         // -----------------------------------------------------------------
         case 'customers':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM customers WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -102,7 +105,7 @@ try {
         // -----------------------------------------------------------------
         case 'tasks':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM tasks WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -137,7 +140,7 @@ try {
         // -----------------------------------------------------------------
         case 'calendar_events':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM calendar_events WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -178,7 +181,7 @@ try {
         // -----------------------------------------------------------------
         case 'quick_notes':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM quick_notes WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -212,7 +215,7 @@ try {
         // -----------------------------------------------------------------
         case 'subscription_plans':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM subscription_plans WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -284,7 +287,7 @@ try {
         // -----------------------------------------------------------------
         case 'users':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM users WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -349,7 +352,7 @@ try {
         case 'company_discounts':
         case 'discounts':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM company_discounts WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -402,7 +405,7 @@ try {
         // -----------------------------------------------------------------
         case 'tools':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM tools WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
@@ -443,7 +446,7 @@ try {
         case 'workspaces':
         case 'workspace':
             if ($action === 'delete') {
-                $id = $input['id'] ?? '';
+                $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM workspaces WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
