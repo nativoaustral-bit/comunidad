@@ -364,19 +364,30 @@ try {
                         expires_at = VALUES(expires_at),
                         is_featured = VALUES(is_featured),
                         status = VALUES(status)';
+                $discCompany = $item['companyName'] ?? ($item['company_name'] ?? 'Empresa Aliada');
+                $discLogo = $item['logo'] ?? '🎁';
+                $discTitle = $item['discountTitle'] ?? ($item['discount_title'] ?? 'Beneficio Exclusivo Humm');
+                $discCat = $item['category'] ?? 'Servicios Generales';
+                $discDesc = $item['description'] ?? '';
+                $discCode = !empty($item['code']) ? trim((string)$item['code']) : null;
+                $discUrl = !empty($item['url']) ? trim((string)$item['url']) : null;
+                $discExpires = !empty($item['expiresAt']) ? $item['expiresAt'] : (!empty($item['expires_at']) ? $item['expires_at'] : null);
+                $discFeatured = !empty($item['featured']) || !empty($item['is_featured']) ? 1 : 0;
+                $discStatus = $item['status'] ?? 'active';
+
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
-                    ':id' => $item['id'],
-                    ':company_name' => $item['companyName'] ?? $item['company_name'],
-                    ':logo' => $item['logo'] ?? '🎁',
-                    ':discount_title' => $item['discountTitle'] ?? $item['discount_title'],
-                    ':category' => $item['category'] ?? 'Servicios Generales',
-                    ':description' => $item['description'] ?? '',
-                    ':code' => !empty($item['code']) ? trim($item['code']) : null,
-                    ':url' => !empty($item['url']) ? trim($item['url']) : null,
-                    ':expires_at' => !empty($item['expiresAt'] ?? $item['expires_at']) ? ($item['expiresAt'] ?? $item['expires_at']) : null,
-                    ':is_featured' => !empty($item['featured'] ?? $item['is_featured']) ? 1 : 0,
-                    ':status' => $item['status'] ?? 'active'
+                    ':id' => $item['id'] ?? ('disc-' . round(microtime(true) * 1000)),
+                    ':company_name' => $discCompany,
+                    ':logo' => $discLogo,
+                    ':discount_title' => $discTitle,
+                    ':category' => $discCat,
+                    ':description' => $discDesc,
+                    ':code' => $discCode,
+                    ':url' => $discUrl,
+                    ':expires_at' => $discExpires,
+                    ':is_featured' => $discFeatured,
+                    ':status' => $discStatus
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
