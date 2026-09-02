@@ -909,11 +909,15 @@ class App {
         const toolCheckboxes = document.querySelectorAll('.user-tool-checkbox');
         const assignedToolIds = Array.from(toolCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
 
+        const submitBtn = document.getElementById('btn-save-admin-user');
+        if (submitBtn) submitBtn.disabled = true;
+
         if (editId) {
           const updates = { name, email, role, workspaceId, isActive, assignedToolIds };
           if (password) updates.password = password;
           store.updateUser(editId, updates);
           this.showToast(`Usuario "${name}" actualizado con éxito`, 'success');
+          if (submitBtn) submitBtn.disabled = false;
           this.closeAllModals();
           this.refreshCurrentView();
         } else {
@@ -978,6 +982,7 @@ class App {
             btnWhatsapp.href = phone ? `https://wa.me/${phone}?text=${waText}` : `https://wa.me/?text=${waText}`;
           }
 
+          if (submitBtn) submitBtn.disabled = false;
           this.closeAllModals();
           this.refreshCurrentView();
           this.openModal('modal-user-created-success');
@@ -1623,6 +1628,9 @@ class App {
         ${workspaces.map(w => `<option value="${w.id}">${w.name} (${w.ownerName})</option>`).join('')}
       `;
     }
+
+    const saveBtn = document.getElementById('btn-save-admin-user');
+    if (saveBtn) saveBtn.disabled = false;
 
     if (userId) {
       const user = store.getUser(userId);

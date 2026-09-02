@@ -173,6 +173,15 @@ class Store {
            !['carolina@humm.cl', 'juan@humm.cl', 'ignacia@humm.cl', 'diego@humm.cl', 'patricia@humm.cl', 'valentina@humm.cl'].includes(u.email.toLowerCase()))
         );
 
+        // Deduplicar usuarios por email
+        const seenUserEmails = new Set();
+        loadedUsers = loadedUsers.filter(u => {
+          const email = (u.email || '').toLowerCase().trim();
+          if (!email || seenUserEmails.has(email)) return false;
+          seenUserEmails.add(email);
+          return true;
+        });
+
         // Asegurar que el administrador siempre esté disponible
         const adminExists = loadedUsers.some(u => u.email.toLowerCase() === 'admin@humm.cl');
         if (!adminExists) {
@@ -231,7 +240,15 @@ class Store {
           if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools.length > 0 ? json.data.tools : INITIAL_TOOLS;
           if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts.length > 0 ? json.data.company_discounts : INITIAL_DISCOUNTS;
           if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans.length > 0 ? json.data.subscription_plans : INITIAL_STATE.subscriptionPlans;
-          if (Array.isArray(json.data.users)) this.data.users = json.data.users;
+          if (Array.isArray(json.data.users)) {
+            const seenEmails = new Set();
+            this.data.users = json.data.users.filter(u => {
+              const email = (u.email || '').toLowerCase().trim();
+              if (!email || seenEmails.has(email)) return false;
+              seenEmails.add(email);
+              return true;
+            });
+          }
           if (Array.isArray(json.data.workspaces)) this.data.workspaces = json.data.workspaces;
           if (Array.isArray(json.data.subscriptions)) this.data.subscriptions = json.data.subscriptions;
           if (Array.isArray(json.data.customers)) this.data.customers = json.data.customers;
@@ -873,11 +890,18 @@ class Store {
   }
 
   createUser(userData) {
-    const id = 'usr-' + Date.now();
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    const existingIdx = this.data.users.findIndex(u => (u.email || '').toLowerCase().trim() === cleanEmail);
+    if (existingIdx !== -1) {
+      const existingId = this.data.users[existingIdx].id;
+      return this.updateUser(existingId, userData);
+    }
+
+    const id = userData.id || ('usr-' + Date.now());
     const newUser = {
       id,
       name: userData.name || '',
-      email: userData.email.trim().toLowerCase(),
+      email: cleanEmail,
       password: userData.password || 'humm2026',
       role: userData.role || 'entrepreneur',
       workspaceId: userData.workspaceId || null,
