@@ -232,7 +232,6 @@ class Store {
     this.notify();
   }
 
-  // Sincronización transparente con la API MySQL en HostGator
   async syncWithBackend(role = 'entrepreneur', workspaceId = null) {
     if (typeof window === 'undefined' || !window.fetch) return;
     try {
@@ -241,8 +240,8 @@ class Store {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools.length > 0 ? json.data.tools : INITIAL_TOOLS;
-          if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts.length > 0 ? json.data.company_discounts : INITIAL_DISCOUNTS;
+          if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools;
+          if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts;
           if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans.length > 0 ? json.data.subscription_plans : INITIAL_STATE.subscriptionPlans;
           if (Array.isArray(json.data.users)) {
             const seenEmails = new Set();

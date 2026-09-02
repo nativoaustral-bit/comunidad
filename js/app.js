@@ -122,6 +122,15 @@ class App {
       this.updateHeaderWorkspace();
       this.updateHeaderBadgeCounts();
       this.setupAdminNavVisibility();
+
+      // Sincronizar datos en vivo desde MySQL
+      const user = auth.getCurrentUser();
+      if (user) {
+        const ws = auth.getCurrentWorkspace();
+        const isImpersonating = !!(auth.session && auth.session.impersonatedWorkspaceId);
+        const wsId = (isImpersonating && auth.session.impersonatedWorkspaceId) ? auth.session.impersonatedWorkspaceId : (ws ? ws.id : null);
+        store.syncWithBackend(user.role, wsId);
+      }
     }
   }
 
@@ -281,6 +290,12 @@ class App {
     this.setupAdminNavVisibility();
     this.updateHeaderUser();
     this.updateHeaderWorkspace();
+
+    // Sincronizar datos en background con MySQL
+    const currentWs = auth.getCurrentWorkspace();
+    const wsId = (isImpersonating && auth.session.impersonatedWorkspaceId) ? auth.session.impersonatedWorkspaceId : (currentWs ? currentWs.id : null);
+    store.syncWithBackend(user.role, wsId);
+
     this.navigate(hash || (isDedicatedAdmin ? 'admin-dashboard' : 'inicio'));
   }
 
