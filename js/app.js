@@ -1961,21 +1961,25 @@ class App {
     });
   }
 
-  loginDemo(email, pass) {
+  async loginDemo(email, pass) {
     const loginEmailInput = document.getElementById('login-email');
     const loginPassInput = document.getElementById('login-password');
     if (loginEmailInput) loginEmailInput.value = email;
     if (loginPassInput) loginPassInput.value = pass;
 
-    const res = auth.login(email, pass, true);
-    if (res.success) {
-      this.showToast(`¡Bienvenido/a a Mi Humm, ${res.user.name}!`, 'success');
-      const targetHash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
-      window.location.hash = targetHash;
-      this.checkAuthenticationState();
-      this.handleHashChange();
-    } else {
-      this.showToast(res.message || 'Error al iniciar sesión', 'danger');
+    try {
+      const res = await auth.login(email, pass, true);
+      if (res.success) {
+        this.showToast(`¡Bienvenido/a a Mi Humm, ${res.user.name}!`, 'success');
+        const targetHash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+        window.location.hash = targetHash;
+        this.checkAuthenticationState();
+        this.handleHashChange();
+      } else {
+        this.showToast(res.message || 'Error al iniciar sesión', 'danger');
+      }
+    } catch (err) {
+      this.showToast('Error al conectar con el servidor', 'danger');
     }
   }
 
@@ -2035,20 +2039,36 @@ class App {
     // Formulario de login
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
-      formLogin.addEventListener('submit', (e) => {
+      formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
-        const remember = document.getElementById('login-remember').checked;
+        const remember = document.getElementById('login-remember')?.checked || false;
 
-        const res = auth.login(email, pass, remember);
-        if (res.success) {
-          this.showToast(`¡Bienvenido a Mi Humm, ${res.user.name.split(' ')[0]}!`, 'success');
-          window.location.hash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
-          this.checkAuthenticationState();
-          this.handleHashChange();
-        } else {
-          this.showToast(res.message, 'danger');
+        const btnSubmit = formLogin.querySelector('button[type="submit"]');
+        const originalText = btnSubmit ? btnSubmit.innerHTML : 'Ingresar a mi Plataforma';
+        if (btnSubmit) {
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = 'Verificando credenciales...';
+        }
+
+        try {
+          const res = await auth.login(email, pass, remember);
+          if (res.success) {
+            this.showToast(`¡Bienvenido a Mi Humm, ${res.user.name.split(' ')[0]}!`, 'success');
+            window.location.hash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+            this.checkAuthenticationState();
+            this.handleHashChange();
+          } else {
+            this.showToast(res.message || 'Error al verificar credenciales', 'danger');
+          }
+        } catch (err) {
+          this.showToast('Ocurrió un error al procesar el ingreso. Intenta nuevamente.', 'danger');
+        } finally {
+          if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalText;
+          }
         }
       });
     }
@@ -2096,11 +2116,11 @@ class App {
     });
 
     // Formulario de cambio directo de contraseña desde enlace de correo
-    document.getElementById('form-reset-password')?.addEventListener('submit', (e) => {
+    document.getElementById('form-reset-password')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('reset-pass-email').value.trim();
-      const passNew = document.getElementById('reset-pass-new').value.trim();
-      const passConfirm = document.getElementById('reset-pass-confirm').value.trim();
+      const email = (document.getElementById('reset-pass-email')?.value || '').trim();
+      const passNew = (document.getElementById('reset-pass-new')?.value || '').trim();
+      const passConfirm = (document.getElementById('reset-pass-confirm')?.value || '').trim();
 
       if (passNew !== passConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifica.', 'danger');
@@ -2116,7 +2136,7 @@ class App {
       if (res.success) {
         this.showToast('¡Contraseña actualizada exitosamente! Iniciando sesión...', 'success');
         this.closeAllModals();
-        const loginRes = auth.login(email, passNew, true);
+        const loginRes = await auth.login(email, passNew, true);
         if (loginRes.success) {
           const targetHash = loginRes.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
           window.location.hash = targetHash;

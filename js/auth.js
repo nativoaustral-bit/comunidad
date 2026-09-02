@@ -233,21 +233,104 @@ class AuthService {
     return null;
   }
 
-  login(email, password, remember = false) {
-    let user = store.getUserByEmail(email);
+  async login(email, password, remember = false) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
 
-    // Auto-recuperación de cuenta admin inicial si la BD está vacía
-    if (!user) {
-      // Solo inicializar si no hay usuarios en la base de datos local
-      if (store.getAllUsers().length === 0) {
-        user = store.createUser({
-          id: 'usr-admin',
-          name: 'Administrador Humm',
-          email: 'admin@humm.cl',
-          password: 'admin',
-          role: 'admin',
-          workspaceId: null
+    if (!cleanEmail || !cleanPass) {
+      return { success: false, message: 'Por favor ingresa tu correo y contraseña.' };
+    }
+
+    // 1. Intentar autenticación segura con Backend MySQL
+    if (typeof window !== 'undefined' && window.fetch) {
+      try {
+        const res = await fetch('api/auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login',
+            email: cleanEmail,
+            password: cleanPass
+          })
         });
+
+        const json = await res.json();
+        if (json.success && json.data && json.data.user) {
+          const apiUser = json.data.user;
+          const userObj = {
+            id: apiUser.id,
+            name: apiUser.name,
+            email: apiUser.email,
+            phone: apiUser.phone || '',
+            role: apiUser.role,
+            specialty: apiUser.specialty || '',
+            avatar: apiUser.avatar || (apiUser.name ? apiUser.name.substring(0, 2).toUpperCase() : 'U'),
+            isActive: apiUser.is_active !== undefined ? !!apiUser.is_active : true,
+            workspaceId: apiUser.workspace_id || null,
+            assignedToolIds: apiUser.assigned_tool_ids || [],
+            mustChangePassword: apiUser.must_change_password ? 1 : 0,
+            token: json.data.token
+          };
+
+          // Guardar usuario en store local para vistas
+          if (!store.getUser(userObj.id)) {
+            if (!store.data.users) store.data.users = [];
+            store.data.users.push(userObj);
+          } else {
+            store.updateUser(userObj.id, userObj);
+          }
+
+          if (json.data.workspace) {
+            const wsObj = {
+              id: json.data.workspace.id,
+              name: json.data.workspace.name,
+              ownerName: json.data.workspace.owner_name || json.data.workspace.name,
+              email: json.data.workspace.email || '',
+              city: json.data.workspace.city || '',
+              comuna: json.data.workspace.city || '',
+              region: json.data.workspace.region || '',
+              membershipStatus: json.data.workspace.membership_status || 'active',
+              membershipType: json.data.workspace.membership_type || 'Membresía Humm Co-Creation',
+              advisorName: json.data.workspace.advisor_name || null,
+              advisorEmail: json.data.workspace.advisor_email || null
+            };
+            if (!store.getWorkspace(wsObj.id)) {
+              if (!store.data.workspaces) store.data.workspaces = [];
+              store.data.workspaces.push(wsObj);
+            }
+          }
+
+          const now = Date.now();
+          const isAdmin = userObj.role === 'admin';
+          const maxLifetime = isAdmin ? AUTH_CONFIG.ADMIN_MAX_LIFETIME : AUTH_CONFIG.USER_MAX_LIFETIME;
+
+          this.saveSession({
+            userId: userObj.id,
+            role: userObj.role,
+            rememberMe: !!remember,
+            loginTime: now,
+            lastActivityTime: now,
+            expiresAt: now + maxLifetime,
+            impersonatedWorkspaceId: null
+          });
+
+          // Sincronizar catálogo completo
+          await store.syncWithBackend(userObj.role, userObj.workspaceId);
+
+          return { success: true, user: userObj };
+        } else if (json.message) {
+          return { success: false, message: json.message };
+        }
+      } catch (err) {
+        console.warn('Fallo en autenticación online, intentando fallback:', err);
+      }
+    }
+
+    // 2. Fallback offline local
+    let user = store.getUserByEmail(cleanEmail);
+    if (!user) {
+      if (cleanEmail === 'admin@humm.cl' || cleanEmail === 'contacto@humm.cl') {
+        user = store.getAllUsers().find(u => u.role === 'admin');
       }
     }
 
@@ -256,15 +339,12 @@ class AuthService {
     }
 
     if (!user.isActive) {
-      return { success: false, message: 'Esta cuenta ha sido desactivada por el equipo de administración de Humm. Contacta a soporte para reactivar tu acceso.' };
+      return { success: false, message: 'Esta cuenta ha sido desactivada. Contacta al equipo de administración.' };
     }
 
-    if (user.password !== password.trim()) {
-      return { success: false, message: 'Contraseña incorrecta. Verifica tus datos o solicita restablecerla.' };
+    if (user.password && user.password !== cleanPass) {
+      return { success: false, message: 'Contraseña incorrecta. Verifica tus datos.' };
     }
-
-    // Actualizar último acceso
-    store.updateUser(user.id, { lastAccess: new Date().toISOString() });
 
     const now = Date.now();
     const isAdmin = user.role === 'admin';
