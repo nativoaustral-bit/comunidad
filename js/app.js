@@ -1208,6 +1208,81 @@ class App {
       });
     }
 
+    // Submit de Admin - Crear / Editar Tutor o Ejecutivo Humm
+    const formAdvEdit = document.getElementById('form-admin-advisor-edit');
+    if (formAdvEdit) {
+      formAdvEdit.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = formAdvEdit.getAttribute('data-edit-id');
+        const name = document.getElementById('admin-adv-name').value.trim();
+        const phone = document.getElementById('admin-adv-phone').value.trim();
+        const email = document.getElementById('admin-adv-email').value.trim().toLowerCase();
+        const specialty = document.getElementById('admin-adv-specialty').value;
+        const password = document.getElementById('admin-adv-pass').value.trim();
+        const isActive = document.getElementById('admin-adv-active').checked;
+        const sendWelcome = document.getElementById('admin-adv-send-welcome')?.checked;
+        const mustChangePass = document.getElementById('admin-adv-must-change-pass')?.checked;
+
+        // Extraer IDs de emprendimientos marcados
+        const selectedWsIds = Array.from(formAdvEdit.querySelectorAll('input[name="adv_workspace"]:checked')).map(cb => cb.value);
+
+        if (editId) {
+          store.updateAdvisor(editId, {
+            name, phone, email, specialty,
+            ...(password ? { password } : {}),
+            isActive,
+            assignedWorkspaceIds: selectedWsIds
+          });
+          this.showToast(`Tutor "${name}" actualizado con éxito`, 'success');
+        } else {
+          store.createAdvisor({
+            name, phone, email, specialty,
+            password: password || 'humm2026',
+            isActive,
+            assignedWorkspaceIds: selectedWsIds,
+            mustChangePassword: !!mustChangePass
+          });
+
+          // Enviar correo de bienvenida si está marcado
+          if (sendWelcome && window.fetch) {
+            fetch('api/mail.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'welcome_user',
+                to: email,
+                name: name,
+                tempPassword: password || 'humm2026',
+                mustChangePassword: !!mustChangePass
+              })
+            }).catch(() => {});
+          }
+
+          this.showToast(`Tutor "${name}" incorporado al equipo Humm`, 'success');
+        }
+
+        this.closeAllModals();
+        this.refreshCurrentView();
+      });
+    }
+
+    // Submit de Admin - Asignación rápida de emprendimientos a tutor
+    const formAdvAssign = document.getElementById('form-advisor-assign-workspaces');
+    if (formAdvAssign) {
+      formAdvAssign.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const advEmail = document.getElementById('assign-advisor-email').value;
+        const advName = document.getElementById('assign-advisor-name').value;
+        const selectedWsIds = Array.from(formAdvAssign.querySelectorAll('input[name="assign_ws"]:checked')).map(cb => cb.value);
+
+        store.assignWorkspacesToAdvisor(advEmail, advName, selectedWsIds);
+        this.showToast(`Emprendimientos asignados exitosamente a ${advName}`, 'success');
+
+        this.closeAllModals();
+        this.refreshCurrentView();
+      });
+    }
+
     // Modal Sincronización de Calendarios: Google, Outlook, iCal
     const btnToggleGoogle = document.getElementById('btn-toggle-google-sync');
     if (btnToggleGoogle) {
@@ -1868,6 +1943,22 @@ class App {
     }
 
     this.openModal('modal-edit-ws-advisor');
+  }
+
+  openAdvisorEditModal(advisorId = null) {
+    import('./views/admin.js').then(module => {
+      if (module.openAdvisorEditModalDirect) {
+        module.openAdvisorEditModalDirect(advisorId);
+      }
+    });
+  }
+
+  openAdvisorAssignModal(advisorId) {
+    import('./views/admin.js').then(module => {
+      if (module.openAdvisorAssignModalDirect) {
+        module.openAdvisorAssignModalDirect(advisorId);
+      }
+    });
   }
 
   loginDemo(email, pass) {

@@ -74,7 +74,7 @@ try {
 
     // 4. Gestión Global para Administradores
     if ($role === 'admin') {
-        $stmtUsers = $pdo->query('SELECT id, workspace_id, name, email, role, avatar, theme, is_active, assigned_tool_ids, advisor_name, advisor_email, last_access, must_change_password, created_at FROM users ORDER BY name ASC');
+        $stmtUsers = $pdo->query('SELECT id, workspace_id, name, email, phone, role, specialty, avatar, theme, is_active, assigned_tool_ids, advisor_name, advisor_email, last_access, must_change_password, created_at FROM users ORDER BY name ASC');
         $rawUsers = $stmtUsers->fetchAll();
         $users = [];
         foreach ($rawUsers as $u) {
@@ -83,7 +83,9 @@ try {
                 'workspaceId' => $u['workspace_id'] ?? null,
                 'name' => $u['name'],
                 'email' => $u['email'],
+                'phone' => $u['phone'] ?? '',
                 'role' => $u['role'] ?? 'entrepreneur',
+                'specialty' => $u['specialty'] ?? '',
                 'avatar' => $u['avatar'] ?? 'U',
                 'theme' => $u['theme'] ?? 'light',
                 'isActive' => (bool)$u['is_active'],

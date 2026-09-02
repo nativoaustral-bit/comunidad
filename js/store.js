@@ -571,93 +571,185 @@ class Store {
   /**
    * Obtiene resumen de tutores/asesores con carga de emprendimientos, usuarios y solicitudes
    */
+  // =========================================================================
+  // GESTIÓN DE TUTORES Y EJECUTIVOS (role === 'advisor')
+  // =========================================================================
+  getAdvisors() {
+    return (this.data.users || []).filter(u => u.role === 'advisor');
+  }
+
+  getAdvisorById(id) {
+    return (this.data.users || []).find(u => u.role === 'advisor' && u.id === id) || null;
+  }
+
   getAdvisorsSummary() {
     const workspaces = this.getAllWorkspaces();
-    const users = this.getAllUsers();
     const requests = this.getSupportRequests();
+    const advisors = this.getAdvisors();
 
-    const advisorsMap = new Map();
+    return advisors.map(adv => {
+      const advEmail = (adv.email || '').toLowerCase().trim();
+      const advName = (adv.name || '').toLowerCase().trim();
 
-    // Tutores base del ecosistema Humm
-    const baseAdvisors = [
-      { name: 'Valentina Castro', email: 'valentina@humm.cl' },
-      { name: 'Rodrigo Merino', email: 'rodrigo@humm.cl' },
-      { name: 'Camila Fuentes', email: 'camila@humm.cl' }
-    ];
-
-    baseAdvisors.forEach(b => {
-      const key = `${b.name}__${b.email}`;
-      advisorsMap.set(key, {
-        name: b.name,
-        email: b.email,
-        workspaces: [],
-        users: [],
-        pendingRequestsCount: 0,
-        totalRequestsCount: 0
+      // Encontrar workspaces asignados a este tutor
+      const assignedWs = workspaces.filter(ws => {
+        const wsAdvEmail = (ws.advisorEmail || '').toLowerCase().trim();
+        const wsAdvName = (ws.advisorName || '').toLowerCase().trim();
+        return (wsAdvEmail && wsAdvEmail === advEmail) || (wsAdvName && wsAdvName === advName);
       });
+
+      // Contar solicitudes
+      const relatedRequests = requests.filter(req => {
+        const reqAdvEmail = (req.advisorEmail || '').toLowerCase().trim();
+        const reqAdvName = (req.advisorName || '').toLowerCase().trim();
+        return (reqAdvEmail && reqAdvEmail === advEmail) || (reqAdvName && reqAdvName === advName);
+      });
+
+      const pendingCount = relatedRequests.filter(r => r.status === 'pendiente').length;
+
+      return {
+        id: adv.id,
+        name: adv.name,
+        email: adv.email,
+        phone: adv.phone || '',
+        specialty: adv.specialty || 'Mentoría General',
+        role: 'advisor',
+        isActive: adv.isActive !== false,
+        avatar: adv.avatar || (adv.name ? adv.name.substring(0, 2).toUpperCase() : 'TH'),
+        workspaces: assignedWs,
+        users: assignedWs,
+        totalRequestsCount: relatedRequests.length,
+        pendingRequestsCount: pendingCount,
+        lastAccess: adv.lastAccess,
+        createdAt: adv.createdAt
+      };
     });
+  }
 
-    workspaces.forEach(ws => {
-      const advName = ws.advisorName || 'Valentina Castro';
-      const advEmail = ws.advisorEmail || 'valentina@humm.cl';
-      const key = `${advName}__${advEmail}`;
+  createAdvisor(advisorData) {
+    const initials = (advisorData.name || 'Tutor')
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
 
-      if (!advisorsMap.has(key)) {
-        advisorsMap.set(key, {
-          name: advName,
-          email: advEmail,
-          workspaces: [],
-          users: [],
-          pendingRequestsCount: 0,
-          totalRequestsCount: 0
-        });
-      }
+    const newAdvisor = {
+      id: 'usr-adv-' + Date.now(),
+      name: advisorData.name,
+      email: (advisorData.email || '').toLowerCase().trim(),
+      phone: advisorData.phone || '',
+      role: 'advisor',
+      specialty: advisorData.specialty || 'Mentoría General',
+      avatar: initials || 'TH',
+      theme: 'light',
+      isActive: advisorData.isActive !== undefined ? !!advisorData.isActive : true,
+      assignedToolIds: [],
+      mustChangePassword: advisorData.mustChangePassword ? 1 : 0,
+      createdAt: new Date().toISOString()
+    };
 
-      const adv = advisorsMap.get(key);
-      if (!adv.workspaces.some(w => w.id === ws.id)) {
-        adv.workspaces.push(ws);
-      }
-    });
+    if (advisorData.password) {
+      newAdvisor.password = advisorData.password;
+    }
 
-    users.forEach(u => {
-      if (u.role === 'admin' || u.role === 'advisor') return;
-      const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-      const advName = u.advisorName || (ws ? ws.advisorName : null) || 'Valentina Castro';
-      const advEmail = u.advisorEmail || (ws ? ws.advisorEmail : null) || 'valentina@humm.cl';
-      const key = `${advName}__${advEmail}`;
+    if (!this.data.users) this.data.users = [];
+    this.data.users.push(newAdvisor);
 
-      if (!advisorsMap.has(key)) {
-        advisorsMap.set(key, {
-          name: advName,
-          email: advEmail,
-          workspaces: [],
-          users: [],
-          pendingRequestsCount: 0,
-          totalRequestsCount: 0
-        });
-      }
+    if (Array.isArray(advisorData.assignedWorkspaceIds) && advisorData.assignedWorkspaceIds.length > 0) {
+      this.assignWorkspacesToAdvisor(newAdvisor.email, newAdvisor.name, advisorData.assignedWorkspaceIds);
+    }
 
-      const adv = advisorsMap.get(key);
-      if (!adv.users.some(item => item.id === u.id)) {
-        adv.users.push(u);
-      }
-    });
+    this.saveState();
+    this.apiSave('users', newAdvisor, 'save');
+    return newAdvisor;
+  }
 
-    requests.forEach(req => {
-      const advName = req.advisorName || 'Valentina Castro';
-      const advEmail = req.advisorEmail || 'valentina@humm.cl';
-      const key = `${advName}__${advEmail}`;
+  updateAdvisor(id, updateData) {
+    const idx = (this.data.users || []).findIndex(u => u.id === id);
+    if (idx === -1) return null;
 
-      if (advisorsMap.has(key)) {
-        const adv = advisorsMap.get(key);
-        adv.totalRequestsCount++;
-        if (req.status === 'pendiente') {
-          adv.pendingRequestsCount++;
+    const oldAdvisor = this.data.users[idx];
+    const updated = {
+      ...oldAdvisor,
+      ...updateData
+    };
+
+    if (updateData.name && !updateData.avatar) {
+      updated.avatar = updateData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    this.data.users[idx] = updated;
+
+    if (oldAdvisor.email !== updated.email || oldAdvisor.name !== updated.name) {
+      (this.data.workspaces || []).forEach(ws => {
+        if ((ws.advisorEmail || '').toLowerCase() === (oldAdvisor.email || '').toLowerCase()) {
+          ws.advisorEmail = updated.email;
+          ws.advisorName = updated.name;
+          this.apiSave('workspaces', ws, 'save');
         }
+      });
+    }
+
+    if (Array.isArray(updateData.assignedWorkspaceIds)) {
+      this.assignWorkspacesToAdvisor(updated.email, updated.name, updateData.assignedWorkspaceIds);
+    }
+
+    this.saveState();
+    this.apiSave('users', updated, 'save');
+    return updated;
+  }
+
+  deleteAdvisor(id) {
+    const adv = this.getUser(id);
+    if (!adv) return false;
+
+    const advEmail = (adv.email || '').toLowerCase().trim();
+    const advName = (adv.name || '').toLowerCase().trim();
+
+    (this.data.workspaces || []).forEach(ws => {
+      const wsEmail = (ws.advisorEmail || '').toLowerCase().trim();
+      const wsName = (ws.advisorName || '').toLowerCase().trim();
+      if ((wsEmail && wsEmail === advEmail) || (wsName && wsName === advName)) {
+        ws.advisorName = null;
+        ws.advisorEmail = null;
+        this.apiSave('workspaces', ws, 'save');
       }
     });
 
-    return Array.from(advisorsMap.values());
+    this.data.users = (this.data.users || []).filter(u => u.id !== id);
+    this.saveState();
+    this.apiSave('users', { id }, 'delete');
+    return true;
+  }
+
+  toggleAdvisorStatus(id) {
+    const adv = this.getUser(id);
+    if (!adv) return null;
+    adv.isActive = adv.isActive === false ? true : false;
+    this.saveState();
+    this.apiSave('users', adv, 'save');
+    return adv;
+  }
+
+  assignWorkspacesToAdvisor(advisorEmail, advisorName, workspaceIds = []) {
+    const emailNorm = (advisorEmail || '').toLowerCase().trim();
+    const nameNorm = (advisorName || '').trim();
+    const idSet = new Set(workspaceIds);
+
+    (this.data.workspaces || []).forEach(ws => {
+      const currentEmail = (ws.advisorEmail || '').toLowerCase().trim();
+      if (idSet.has(ws.id)) {
+        ws.advisorName = nameNorm;
+        ws.advisorEmail = emailNorm;
+        this.apiSave('workspaces', ws, 'save');
+      } else if (currentEmail && currentEmail === emailNorm) {
+        ws.advisorName = null;
+        ws.advisorEmail = null;
+        this.apiSave('workspaces', ws, 'save');
+      }
+    });
+    this.saveState();
   }
 
   assignAdvisorToUserOrWorkspace({ userId, workspaceId, advisorName, advisorEmail }) {

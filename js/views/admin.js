@@ -525,8 +525,8 @@ export function renderAdminMembersView(container) {
           ${workspaces.map(ws => {
             const wsUser = users.find(u => u.workspaceId === ws.id) || { id: 'usr-none', name: 'Sin usuario', email: ws.email, lastAccess: null, isActive: true };
             const assignedCount = (ws.assignedTools || []).length;
-            const advisorName = ws.advisorName || 'Valentina Castro';
-            const advisorEmail = ws.advisorEmail || 'valentina@humm.cl';
+            const advisorName = ws.advisorName || 'Sin tutor asignado';
+            const advisorEmail = ws.advisorEmail || '';
 
             const wsSales = store.getSales(ws.id);
             const now = new Date();
@@ -557,10 +557,10 @@ export function renderAdminMembersView(container) {
                 <td>
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
                     <div>
-                      <div style="font-weight: 600; font-size: var(--font-size-xs); color: var(--text-primary);">${advisorName}</div>
-                      <div style="font-size: 11px; color: var(--humm-red-primary);">${advisorEmail}</div>
+                      <div style="font-weight: 600; font-size: var(--font-size-xs); color: ${ws.advisorName ? 'var(--text-primary)' : 'var(--text-muted)'};">${advisorName}</div>
+                      ${advisorEmail ? `<div style="font-size: 11px; color: var(--humm-red-primary);">${advisorEmail}</div>` : ''}
                     </div>
-                    <button class="btn btn-ghost btn-sm btn-edit-ws-advisor" data-ws-id="${ws.id}" data-ws-name="${ws.name}" data-advisor-name="${advisorName}" data-advisor-email="${advisorEmail}" title="Editar tutor asignado">
+                    <button class="btn btn-ghost btn-sm btn-edit-ws-advisor" data-ws-id="${ws.id}" data-ws-name="${ws.name}" data-advisor-name="${ws.advisorName || ''}" data-advisor-email="${ws.advisorEmail || ''}" title="Editar tutor asignado">
                       ✏️
                     </button>
                   </div>
@@ -714,107 +714,120 @@ export function renderAdminCustomersView(container) {
 let adminAdvisorsSearchQuery = '';
 let adminAdvisorsFilter = 'all';
 
-function openAdvisorAssignmentModalDirect(targetUserId = null, targetWsId = null, preselectedAdvisor = null, container = null) {
-  const modal = document.getElementById('modal-edit-ws-advisor');
-  const form = document.getElementById('form-admin-edit-advisor');
+export function openAdvisorEditModalDirect(advisorId = null, container = null) {
+  const modal = document.getElementById('modal-advisor-edit');
+  const form = document.getElementById('form-admin-advisor-edit');
   if (!modal || !form) return;
 
-  const users = store.getAllUsers();
-  const workspaces = store.getAllWorkspaces();
-  const targetSelect = document.getElementById('edit-advisor-target-user');
-  const advisorSelect = document.getElementById('edit-advisor-select');
-  const customFields = document.getElementById('advisor-custom-fields');
-  const nameInput = document.getElementById('edit-advisor-name');
-  const emailInput = document.getElementById('edit-advisor-email');
+  const titleEl = document.getElementById('modal-advisor-header-title');
+  const nameInput = document.getElementById('admin-adv-name');
+  const phoneInput = document.getElementById('admin-adv-phone');
+  const emailInput = document.getElementById('admin-adv-email');
+  const specialtySelect = document.getElementById('admin-adv-specialty');
+  const passInput = document.getElementById('admin-adv-pass');
+  const activeCheckbox = document.getElementById('admin-adv-active');
+  const welcomeOptions = document.getElementById('admin-adv-welcome-options');
+  const wsChecklist = document.getElementById('admin-adv-workspaces-checklist');
 
-  // Poblar select de usuarios y emprendimientos
-  if (targetSelect) {
-    let optionsHtml = '<optgroup label="👤 Usuarios de la Comunidad">';
-    users.filter(u => u.role !== 'admin').forEach(u => {
-      const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-      const wsText = ws ? ` (${ws.name})` : '';
-      const selected = (targetUserId && u.id === targetUserId) ? 'selected' : '';
-      optionsHtml += `<option value="user:${u.id}" ${selected}>${u.name} - ${u.email}${wsText}</option>`;
-    });
-    optionsHtml += '</optgroup><optgroup label="🏢 Emprendimientos Directos">';
-    workspaces.forEach(w => {
-      const selected = (targetWsId && w.id === targetWsId) ? 'selected' : '';
-      optionsHtml += `<option value="ws:${w.id}" ${selected}>${w.name} (Dueño: ${w.ownerName})</option>`;
-    });
-    optionsHtml += '</optgroup>';
-    targetSelect.innerHTML = optionsHtml;
+  const allWorkspaces = store.getAllWorkspaces();
+
+  if (advisorId) {
+    const adv = store.getAdvisorById(advisorId);
+    if (!adv) return;
+
+    form.setAttribute('data-edit-id', advisorId);
+    if (titleEl) titleEl.textContent = `✏️ Editar Tutor / Ejecutivo: ${adv.name}`;
+    if (nameInput) nameInput.value = adv.name || '';
+    if (phoneInput) phoneInput.value = adv.phone || '';
+    if (emailInput) emailInput.value = adv.email || '';
+    if (specialtySelect) specialtySelect.value = adv.specialty || 'Mentoría General & Estrategia';
+    if (passInput) passInput.value = '';
+    if (activeCheckbox) activeCheckbox.checked = adv.isActive !== false;
+    if (welcomeOptions) welcomeOptions.style.display = 'none';
+
+    // Poblar checklist de emprendimientos
+    if (wsChecklist) {
+      const advEmail = (adv.email || '').toLowerCase().trim();
+      wsChecklist.innerHTML = allWorkspaces.length > 0 ? allWorkspaces.map(ws => {
+        const isAssigned = (ws.advisorEmail || '').toLowerCase().trim() === advEmail;
+        return `
+          <label style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 4px 8px; background: var(--bg-surface-primary); border-radius: var(--radius-xs); cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" name="adv_workspace" value="${ws.id}" ${isAssigned ? 'checked' : ''} style="accent-color: var(--humm-red-primary);" />
+              <strong style="color: var(--text-primary);">${ws.name}</strong>
+            </div>
+            <span class="text-xs text-muted">${ws.city || ws.industry || 'Comunidad'}</span>
+          </label>
+        `;
+      }).join('') : '<div class="text-xs text-muted">No hay emprendimientos registrados aún.</div>';
+    }
+  } else {
+    form.removeAttribute('data-edit-id');
+    form.reset();
+    if (titleEl) titleEl.textContent = '👔 + Nuevo Tutor / Ejecutivo Humm';
+    if (activeCheckbox) activeCheckbox.checked = true;
+    if (welcomeOptions) welcomeOptions.style.display = 'block';
+
+    if (wsChecklist) {
+      wsChecklist.innerHTML = allWorkspaces.length > 0 ? allWorkspaces.map(ws => `
+        <label style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 4px 8px; background: var(--bg-surface-primary); border-radius: var(--radius-xs); cursor: pointer;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="adv_workspace" value="${ws.id}" style="accent-color: var(--humm-red-primary);" />
+            <strong style="color: var(--text-primary);">${ws.name}</strong>
+          </div>
+          <span class="text-xs text-muted">${ws.city || ws.industry || 'Comunidad'}</span>
+        </label>
+      `).join('') : '<div class="text-xs text-muted">No hay emprendimientos registrados aún.</div>';
+    }
   }
 
-  // Preseleccionar tutor si se proporcionó
-  if (advisorSelect) {
-    if (preselectedAdvisor) {
-      const matching = Array.from(advisorSelect.options).find(opt => opt.value.startsWith(preselectedAdvisor));
-      if (matching) {
-        advisorSelect.value = matching.value;
-        if (customFields) customFields.style.display = 'none';
-      } else {
-        advisorSelect.value = 'custom';
-        if (customFields) {
-          customFields.style.display = 'block';
-          if (nameInput) nameInput.value = preselectedAdvisor;
-        }
-      }
-    } else {
-      advisorSelect.value = 'Valentina Castro|valentina@humm.cl';
-      if (customFields) customFields.style.display = 'none';
-    }
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
 
-    advisorSelect.onchange = () => {
-      if (advisorSelect.value === 'custom') {
-        if (customFields) customFields.style.display = 'block';
-      } else {
-        if (customFields) customFields.style.display = 'none';
-        const [advName, advEmail] = advisorSelect.value.split('|');
-        if (nameInput) nameInput.value = advName;
-        if (emailInput) emailInput.value = advEmail;
-      }
-    };
+export function openAdvisorAssignModalDirect(advisorId, container = null) {
+  const modal = document.getElementById('modal-advisor-assign-workspaces');
+  const form = document.getElementById('form-advisor-assign-workspaces');
+  if (!modal || !form) return;
+
+  const adv = store.getAdvisorById(advisorId);
+  if (!adv) return;
+
+  const nameTarget = document.getElementById('assign-advisor-target-name');
+  const emailTarget = document.getElementById('assign-advisor-target-email');
+  const idInput = document.getElementById('assign-advisor-id');
+  const emailInput = document.getElementById('assign-advisor-email');
+  const nameInput = document.getElementById('assign-advisor-name');
+  const wsListContainer = document.getElementById('modal-advisor-ws-list');
+
+  if (nameTarget) nameTarget.textContent = adv.name;
+  if (emailTarget) emailTarget.textContent = adv.email;
+  if (idInput) idInput.value = adv.id;
+  if (emailInput) emailInput.value = adv.email;
+  if (nameInput) nameInput.value = adv.name;
+
+  const allWorkspaces = store.getAllWorkspaces();
+  const advEmail = (adv.email || '').toLowerCase().trim();
+
+  if (wsListContainer) {
+    wsListContainer.innerHTML = allWorkspaces.length > 0 ? allWorkspaces.map(ws => {
+      const isAssigned = (ws.advisorEmail || '').toLowerCase().trim() === advEmail;
+      return `
+        <label style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 8px 12px; background: var(--bg-surface-primary); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); cursor: pointer;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" name="assign_ws" value="${ws.id}" ${isAssigned ? 'checked' : ''} style="accent-color: var(--humm-red-primary); width: 16px; height: 16px;" />
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">${ws.name}</div>
+              <div class="text-xs text-muted">${ws.ownerName || 'Titular'} • ${ws.city || 'Chile'}</div>
+            </div>
+          </div>
+          <span class="badge ${isAssigned ? 'badge-humm' : 'badge-neutral'} text-xs">
+            ${isAssigned ? 'Asignado' : 'Disponible'}
+          </span>
+        </label>
+      `;
+    }).join('') : '<div class="text-xs text-muted" style="text-align: center; padding: 20px;">No hay emprendimientos registrados en el sistema.</div>';
   }
-
-  // Manejar submit del formulario
-  form.onsubmit = (e) => {
-    e.preventDefault();
-    let advisorName = '';
-    let advisorEmail = '';
-
-    if (advisorSelect.value === 'custom') {
-      advisorName = nameInput ? nameInput.value.trim() : '';
-      advisorEmail = emailInput ? emailInput.value.trim() : '';
-    } else {
-      const parts = advisorSelect.value.split('|');
-      advisorName = parts[0];
-      advisorEmail = parts[1];
-    }
-
-    if (!advisorName || !advisorEmail) {
-      if (window.MiHummApp) window.MiHummApp.showToast('Por favor completa el nombre y correo del tutor', 'danger');
-      return;
-    }
-
-    const selectedTarget = targetSelect ? targetSelect.value : '';
-    if (selectedTarget.startsWith('user:')) {
-      const uId = selectedTarget.replace('user:', '');
-      store.assignAdvisorToUserOrWorkspace({ userId: uId, advisorName, advisorEmail });
-      const targetUser = store.getUser(uId);
-      const name = targetUser ? targetUser.name : 'Usuario';
-      if (window.MiHummApp) window.MiHummApp.showToast(`Tutor "${advisorName}" asignado a ${name}`, 'success');
-    } else if (selectedTarget.startsWith('ws:')) {
-      const wId = selectedTarget.replace('ws:', '');
-      store.assignAdvisorToUserOrWorkspace({ workspaceId: wId, advisorName, advisorEmail });
-      const targetWs = store.getWorkspace(wId);
-      const name = targetWs ? targetWs.name : 'Emprendimiento';
-      if (window.MiHummApp) window.MiHummApp.showToast(`Tutor "${advisorName}" asignado a ${name}`, 'success');
-    }
-
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-    if (container) renderAdminAdvisorsView(container);
-  };
 
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -822,26 +835,27 @@ function openAdvisorAssignmentModalDirect(targetUserId = null, targetWsId = null
 
 export function renderAdminAdvisorsView(container) {
   const advisors = store.getAdvisorsSummary();
-  const users = store.getAllUsers().filter(u => u.role !== 'admin');
-  const workspaces = store.getAllWorkspaces();
+  const allWorkspaces = store.getAllWorkspaces();
+  const assignedWsCount = allWorkspaces.filter(w => w.advisorName || w.advisorEmail).length;
+  const totalRequests = store.getSupportRequests().length;
 
-  // Filtrado de usuarios de la comunidad para la tabla
-  const filteredUsers = users.filter(u => {
-    const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-    const advisorName = u.advisorName || (ws ? ws.advisorName : null) || 'Valentina Castro';
-
-    if (adminAdvisorsFilter !== 'all' && advisorName !== adminAdvisorsFilter) {
-      return false;
+  // Filtrado de la tabla de tutores
+  const filteredAdvisors = advisors.filter(adv => {
+    if (adminAdvisorsFilter !== 'all') {
+      if (adminAdvisorsFilter === 'active' && !adv.isActive) return false;
+      if (adminAdvisorsFilter === 'inactive' && adv.isActive) return false;
+      if (adminAdvisorsFilter !== 'active' && adminAdvisorsFilter !== 'inactive' && adv.specialty !== adminAdvisorsFilter) return false;
     }
 
     if (adminAdvisorsSearchQuery.trim() !== '') {
       const q = adminAdvisorsSearchQuery.toLowerCase();
-      const userName = (u.name || '').toLowerCase();
-      const userEmail = (u.email || '').toLowerCase();
-      const wsName = ws ? ws.name.toLowerCase() : '';
-      const advName = advisorName.toLowerCase();
+      const advName = (adv.name || '').toLowerCase();
+      const advEmail = (adv.email || '').toLowerCase();
+      const advPhone = (adv.phone || '').toLowerCase();
+      const advSpec = (adv.specialty || '').toLowerCase();
+      const wsNames = (adv.workspaces || []).map(w => (w.name || '').toLowerCase()).join(' ');
 
-      if (!userName.includes(q) && !userEmail.includes(q) && !wsName.includes(q) && !advName.includes(q)) {
+      if (!advName.includes(q) && !advEmail.includes(q) && !advPhone.includes(q) && !advSpec.includes(q) && !wsNames.includes(q)) {
         return false;
       }
     }
@@ -849,27 +863,27 @@ export function renderAdminAdvisorsView(container) {
     return true;
   });
 
-  const totalAssigned = users.length;
-  const totalRequests = store.getSupportRequests().length;
+  // Especialidades únicas para el filtro
+  const specialties = Array.from(new Set(advisors.map(a => a.specialty).filter(Boolean)));
 
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
         <div style="display: flex; align-items: center; gap: 8px;">
           <h2>Tutores y Ejecutivos Humm</h2>
-          <span class="badge badge-humm text-xs">${advisors.length} Tutores Activos</span>
+          <span class="badge badge-humm text-xs">${advisors.length} Tutores Registrados</span>
         </div>
-        <p>Supervisión del equipo de tutores, asignación de cuentas y gestión personalizada de apoyo para los usuarios y emprendimientos de la comunidad.</p>
+        <p>Administración del equipo de tutores y ejecutivos asignados para apoyar, asesorar y acompañar a los emprendimientos de la comunidad.</p>
       </div>
       <div class="view-actions">
-        <button class="btn btn-primary" id="btn-admin-assign-advisor-top">
+        <button class="btn btn-primary" id="btn-admin-new-advisor">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
             <line x1="19" y1="8" x2="19" y2="14"></line>
             <line x1="22" y1="11" x2="16" y2="11"></line>
           </svg>
-          Asignar Tutor a Usuario
+          + Nuevo Tutor / Ejecutivo
         </button>
       </div>
     </div>
@@ -894,7 +908,7 @@ export function renderAdminAdvisorsView(container) {
 
       <div class="metric-card">
         <div class="metric-card-header">
-          <span class="metric-card-title">Usuarios Asignados</span>
+          <span class="metric-card-title">Tutores Activos</span>
           <div class="metric-icon-box" style="background: rgba(16, 185, 129, 0.12); color: var(--success);">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -902,26 +916,27 @@ export function renderAdminAdvisorsView(container) {
             </svg>
           </div>
         </div>
-        <div class="metric-value" style="color: var(--success);">${totalAssigned}</div>
-        <div class="metric-comparison"><span class="comparison-positive">100% con tutor asignado</span></div>
+        <div class="metric-value" style="color: var(--success);">${advisors.filter(a => a.isActive).length}</div>
+        <div class="metric-comparison"><span class="comparison-positive">Habilitados para soporte</span></div>
       </div>
 
       <div class="metric-card">
         <div class="metric-card-header">
-          <span class="metric-card-title">Solicitudes Atendidas</span>
+          <span class="metric-card-title">Emprendimientos Asignados</span>
           <div class="metric-icon-box" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
             </svg>
           </div>
         </div>
-        <div class="metric-value">${totalRequests}</div>
-        <div class="metric-comparison"><span class="comparison-neutral">Requerimientos de apoyo</span></div>
+        <div class="metric-value">${assignedWsCount} <span style="font-size: 14px; font-weight: 500; color: var(--text-muted);">/ ${allWorkspaces.length}</span></div>
+        <div class="metric-comparison"><span class="comparison-neutral">Cuentas con mentoría</span></div>
       </div>
 
       <div class="metric-card">
         <div class="metric-card-header">
-          <span class="metric-card-title">Tiempo de Respuesta</span>
+          <span class="metric-card-title">Requerimientos de Apoyo</span>
           <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -929,74 +944,12 @@ export function renderAdminAdvisorsView(container) {
             </svg>
           </div>
         </div>
-        <div class="metric-value" style="font-size: 1.4rem;">&lt; 4 hrs</div>
-        <div class="metric-comparison"><span class="comparison-positive">Atención prioritaria</span></div>
+        <div class="metric-value">${totalRequests}</div>
+        <div class="metric-comparison"><span class="comparison-neutral">Consultas de miembros</span></div>
       </div>
     </div>
 
-    <!-- SECCIÓN 1: TARJETAS DE TUTORES ACTIVOS -->
-    <div style="margin-bottom: 30px;">
-      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-        <span>👔</span> Equipo de Tutores y Ejecutivos Asignados
-      </h3>
-      <div class="grid grid-3" style="gap: 16px;">
-        ${advisors.map(adv => {
-          const userCount = adv.users ? adv.users.length : adv.workspaces.length;
-          return `
-            <div class="data-table-container" style="padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
-              <div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--humm-red-light); color: var(--humm-red-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem;">
-                      ${adv.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                    </div>
-                    <div>
-                      <h4 style="font-size: 14px; font-weight: 700; margin: 0; color: var(--text-primary);">${adv.name}</h4>
-                      <div class="text-xs text-muted">${adv.email}</div>
-                    </div>
-                  </div>
-                  <span class="badge badge-info text-xs" style="font-weight: 700;">${userCount} Usuarios</span>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
-                  <div style="background: var(--bg-surface-secondary); padding: 8px; border-radius: var(--radius-sm); text-align: center;">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">${adv.totalRequestsCount}</div>
-                    <div class="text-xs text-muted">Solicitudes</div>
-                  </div>
-                  <div style="background: var(--bg-surface-secondary); padding: 8px; border-radius: var(--radius-sm); text-align: center;">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: ${adv.pendingRequestsCount > 0 ? 'var(--danger)' : 'var(--success)'};">${adv.pendingRequestsCount}</div>
-                    <div class="text-xs text-muted">Pendientes</div>
-                  </div>
-                </div>
-
-                <div style="font-weight: 600; font-size: 11.5px; margin-bottom: 6px; color: var(--text-secondary);">
-                  Cuentas a su cargo:
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 12px;">
-                  ${adv.users && adv.users.length > 0 ? adv.users.map(u => {
-                    const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-                    return `
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; padding: 4px 8px; background: var(--bg-surface-secondary); border-radius: var(--radius-xs);">
-                        <span style="font-weight: 600; color: var(--text-primary);">${u.name}</span>
-                        <span class="text-xs text-muted">${ws ? ws.name : 'Comunidad'}</span>
-                      </div>
-                    `;
-                  }).join('') : `
-                    <div class="text-xs text-muted" style="padding: 6px 0;">Sin usuarios asignados directamente</div>
-                  `}
-                </div>
-              </div>
-
-              <button class="btn btn-secondary btn-sm btn-assign-to-this-advisor" data-advisor-name="${adv.name}" data-advisor-email="${adv.email}" style="width: 100%; font-size: 12px; font-weight: 600;">
-                + Asignar Usuarios a este Tutor
-              </button>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- SECCIÓN 2: TABLA GENERAL DE ASIGNACIONES DE USUARIOS -->
+    <!-- TABLA PRINCIPAL DE TUTORES Y EJECUTIVOS -->
     <div class="data-table-container">
       <div class="table-toolbar" style="flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; flex: 1;">
@@ -1007,13 +960,15 @@ export function renderAdminAdvisorsView(container) {
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </span>
-            <input type="text" id="admin-advisors-search" class="form-control" placeholder="Buscar usuario, empresa o tutor..." value="${adminAdvisorsSearchQuery}" />
+            <input type="text" id="admin-advisors-search" class="form-control" placeholder="Buscar por tutor, correo, área o empresa..." value="${adminAdvisorsSearchQuery}" />
           </div>
 
           <div style="min-width: 170px;">
             <select id="admin-advisors-filter" class="form-select" style="font-size: 13px; font-weight: 600; padding: 7px 10px;">
-              <option value="all" ${adminAdvisorsFilter === 'all' ? 'selected' : ''}>👔 Todos los tutores</option>
-              ${advisors.map(adv => `<option value="${adv.name}" ${adminAdvisorsFilter === adv.name ? 'selected' : ''}>${adv.name}</option>`).join('')}
+              <option value="all" ${adminAdvisorsFilter === 'all' ? 'selected' : ''}>Todos los tutores</option>
+              <option value="active" ${adminAdvisorsFilter === 'active' ? 'selected' : ''}>🟢 Solo Activos</option>
+              <option value="inactive" ${adminAdvisorsFilter === 'inactive' ? 'selected' : ''}>🔴 Solo Inactivos</option>
+              ${specialties.map(spec => `<option value="${spec}" ${adminAdvisorsFilter === spec ? 'selected' : ''}>📍 ${spec}</option>`).join('')}
             </select>
           </div>
 
@@ -1025,74 +980,106 @@ export function renderAdminAdvisorsView(container) {
         </div>
 
         <div style="font-size: 13px; color: var(--text-secondary); background: var(--bg-body); padding: 7px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); white-space: nowrap;">
-          <strong>${filteredUsers.length}</strong> usuarios listados
+          <strong>${filteredAdvisors.length}</strong> tutores listados
         </div>
       </div>
 
       <table class="data-table">
         <thead>
           <tr>
-            <th>Usuario de la Comunidad</th>
-            <th>Emprendimiento</th>
-            <th>Tutor / Ejecutivo Asignado</th>
-            <th>Correo de Soporte Humm</th>
+            <th>Tutor / Ejecutivo Humm</th>
+            <th>Especialidad / Área</th>
+            <th>Contacto</th>
+            <th>Emprendimientos a Cargo</th>
             <th>Estado</th>
             <th style="text-align: right;">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          ${filteredUsers.length > 0 ? filteredUsers.map(u => {
-            const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-            const currentAdvName = u.advisorName || (ws ? ws.advisorName : null) || 'Valentina Castro';
-            const currentAdvEmail = u.advisorEmail || (ws ? ws.advisorEmail : null) || 'valentina@humm.cl';
-
+          ${filteredAdvisors.length > 0 ? filteredAdvisors.map(adv => {
+            const cleanPhone = (adv.phone || '').replace(/\D/g, '');
             return `
               <tr>
                 <td>
                   <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--humm-red-primary); color: #FFF; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;">
-                      ${u.avatar || u.name.substring(0, 2).toUpperCase()}
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--humm-red-primary); color: #FFF; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      ${adv.avatar || adv.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div style="font-weight: 700; color: var(--text-primary);">${u.name}</div>
-                      <div class="text-xs text-muted">${u.email}</div>
+                      <div style="font-weight: 700; color: var(--text-primary); font-size: var(--font-size-sm);">${adv.name}</div>
+                      <div class="text-xs text-muted" style="font-family: monospace;">${adv.email}</div>
                     </div>
                   </div>
                 </td>
                 <td>
-                  ${ws ? `
-                    <div style="font-weight: 600; color: var(--text-primary);">${ws.name}</div>
-                    <div class="text-xs text-muted">${ws.industry || 'Comunidad Humm'}</div>
+                  <span class="badge badge-neutral text-xs" style="font-weight: 600;">
+                    ${adv.specialty || 'Mentoría General'}
+                  </span>
+                </td>
+                <td>
+                  ${adv.phone ? `
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-size: 12px; color: var(--text-primary);">${adv.phone}</span>
+                      ${cleanPhone ? `
+                        <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener noreferrer" style="color: #25D366; text-decoration: none;" title="Abrir chat de WhatsApp">
+                          💬
+                        </a>
+                      ` : ''}
+                    </div>
                   ` : `
-                    <span class="text-xs text-muted">Acceso Central</span>
+                    <span class="text-xs text-muted">Sin teléfono</span>
                   `}
                 </td>
                 <td>
-                  <span class="badge badge-info text-xs" style="font-size: 12px; font-weight: 700; padding: 4px 8px;">
-                    👔 ${currentAdvName}
-                  </span>
-                </td>
-                <td style="font-family: monospace; font-size: 12px; color: var(--text-secondary);">
-                  ${currentAdvEmail}
+                  <div style="display: flex; flex-direction: column; gap: 4px; max-width: 280px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                      ${(adv.workspaces && adv.workspaces.length > 0) ? adv.workspaces.map(w => `
+                        <span class="badge badge-info text-xs" style="font-size: 11px; padding: 2px 7px;">
+                          🏢 ${w.name}
+                        </span>
+                      `).join('') : `
+                        <span class="text-xs text-muted">Sin emprendimientos asignados</span>
+                      `}
+                    </div>
+                  </div>
                 </td>
                 <td>
-                  <span class="badge ${u.isActive !== false ? 'badge-success' : 'badge-danger'} text-xs">
-                    ${u.isActive !== false ? '🟢 Activo' : '🔴 Inactivo'}
-                  </span>
+                  <button class="badge ${adv.isActive ? 'badge-success' : 'badge-danger'} btn-toggle-advisor-status" data-adv-id="${adv.id}" title="Haz clic para ${adv.isActive ? 'desactivar' : 'activar'} este tutor" style="cursor: pointer; border: none; font-size: 11.5px; font-weight: 700;">
+                    ${adv.isActive ? '🟢 Activo' : '🔴 Inactivo'}
+                  </button>
                 </td>
                 <td style="text-align: right;">
-                  <button class="btn btn-primary btn-sm btn-reassign-user-advisor" data-user-id="${u.id}" data-ws-id="${u.workspaceId || ''}" data-advisor-name="${currentAdvName}" style="font-size: 11.5px; font-weight: 600; padding: 5px 10px;">
-                    👔 Asignar / Cambiar Tutor
-                  </button>
+                  <div style="display: flex; justify-content: flex-end; gap: 4px;">
+                    <button class="btn btn-secondary btn-sm btn-assign-advisor-ws" data-adv-id="${adv.id}" style="font-size: 11px; padding: 4px 8px; font-weight: 600;" title="Asignar emprendimientos">
+                      👔 Asignar
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-edit-advisor" data-adv-id="${adv.id}" title="Editar tutor">
+                      ✏️
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-delete-advisor" data-adv-id="${adv.id}" title="Eliminar tutor" style="color: var(--danger);">
+                      🗑️
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
           }).join('') : `
             <tr>
-              <td colspan="6" style="text-align: center; padding: 40px;">
-                <div style="font-size: 28px; margin-bottom: 8px;">👔</div>
-                <div style="font-weight: 700; color: var(--text-primary);">No se encontraron usuarios</div>
-                <p class="text-xs text-muted" style="margin-top: 4px;">Intenta cambiar los filtros o el término de búsqueda.</p>
+              <td colspan="6" style="text-align: center; padding: 48px;">
+                <div style="font-size: 38px; margin-bottom: 12px;">👔</div>
+                <div style="font-weight: 700; font-size: var(--font-size-base); color: var(--text-primary);">
+                  ${advisors.length === 0 ? 'Aún no hay tutores o ejecutivos registrados' : 'No se encontraron tutores con los filtros actuales'}
+                </div>
+                <p class="text-xs text-muted" style="max-width: 420px; margin: 8px auto 18px;">
+                  ${advisors.length === 0 
+                    ? 'Registra a los integrantes de tu equipo que prestarán mentoría, soporte y asesoría a los emprendimientos de la comunidad.' 
+                    : 'Intenta cambiar los términos de búsqueda o limpiar los filtros seleccionados.'}
+                </p>
+                ${advisors.length === 0 ? `
+                  <button class="btn btn-primary btn-sm" id="btn-empty-new-advisor">
+                    👔 + Crear Primer Tutor / Ejecutivo
+                  </button>
+                ` : ''}
               </td>
             </tr>
           `}
@@ -1126,29 +1113,61 @@ export function renderAdminAdvisorsView(container) {
     renderAdminAdvisorsView(container);
   });
 
-  // Botón superior Asignar Tutor
-  container.querySelector('#btn-admin-assign-advisor-top')?.addEventListener('click', (e) => {
+  // Botón Nuevo Tutor
+  container.querySelector('#btn-admin-new-advisor')?.addEventListener('click', (e) => {
     e.preventDefault();
-    openAdvisorAssignmentModalDirect(null, null, null, container);
+    openAdvisorEditModalDirect(null, container);
   });
 
-  // Botones de asignar a este tutor desde las tarjetas
-  container.querySelectorAll('.btn-assign-to-this-advisor').forEach(btn => {
+  container.querySelector('#btn-empty-new-advisor')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openAdvisorEditModalDirect(null, container);
+  });
+
+  // Toggle de estado Activo/Inactivo
+  container.querySelectorAll('.btn-toggle-advisor-status').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      const advName = btn.getAttribute('data-advisor-name');
-      openAdvisorAssignmentModalDirect(null, null, advName, container);
+      const advId = btn.getAttribute('data-adv-id');
+      const updated = store.toggleAdvisorStatus(advId);
+      if (updated && window.MiHummApp) {
+        window.MiHummApp.showToast(`Estado de "${updated.name}" cambiado a ${updated.isActive ? 'Activo' : 'Inactivo'}`, 'info');
+      }
+      renderAdminAdvisorsView(container);
     });
   });
 
-  // Botones de reasignar en cada fila de usuario
-  container.querySelectorAll('.btn-reassign-user-advisor').forEach(btn => {
+  // Asignar emprendimientos a tutor
+  container.querySelectorAll('.btn-assign-advisor-ws').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      const userId = btn.getAttribute('data-user-id');
-      const wsId = btn.getAttribute('data-ws-id');
-      const advName = btn.getAttribute('data-advisor-name');
-      openAdvisorAssignmentModalDirect(userId, wsId, advName, container);
+      const advId = btn.getAttribute('data-adv-id');
+      openAdvisorAssignModalDirect(advId, container);
+    });
+  });
+
+  // Editar tutor
+  container.querySelectorAll('.btn-edit-advisor').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const advId = btn.getAttribute('data-adv-id');
+      openAdvisorEditModalDirect(advId, container);
+    });
+  });
+
+  // Eliminar tutor
+  container.querySelectorAll('.btn-delete-advisor').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const advId = btn.getAttribute('data-adv-id');
+      const adv = store.getAdvisorById(advId);
+      if (!adv) return;
+
+      if (confirm(`¿Estás seguro de eliminar al tutor "${adv.name}" (${adv.email})? Se liberarán sus emprendimientos asignados.`)) {
+        store.deleteAdvisor(advId);
+        if (window.MiHummApp) window.MiHummApp.showToast(`Tutor "${adv.name}" eliminado`, 'success');
+        renderAdminAdvisorsView(container);
+      }
     });
   });
 }

@@ -935,10 +935,10 @@
           <div style="background-color: var(--bg-surface-secondary); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 18px;">
             <div class="text-xs text-muted font-semibold">Tu Ejecutivo / Tutor Humm Asignado:</div>
             <div style="font-weight: 700; font-size: var(--font-size-base); color: var(--text-primary); margin-top: 2px;" id="req-support-advisor-name">
-              Valentina Castro
+              Equipo de Apoyo Humm Co-Creation
             </div>
             <div style="font-size: var(--font-size-xs); color: var(--humm-red-primary);" id="req-support-advisor-email">
-              valentina@humm.cl
+              contacto@humm.cl
             </div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
               Tu requerimiento le llegará directamente con copia a <strong>contacto@humm.cl</strong>.
@@ -1311,6 +1311,119 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-primary btn-block modal-cancel-btn">Entendido</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal 9.6: Admin - Crear / Editar Tutor o Ejecutivo Humm -->
+  <div id="modal-advisor-edit" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="modal-advisor-header-title">👔 Tutor / Ejecutivo Humm</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-admin-advisor-edit">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label" for="admin-adv-name">Nombre Completo del Tutor *</label>
+              <input type="text" id="admin-adv-name" class="form-control" required placeholder="Ej. Camila Fuentes, Matías Rojas..." />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="admin-adv-phone">Teléfono / WhatsApp</label>
+              <input type="tel" id="admin-adv-phone" class="form-control" placeholder="+56 9 1234 5678" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="admin-adv-email">Correo Electrónico *</label>
+              <input type="email" id="admin-adv-email" class="form-control" required placeholder="ejemplo@humm.cl" />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="admin-adv-specialty">Especialidad / Área *</label>
+              <select id="admin-adv-specialty" class="form-control" required>
+                <option value="Mentoría General & Estrategia">🧭 Mentoría General & Estrategia</option>
+                <option value="Ventas & Gestión Comercial">💰 Ventas & Gestión Comercial</option>
+                <option value="Marketing Digital & Redes">📣 Marketing Digital & Redes</option>
+                <option value="Finanzas, Costos & Fondos">🌱 Finanzas, Costos & Fondos</option>
+                <option value="Operaciones & Procesos">⚙️ Operaciones & Procesos</option>
+                <option value="Legal & Estructura Tributaria">⚖️ Legal & Estructura Tributaria</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-adv-pass">Contraseña de Acceso</label>
+            <input type="text" id="admin-adv-pass" class="form-control" placeholder="Dejar en blanco para conservar la actual (Por defecto: humm2026)" />
+            <span class="form-hint" style="font-size: 11px;">Al crear el tutor, si se deja en blanco se asignará la contraseña inicial <code>humm2026</code>.</span>
+          </div>
+
+          <!-- ASIGNACIÓN DE EMPRENDIMIENTOS A CARGO -->
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label">Emprendimientos y Espacios Asignados</label>
+            <div id="admin-adv-workspaces-checklist" style="max-height: 140px; overflow-y: auto; background: var(--bg-surface-secondary); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 8px;">
+              <!-- Se puebla dinámicamente -->
+            </div>
+            <span class="form-hint" style="font-size: 11px;">Marca los emprendimientos que este tutor supervisará y apoyará directamente.</span>
+          </div>
+
+          <!-- ESTADO ACTIVO -->
+          <div class="form-group" style="margin-top: 12px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="admin-adv-active" style="accent-color: var(--humm-red-primary);" checked />
+              <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Tutor Activo (habilitado para iniciar sesión y atender requerimientos)</span>
+            </label>
+          </div>
+
+          <!-- BIENVENIDA Y SEGURIDAD -->
+          <div id="admin-adv-welcome-options" class="form-group" style="margin-top: 10px; padding: 12px 14px; background: rgba(229, 56, 59, 0.04); border: 1px solid rgba(229, 56, 59, 0.15); border-radius: var(--radius-md);">
+            <div style="font-size: var(--font-size-xs); font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+              ✉️ Correo de Bienvenida & Contraseña
+            </div>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-bottom: 6px;">
+              <input type="checkbox" id="admin-adv-send-welcome" style="accent-color: var(--humm-red-primary);" checked />
+              <span style="font-size: 13px; color: var(--text-primary);">Enviar correo de bienvenida con credenciales al tutor</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+              <input type="checkbox" id="admin-adv-must-change-pass" style="accent-color: var(--humm-red-primary);" checked />
+              <span style="font-size: 13px; color: var(--text-primary);">Requerir cambio de contraseña en el primer inicio de sesión</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-admin-advisor">Guardar Tutor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 9.7: Admin - Asignación Rápida de Emprendimientos a Tutor -->
+  <div id="modal-advisor-assign-workspaces" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="modal-advisor-assign-title">👔 Asignar Emprendimientos a Tutor</h3>
+        <button class="modal-close-btn" aria-label="Cerrar modal">✕</button>
+      </div>
+      <form id="form-advisor-assign-workspaces">
+        <div class="modal-body">
+          <p class="text-xs text-secondary" style="margin-bottom: 14px;">
+            Selecciona los espacios de emprendimiento que estarán asignados a <strong id="assign-advisor-target-name"></strong> (<span id="assign-advisor-target-email" style="font-family: monospace;"></span>):
+          </p>
+          <input type="hidden" id="assign-advisor-id" value="" />
+          <input type="hidden" id="assign-advisor-email" value="" />
+          <input type="hidden" id="assign-advisor-name" value="" />
+
+          <div id="modal-advisor-ws-list" style="max-height: 260px; overflow-y: auto; background: var(--bg-surface-secondary); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 10px;">
+            <!-- Cargado dinámicamente con checkboxes de workspaces -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Asignaciones</button>
+        </div>
+      </form>
     </div>
   </div>
 

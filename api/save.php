@@ -304,14 +304,16 @@ try {
                     }
                 }
 
-                $sql = 'INSERT INTO users (id, workspace_id, name, email, password_hash, role, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email, must_change_password, reset_token)
-                        VALUES (:id, :workspace_id, :name, :email, :password_hash, :role, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email, :must_change_password, :reset_token)
+                $sql = 'INSERT INTO users (id, workspace_id, name, email, phone, password_hash, role, specialty, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email, must_change_password, reset_token)
+                        VALUES (:id, :workspace_id, :name, :email, :phone, :password_hash, :role, :specialty, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email, :must_change_password, :reset_token)
                         ON DUPLICATE KEY UPDATE
                         name = VALUES(name),
                         email = VALUES(email),
+                        phone = VALUES(phone),
                         workspace_id = VALUES(workspace_id),
                         password_hash = IF(VALUES(password_hash) != "" AND VALUES(password_hash) IS NOT NULL, VALUES(password_hash), password_hash),
                         role = VALUES(role),
+                        specialty = VALUES(specialty),
                         avatar = VALUES(avatar),
                         is_active = VALUES(is_active),
                         assigned_tool_ids = VALUES(assigned_tool_ids),
@@ -325,8 +327,10 @@ try {
                     ':workspace_id' => $item['workspaceId'] ?? $item['workspace_id'] ?? null,
                     ':name' => $item['name'] ?? '',
                     ':email' => $item['email'] ?? '',
+                    ':phone' => $item['phone'] ?? null,
                     ':password_hash' => $passHash,
                     ':role' => $item['role'] ?? 'entrepreneur',
+                    ':specialty' => $item['specialty'] ?? null,
                     ':avatar' => $item['avatar'] ?? 'U',
                     ':is_active' => isset($item['isActive']) ? ($item['isActive'] ? 1 : 0) : 1,
                     ':assigned_tool_ids' => json_encode($item['assignedToolIds'] ?? $item['assigned_tool_ids'] ?? [], JSON_UNESCAPED_UNICODE),
