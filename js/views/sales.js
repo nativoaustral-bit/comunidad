@@ -37,10 +37,10 @@ export function renderSalesView(container) {
   const currentMonthTotal = currentMonthSales.reduce((sum, s) => sum + s.amount, 0);
   const prevMonthTotal = prevMonthSales.reduce((sum, s) => sum + s.amount, 0);
 
-  // Total cobrado vs pendiente general
+  // Total cobrado vs pendiente general (incluye pendientes, en cobranza, abonos y ventas por facturar)
   const totalPaid = sales.filter(s => s.paymentStatus === 'pagado').reduce((sum, s) => sum + s.amount, 0);
-  const totalPending = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono').reduce((sum, s) => sum + s.amount, 0);
-  const pendingCount = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono').length;
+  const totalPending = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').reduce((sum, s) => sum + s.amount, 0);
+  const pendingCount = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').length;
 
   // Total últimos 12 meses
   const recent12Sales = sales.slice(-12);
@@ -384,7 +384,20 @@ export function renderSalesView(container) {
         ${filteredSales.length > 0 ? [...filteredSales].reverse().map(sale => {
           const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
           const saleDate = sale.date ? formatDateCL(sale.date) : `${formatMonthName(sale.month)} ${sale.year}`;
+          const isToInvoice = sale.paymentStatus === 'por_facturar';
           const isPending = sale.paymentStatus === 'pendiente' || sale.paymentStatus === 'vencido' || sale.paymentStatus === 'abono';
+          const isDueOver = sale.dueDate && isDateOverdue(sale.dueDate) && isPending;
+
+          let statusBadge = '<span class="badge badge-success text-xs">✅ Pagado</span>';
+          if (isToInvoice) {
+            statusBadge = '<span class="badge badge-neutral text-xs" style="background: rgba(100, 116, 139, 0.15); color: #334155; font-weight: 700;">📄 Por Facturar</span>';
+          } else if (sale.paymentStatus === 'pendiente') {
+            statusBadge = '<span class="badge badge-warning text-xs">⏳ Pendiente</span>';
+          } else if (sale.paymentStatus === 'abono') {
+            statusBadge = '<span class="badge badge-info text-xs">💳 Abonado</span>';
+          } else if (sale.paymentStatus === 'vencido' || isDueOver) {
+            statusBadge = '<span class="badge badge-danger text-xs">⚠️ En Cobranza</span>';
+          }
 
           return `
             <div class="adaptive-item-card" style="padding: 16px;">
@@ -402,15 +415,18 @@ export function renderSalesView(container) {
 
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: var(--font-size-xs);">
                 <span>Estado:</span>
-                <span class="badge ${sale.paymentStatus === 'pagado' ? 'badge-success' : 'badge-warning'} text-xs">
-                  ${sale.paymentStatus === 'pagado' ? '✅ Pagado' : '⏳ Pendiente'}
-                </span>
+                ${statusBadge}
               </div>
 
               ${sale.notes ? `<div class="adaptive-card-body" style="font-size: var(--font-size-xs); margin-bottom: 10px;">${sale.notes}</div>` : ''}
 
               <div class="adaptive-card-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
-                ${isPending ? `
+                ${isToInvoice ? `
+                  <button class="btn btn-secondary btn-sm btn-mark-sale-billed" data-sale-id="${sale.id}">
+                    🧾 Emitir
+                  </button>
+                ` : ''}
+                ${isPending || isToInvoice ? `
                   <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${sale.id}">
                     💰 Pagado
                   </button>
