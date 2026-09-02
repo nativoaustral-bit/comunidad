@@ -28,9 +28,11 @@ try {
             'name' => $t['name'],
             'category' => $t['category'] ?? 'Gestión Comercial',
             'description' => $t['description'] ?? '',
+            'status' => $t['status'] ?? 'disponible',
             'url' => $t['url'] ?? '',
             'icon' => $t['icon'] ?? '🚀',
             'sortOrder' => (int)($t['sort_order'] ?? 1),
+            'order' => (int)($t['sort_order'] ?? 1),
             'isVisible' => (bool)($t['is_visible'] ?? 1),
             'isIncluded' => (bool)($t['is_included'] ?? 1),
             'createdAt' => $t['created_at'] ?? null
@@ -71,6 +73,25 @@ try {
         $p['order'] = (int)($p['sort_order'] ?? 1);
     }
     $data['subscription_plans'] = $plans;
+
+    // 3.1 Difusión y Comunicados
+    $stmtBc = $pdo->query('SELECT * FROM broadcasts ORDER BY created_at DESC');
+    $rawBc = $stmtBc->fetchAll();
+    $broadcasts = [];
+    foreach ($rawBc as $bc) {
+        $broadcasts[] = [
+            'id' => $bc['id'],
+            'title' => $bc['title'],
+            'category' => $bc['category'] ?? 'Noticia de la Comunidad',
+            'targetAudience' => $bc['target_audience'] ?? 'Todos los Emprendedores',
+            'content' => $bc['content'] ?? '',
+            'authorName' => $bc['author_name'] ?? 'Administración Humm',
+            'channels' => !empty($bc['channels']) ? json_decode($bc['channels'], true) : [],
+            'reachCount' => (int)($bc['reach_count'] ?? 0),
+            'createdAt' => $bc['created_at'] ?? null
+        ];
+    }
+    $data['broadcasts'] = $broadcasts;
 
     // 4. Gestión Global para Administradores
     if ($role === 'admin') {
@@ -127,10 +148,57 @@ try {
         $data['workspaces'] = $workspaces;
 
         $stmtSubs = $pdo->query('SELECT * FROM subscriptions ORDER BY created_at DESC');
-        $data['subscriptions'] = $stmtSubs->fetchAll();
+        $rawSubs = $stmtSubs->fetchAll();
+        $subs = [];
+        foreach ($rawSubs as $s) {
+            $subs[] = [
+                'id' => $s['id'],
+                'userId' => $s['user_id'] ?? null,
+                'workspaceId' => $s['workspace_id'] ?? null,
+                'clientName' => $s['client_name'] ?? 'Emprendedor Humm',
+                'clientEmail' => $s['client_email'] ?? '',
+                'clientPhone' => $s['client_phone'] ?? '',
+                'businessName' => $s['business_name'] ?? 'Emprendimiento',
+                'planId' => $s['plan_id'] ?? 'plan-base',
+                'planName' => $s['plan_name'] ?? 'Plan Base',
+                'monthlyPrice' => (int)($s['monthly_price'] ?? 0),
+                'status' => $s['status'] ?? 'trial',
+                'trialDaysTotal' => (int)($s['trial_days_total'] ?? 14),
+                'trialDaysLeft' => (int)($s['trial_days_left'] ?? 14),
+                'isTrial' => (bool)($s['is_trial'] ?? 0),
+                'paymentStatus' => $s['payment_status'] ?? 'pending',
+                'joinedDate' => $s['joined_date'] ?? null,
+                'lastPaymentDate' => $s['last_payment_date'] ?? null,
+                'nextBillingDate' => $s['next_billing_date'] ?? null,
+                'paymentMethod' => $s['payment_method'] ?? 'Webpay',
+                'paymentLink' => $s['payment_link'] ?? '',
+                'createdAt' => $s['created_at'] ?? null
+            ];
+        }
+        $data['subscriptions'] = $subs;
 
         $stmtRequests = $pdo->query('SELECT * FROM support_requests ORDER BY created_at DESC');
-        $data['support_requests'] = $stmtRequests->fetchAll();
+        $rawRequests = $stmtRequests->fetchAll();
+        $requests = [];
+        foreach ($rawRequests as $r) {
+            $requests[] = [
+                'id' => $r['id'],
+                'workspaceId' => $r['workspace_id'] ?? null,
+                'userId' => $r['user_id'] ?? null,
+                'workspaceName' => $r['workspace_name'] ?? '',
+                'userName' => $r['user_name'] ?? '',
+                'userEmail' => $r['user_email'] ?? '',
+                'requestType' => $r['request_type'] ?? 'Consulta general',
+                'subject' => $r['subject'] ?? '',
+                'description' => $r['description'] ?? '',
+                'contactPreference' => $r['contact_preference'] ?? '',
+                'advisorName' => $r['advisor_name'] ?? null,
+                'advisorEmail' => $r['advisor_email'] ?? null,
+                'status' => $r['status'] ?? 'pendiente',
+                'createdAt' => $r['created_at'] ?? null
+            ];
+        }
+        $data['support_requests'] = $requests;
     } elseif (!empty($workspaceId)) {
         // Si no es admin pero tiene workspace asignado
         $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
@@ -167,19 +235,32 @@ try {
         $rawCust = $stmtCustomers->fetchAll();
         $customers = [];
         foreach ($rawCust as $c) {
+            $firstName = $c['name'];
+            $lastName = $c['last_name'] ?? '';
+            if (empty($lastName) && strpos($c['name'], ' ') !== false) {
+                $parts = explode(' ', $c['name'], 2);
+                $firstName = $parts[0];
+                $lastName = $parts[1] ?? '';
+            }
             $customers[] = [
                 'id' => $c['id'],
                 'workspaceId' => $c['workspace_id'],
                 'name' => $c['name'],
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'company' => $c['company'] ?? '',
                 'rut' => $c['rut'] ?? '',
                 'email' => $c['email'] ?? '',
                 'phone' => $c['phone'] ?? '',
+                'region' => $c['region'] ?? '',
+                'comuna' => $c['comuna'] ?? '',
                 'city' => $c['city'] ?? '',
-                'comuna' => $c['city'] ?? '',
                 'address' => $c['address'] ?? '',
-                'notes' => $c['notes'] ?? '',
-                'totalPurchases' => (float)($c['total_purchases'] ?? 0),
+                'sourceChannel' => $c['source_channel'] ?? 'Recomendación',
                 'status' => $c['status'] ?? 'active',
+                'totalPurchases' => (float)($c['total_purchases'] ?? 0),
+                'lastPurchaseDate' => $c['last_purchase_date'] ?? null,
+                'notes' => $c['notes'] ?? '',
                 'createdAt' => $c['created_at'] ?? null
             ];
         }
@@ -211,14 +292,24 @@ try {
         $rawTasks = $stmtTasks->fetchAll();
         $tasks = [];
         foreach ($rawTasks as $t) {
+            $rawStatus = $t['status'] ?? 'todo';
+            if ($rawStatus === '' || $rawStatus === 'pendiente') $rawStatus = 'todo';
+            elseif ($rawStatus === 'en_proceso' || $rawStatus === 'en_progreso') $rawStatus = 'in_progress';
+            elseif ($rawStatus === 'completada') $rawStatus = 'done';
+
             $tasks[] = [
                 'id' => $t['id'],
                 'workspaceId' => $t['workspace_id'],
                 'title' => $t['title'],
                 'description' => $t['description'] ?? '',
+                'startDate' => $t['start_date'] ?? null,
                 'dueDate' => $t['due_date'] ?? null,
-                'priority' => $t['priority'] ?? 'medium',
-                'status' => $t['status'] ?? 'pending',
+                'priority' => $t['priority'] ?? 'media',
+                'status' => $rawStatus,
+                'tag' => $t['tag'] ?? '',
+                'customerId' => $t['customer_id'] ?? null,
+                'opportunityId' => $t['opportunity_id'] ?? null,
+                'completedAt' => $t['completed_at'] ?? null,
                 'createdAt' => $t['created_at'] ?? null
             ];
         }

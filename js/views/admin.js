@@ -2608,6 +2608,20 @@ export function renderAdminSubscriptionsView(container) {
         <tbody>
           ${filteredSubs.length > 0 ? filteredSubs.map(sub => {
             const isSelected = selectedSubscriptionIds.has(sub.id);
+            const clientName = sub.clientName || sub.client_name || 'Emprendedor Humm';
+            const clientEmail = sub.clientEmail || sub.client_email || '';
+            const clientPhone = sub.clientPhone || sub.client_phone || '';
+            const businessName = sub.businessName || sub.business_name || 'Emprendimiento';
+            const planName = sub.planName || sub.plan_name || 'Plan Base';
+            const monthlyPrice = sub.monthlyPrice ?? sub.monthly_price ?? 0;
+            const joinedDate = sub.joinedDate || sub.joined_date;
+            const nextBillingDate = sub.nextBillingDate || sub.next_billing_date;
+            const trialDaysLeft = sub.trialDaysLeft ?? sub.trial_days_left ?? 0;
+            const isTrial = sub.isTrial ?? sub.is_trial ?? (sub.status === 'trial');
+            const status = sub.status || 'trial';
+            const paymentStatus = sub.paymentStatus || sub.payment_status || 'pending';
+            const initials = clientName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2) || 'CL';
+
             return `
               <tr style="${isSelected ? 'background: rgba(229, 56, 59, 0.05);' : ''}">
                 <td style="text-align: center;">
@@ -2616,44 +2630,44 @@ export function renderAdminSubscriptionsView(container) {
                 <td>
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--humm-red-primary); color: #FFF; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;">
-                      ${sub.clientName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                      ${initials}
                     </div>
                     <div>
-                      <div style="font-weight: 700; color: var(--text-primary);">${sub.clientName}</div>
-                      <div class="text-xs text-muted">${sub.clientEmail}</div>
+                      <div style="font-weight: 700; color: var(--text-primary);">${clientName}</div>
+                      <div class="text-xs text-muted">${clientEmail}</div>
                       <div class="text-xs" style="color: #25D366; font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-                        <span>📱</span> ${sub.clientPhone || 'Sin teléfono'}
+                        <span>📱</span> ${clientPhone || 'Sin teléfono'}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td>
-                  <div style="font-weight: 600; color: var(--text-primary);">${sub.businessName}</div>
+                  <div style="font-weight: 600; color: var(--text-primary);">${businessName}</div>
                 </td>
                 <td style="font-size: 12px; color: var(--text-secondary);">
-                  ${formatDateCL(sub.joinedDate)}
+                  ${joinedDate ? formatDateCL(joinedDate) : 'Reciente'}
                 </td>
                 <td>
                   <div>
                     <span class="badge badge-neutral text-xs" style="font-weight: 700; margin-bottom: 2px;">
-                      ${sub.planName}
+                      ${planName}
                     </span>
                     <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">
-                      ${formatCLP(sub.monthlyPrice)} <span style="font-size: 10.5px; font-weight: normal; color: var(--text-muted);">/ mes +IVA</span>
+                      ${formatCLP(monthlyPrice)} <span style="font-size: 10.5px; font-weight: normal; color: var(--text-muted);">/ mes +IVA</span>
                     </div>
                   </div>
                 </td>
                 <td>
-                  ${sub.isTrial || sub.status === 'trial' ? `
+                  ${isTrial || status === 'trial' ? `
                     <div>
                       <span class="badge badge-warning text-xs" style="font-weight: 700;">
-                        🟡 Prueba (${sub.trialDaysLeft} días rest.)
+                        🟡 Prueba (${trialDaysLeft} días rest.)
                       </span>
                       <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                        Corte: ${formatDateCL(sub.nextBillingDate)}
+                        Corte: ${nextBillingDate ? formatDateCL(nextBillingDate) : 'Por definir'}
                       </div>
                     </div>
-                  ` : sub.status === 'overdue' ? `
+                  ` : status === 'overdue' ? `
                     <span class="badge badge-danger text-xs" style="font-weight: 700;">
                       🔴 Pago Vencido
                     </span>
@@ -2663,17 +2677,17 @@ export function renderAdminSubscriptionsView(container) {
                         🟢 Suscripción Activa
                       </span>
                       <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                        Próx: ${formatDateCL(sub.nextBillingDate)}
+                        Próx: ${nextBillingDate ? formatDateCL(nextBillingDate) : 'Al día'}
                       </div>
                     </div>
                   `}
                 </td>
                 <td>
-                  ${sub.paymentStatus === 'paid' ? `
+                  ${paymentStatus === 'paid' ? `
                     <span class="badge badge-success text-xs" style="font-weight: 700; padding: 4px 8px;">
                       🟢 Al día (Pagado)
                     </span>
-                  ` : sub.paymentStatus === 'overdue' ? `
+                  ` : paymentStatus === 'overdue' ? `
                     <span class="badge badge-danger text-xs" style="font-weight: 700; padding: 4px 8px;">
                       🔴 Vencido
                     </span>
@@ -2696,7 +2710,7 @@ export function renderAdminSubscriptionsView(container) {
                     </button>
 
                     <!-- Botón Marcar Pagado -->
-                    ${sub.paymentStatus !== 'paid' ? `
+                    ${paymentStatus !== 'paid' ? `
                       <button class="btn btn-ghost btn-sm btn-mark-single-paid" data-sub-id="${sub.id}" title="Marcar como pagado este mes" style="color: var(--success); font-weight: 800; padding: 5px 8px; border: 1px solid var(--border-color);">
                         ✓
                       </button>

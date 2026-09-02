@@ -123,9 +123,16 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `id` VARCHAR(40) NOT NULL,
   `workspace_id` VARCHAR(40) NOT NULL,
   `name` VARCHAR(120) NOT NULL,
+  `last_name` VARCHAR(100) DEFAULT NULL,
+  `rut` VARCHAR(20) DEFAULT NULL,
   `email` VARCHAR(150) DEFAULT NULL,
   `phone` VARCHAR(50) DEFAULT NULL,
   `company` VARCHAR(150) DEFAULT NULL,
+  `region` VARCHAR(100) DEFAULT NULL,
+  `comuna` VARCHAR(100) DEFAULT NULL,
+  `city` VARCHAR(100) DEFAULT NULL,
+  `address` VARCHAR(200) DEFAULT NULL,
+  `source_channel` VARCHAR(100) DEFAULT 'Recomendación',
   `status` ENUM('activo', 'inactivo', 'prospecto') DEFAULT 'activo',
   `total_purchases` INT UNSIGNED DEFAULT 0,
   `last_purchase_date` DATE DEFAULT NULL,
@@ -171,8 +178,13 @@ CREATE TABLE IF NOT EXISTS `tasks` (
   `title` VARCHAR(200) NOT NULL,
   `description` TEXT DEFAULT NULL,
   `priority` ENUM('alta', 'media', 'baja') DEFAULT 'media',
-  `status` ENUM('pendiente', 'en_proceso', 'completada') DEFAULT 'pendiente',
+  `start_date` DATE DEFAULT NULL,
+  `status` VARCHAR(50) DEFAULT 'todo',
   `due_date` DATE DEFAULT NULL,
+  `tag` VARCHAR(100) DEFAULT NULL,
+  `customer_id` VARCHAR(40) DEFAULT NULL,
+  `opportunity_id` VARCHAR(40) DEFAULT NULL,
+  `completed_at` DATETIME DEFAULT NULL,
   `assigned_to` VARCHAR(120) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -308,19 +320,38 @@ CREATE TABLE IF NOT EXISTS `tools` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -------------------------------------------------------------------------
+-- 14. TABLA: broadcasts (Difusión y Comunicados Masivos)
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `broadcasts` (
+  `id` VARCHAR(40) NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `category` VARCHAR(100) DEFAULT 'Noticia de la Comunidad',
+  `target_audience` VARCHAR(100) DEFAULT 'Todos los Emprendedores',
+  `content` TEXT DEFAULT NULL,
+  `author_name` VARCHAR(120) DEFAULT 'Administración Humm',
+  `channels` TEXT DEFAULT NULL,
+  `reach_count` INT DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- =========================================================================
 -- DATOS SEMILLA INICIALES (PRODUCCIÓN - PARTIDA DE CERO)
 -- =========================================================================
 
--- Usuario Administrador Central Inicial (admin@humm.cl / admin)
+-- Usuario Administrador Central Inicial (contacto@humm.cl / humm2026)
 INSERT INTO `users` (`id`, `workspace_id`, `name`, `email`, `password_hash`, `role`, `avatar`, `is_active`, `assigned_tool_ids`, `advisor_name`, `advisor_email`, `created_at`) VALUES
-('usr-admin', NULL, 'Administrador Humm', 'admin@humm.cl', '$2y$10$wK1F5N8qXN8jLwH6fO6aheJ3bK3Z1xT5jU9vP0mO2sT4qR8wN2h6W', 'admin', 'AH', 1, '[]', NULL, NULL, '2026-01-01 08:00:00');
+('usr-admin', NULL, 'Administrador Humm', 'contacto@humm.cl', '$2y$10$tZ2E7f2i7rY7r0qXgR6E6e.rR8i.XjP8LqjP2n8nE.1N2k3l4m5O6', 'admin', 'AH', 1, '[]', NULL, NULL, '2026-01-01 08:00:00')
+ON DUPLICATE KEY UPDATE role = 'admin', is_active = 1;
 
 -- Subscription Plans
 INSERT INTO `subscription_plans` (`id`, `name`, `price`, `trial_days`, `description`, `features`, `status`, `sort_order`) VALUES
 ('plan-base', 'Plan Emprendedor Base', 19990, 14, 'Acceso a herramientas esenciales de gestión comercial y red de apoyo.', '["2 Herramientas Humm a elección", "14 días de prueba gratuita", "Soporte y comunidad", "Acceso a red de convenios"]', 'active', 1),
 ('plan-crecimiento', 'Plan Crecimiento Humm', 34990, 30, 'El plan más popular para negocios en expansión. Acceso a todas las herramientas y tutoría.', '["Todas las herramientas Humm habilitadas", "30 días de prueba gratuita", "Tutor y ejecutivo exclusivo", "Descuentos de empresas colaboradoras"]', 'active', 2),
-('plan-pro', 'Plan Pro Co-Creation', 59990, 0, 'Máximo nivel de acompañamiento con consultoría 1 a 1 y vitrina comercial destacada.', '["Suite completa de soluciones Humm", "Mentorías personalizadas mensuales", "Vitrina y difusión destacada", "Sin periodo de prueba (Pago directo)"]', 'active', 3);
+('plan-pro', 'Plan Pro Co-Creation', 59990, 0, 'Máximo nivel de acompañamiento con consultoría 1 a 1 y vitrina comercial destacada.', '["Suite completa de soluciones Humm", "Mentorías personalizadas mensuales", "Vitrina y difusión destacada", "Sin periodo de prueba (Pago directo)"]', 'active', 3)
+ON DUPLICATE KEY UPDATE price = VALUES(price), trial_days = VALUES(trial_days), description = VALUES(description), features = VALUES(features), status = VALUES(status), sort_order = VALUES(sort_order);
 
 -- Tools (Catálogo de Soluciones Humm)
 INSERT INTO `tools` (`id`, `name`, `description`, `category`, `status`, `url`, `icon`, `sort_order`, `is_visible`, `is_included`) VALUES
@@ -329,6 +360,7 @@ INSERT INTO `tools` (`id`, `name`, `description`, `category`, `status`, `url`, `
 ('tool-kinetic', 'Kinetic Control', 'Supervisa y organiza las operaciones diarias y tiempos de tu negocio.', 'Gestión', 'disponible', 'https://kinetic.humm.cl', 'activity', 3, 1, 1),
 ('tool-humm-radar', 'Humm Radar', 'Diagnostica la salud de tu emprendimiento y descubre oportunidades de mejora.', 'Diagnóstico', 'disponible', 'https://radar.humm.cl', 'radar', 4, 1, 1),
 ('tool-humm-link', 'Humm Link', 'Tu vitrina digital y enlace directo con botones de compra para bio y redes.', 'Comunicación', 'disponible', 'https://link.humm.cl', 'link', 5, 1, 1),
-('tool-orientador', 'Orientador de Financiamiento', 'Descubre fondos concursables, subsidios y opciones de financiamiento para tu etapa.', 'Financiamiento', 'proximamente', 'https://fondos.humm.cl', 'dollar-sign', 6, 1, 0);
+('tool-orientador', 'Orientador de Financiamiento', 'Descubre fondos concursables, subsidios y opciones de financiamiento para tu etapa.', 'Financiamiento', 'proximamente', 'https://fondos.humm.cl', 'dollar-sign', 6, 1, 0)
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), category = VALUES(category), status = VALUES(status), url = VALUES(url), icon = VALUES(icon), sort_order = VALUES(sort_order), is_visible = VALUES(is_visible), is_included = VALUES(is_included);
 
 SET FOREIGN_KEY_CHECKS = 1;

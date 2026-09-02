@@ -241,7 +241,9 @@ class Store {
         if (json.success && json.data) {
           if (Array.isArray(json.data.tools)) this.data.tools = json.data.tools;
           if (Array.isArray(json.data.company_discounts)) this.data.companyDiscounts = json.data.company_discounts;
-          if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans.length > 0 ? json.data.subscription_plans : INITIAL_STATE.subscriptionPlans;
+          if (Array.isArray(json.data.subscription_plans)) this.data.subscriptionPlans = json.data.subscription_plans;
+          if (Array.isArray(json.data.broadcasts)) this.data.broadcasts = json.data.broadcasts;
+          if (Array.isArray(json.data.support_requests)) this.data.supportRequests = json.data.support_requests;
           if (Array.isArray(json.data.users)) {
             const seenEmails = new Set();
             this.data.users = json.data.users.filter(u => {
@@ -805,6 +807,7 @@ class Store {
     };
     this.data.supportRequests.push(newRequest);
     this.saveState();
+    this.apiSave('support_requests', newRequest, 'save');
     return newRequest;
   }
 
@@ -815,6 +818,7 @@ class Store {
       this.data.supportRequests[idx].status = status;
       this.data.supportRequests[idx].updatedAt = new Date().toISOString();
       this.saveState();
+      this.apiSave('support_requests', this.data.supportRequests[idx], 'save');
       return this.data.supportRequests[idx];
     }
     return null;
@@ -847,6 +851,7 @@ class Store {
     };
     this.data.broadcasts.unshift(newBroadcast);
     this.saveState();
+    this.apiSave('broadcasts', newBroadcast, 'save');
     return newBroadcast;
   }
 
@@ -856,6 +861,7 @@ class Store {
     this.data.broadcasts = this.data.broadcasts.filter(b => b.id !== id);
     if (this.data.broadcasts.length !== initialLen) {
       this.saveState();
+      this.apiSave('broadcasts', { id }, 'delete');
       return true;
     }
     return false;
@@ -1062,7 +1068,7 @@ class Store {
   // HERRAMIENTAS HUMM (CATÁLOGO & ASIGNACIONES)
   // =========================================================================
   getAllTools() {
-    return [...this.data.tools].sort((a, b) => (a.order || 0) - (b.order || 0));
+    return [...this.data.tools].sort((a, b) => (a.order ?? a.sortOrder ?? 0) - (b.order ?? b.sortOrder ?? 0));
   }
 
   getToolsForWorkspace(workspaceId) {
@@ -1131,7 +1137,19 @@ class Store {
   // TAREAS (KANBAN AISLADO POR EMPRENDIMIENTO)
   // =========================================================================
   getTasks(workspaceId) {
-    return this.data.tasks.filter(t => t.workspaceId === workspaceId);
+    if (!this.data.tasks) this.data.tasks = [];
+    return this.data.tasks
+      .filter(t => t.workspaceId === workspaceId)
+      .map(t => {
+        let status = t.status || 'todo';
+        if (status === '' || status === 'pendiente') status = 'todo';
+        else if (status === 'en_proceso' || status === 'en_progreso') status = 'in_progress';
+        else if (status === 'completada') status = 'done';
+        return {
+          ...t,
+          status
+        };
+      });
   }
 
   getTask(taskId) {
@@ -1156,6 +1174,7 @@ class Store {
     };
     this.data.tasks.push(newTask);
     this.saveState();
+    this.apiSave('tasks', newTask, 'save');
     return newTask;
   }
 
@@ -1169,6 +1188,7 @@ class Store {
       }
       this.data.tasks[idx] = { ...this.data.tasks[idx], ...updates, updatedAt: new Date().toISOString() };
       this.saveState();
+      this.apiSave('tasks', this.data.tasks[idx], 'save');
       return this.data.tasks[idx];
     }
     return null;
@@ -1177,6 +1197,7 @@ class Store {
   deleteTask(taskId) {
     this.data.tasks = this.data.tasks.filter(t => t.id !== taskId);
     this.saveState();
+    this.apiSave('tasks', { id: taskId }, 'delete');
     return true;
   }
 
@@ -1330,6 +1351,7 @@ class Store {
           updatedAt: new Date().toISOString()
         };
         this.saveState();
+        this.apiSave('sales', this.data.sales[idx], 'save');
         return this.data.sales[idx];
       }
     }
@@ -1349,6 +1371,7 @@ class Store {
     };
     this.data.sales.push(newSale);
     this.saveState();
+    this.apiSave('sales', newSale, 'save');
     return newSale;
   }
 
@@ -1358,6 +1381,7 @@ class Store {
       sale.paymentStatus = paymentStatus;
       sale.updatedAt = new Date().toISOString();
       this.saveState();
+      this.apiSave('sales', sale, 'save');
       return sale;
     }
     return null;
@@ -1366,6 +1390,7 @@ class Store {
   deleteSale(saleId) {
     this.data.sales = this.data.sales.filter(s => s.id !== saleId);
     this.saveState();
+    this.apiSave('sales', { id: saleId }, 'delete');
     return true;
   }
 
@@ -1373,45 +1398,96 @@ class Store {
   // CLIENTES (CRM BÁSICO & WHATSAPP)
   // =========================================================================
   getCustomers(workspaceId) {
+    if (!this.data.customers) this.data.customers = [];
     return this.data.customers
       .filter(c => c.workspaceId === workspaceId)
+      .map(c => ({
+        ...c,
+        name: c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+        firstName: c.firstName || (c.name ? c.name.split(' ')[0] : 'Cliente'),
+        lastName: c.lastName !== undefined ? c.lastName : (c.name ? c.name.split(' ').slice(1).join(' ') : ''),
+        rut: c.rut || '',
+        company: c.company || '',
+        phone: c.phone || '',
+        email: c.email || '',
+        region: c.region || '',
+        comuna: c.comuna || '',
+        city: c.city || '',
+        address: c.address || '',
+        sourceChannel: c.sourceChannel || c.source_channel || 'Recomendación',
+        status: c.status || 'active'
+      }))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
 
   getCustomer(customerId) {
-    return this.data.customers.find(c => c.id === customerId) || null;
+    const c = (this.data.customers || []).find(cust => cust.id === customerId);
+    if (!c) return null;
+    return {
+      ...c,
+      name: c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim(),
+      firstName: c.firstName || (c.name ? c.name.split(' ')[0] : 'Cliente'),
+      lastName: c.lastName !== undefined ? c.lastName : (c.name ? c.name.split(' ').slice(1).join(' ') : ''),
+      rut: c.rut || '',
+      company: c.company || '',
+      phone: c.phone || '',
+      email: c.email || '',
+      region: c.region || '',
+      comuna: c.comuna || '',
+      city: c.city || '',
+      address: c.address || '',
+      sourceChannel: c.sourceChannel || c.source_channel || 'Recomendación',
+      status: c.status || 'active'
+    };
   }
 
   createCustomer(workspaceId, customerData) {
+    const firstName = customerData.firstName ? customerData.firstName.trim() : '';
+    const lastName = customerData.lastName ? customerData.lastName.trim() : '';
     const newCustomer = {
       id: 'cli-' + Date.now(),
       workspaceId,
-      firstName: customerData.firstName.trim(),
-      lastName: customerData.lastName ? customerData.lastName.trim() : '',
+      name: `${firstName} ${lastName}`.trim(),
+      firstName,
+      lastName,
+      rut: customerData.rut ? customerData.rut.trim() : '',
       company: customerData.company ? customerData.company.trim() : '',
       phone: customerData.phone ? customerData.phone.trim() : '',
       email: customerData.email ? customerData.email.trim() : '',
+      region: customerData.region ? customerData.region.trim() : '',
+      comuna: customerData.comuna ? customerData.comuna.trim() : '',
       city: customerData.city ? customerData.city.trim() : '',
-      sourceChannel: customerData.sourceChannel || 'Otro',
+      address: customerData.address ? customerData.address.trim() : '',
+      sourceChannel: customerData.sourceChannel || 'Recomendación',
       status: customerData.status || 'active',
       notes: customerData.notes ? customerData.notes.trim() : '',
+      totalPurchases: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    if (!this.data.customers) this.data.customers = [];
     this.data.customers.push(newCustomer);
     this.saveState();
+    this.apiSave('customers', newCustomer, 'save');
     return newCustomer;
   }
 
   updateCustomer(customerId, updates) {
+    if (!this.data.customers) this.data.customers = [];
     const idx = this.data.customers.findIndex(c => c.id === customerId);
     if (idx !== -1) {
+      if (updates.firstName !== undefined || updates.lastName !== undefined) {
+        const fn = updates.firstName !== undefined ? updates.firstName : (this.data.customers[idx].firstName || '');
+        const ln = updates.lastName !== undefined ? updates.lastName : (this.data.customers[idx].lastName || '');
+        updates.name = `${fn} ${ln}`.trim();
+      }
       this.data.customers[idx] = {
         ...this.data.customers[idx],
         ...updates,
         updatedAt: new Date().toISOString()
       };
       this.saveState();
+      this.apiSave('customers', this.data.customers[idx], 'save');
       return this.data.customers[idx];
     }
     return null;
@@ -1420,6 +1496,7 @@ class Store {
   deleteCustomer(customerId) {
     this.data.customers = this.data.customers.filter(c => c.id !== customerId);
     this.saveState();
+    this.apiSave('customers', { id: customerId }, 'delete');
     return true;
   }
 
@@ -1457,6 +1534,7 @@ class Store {
     };
     this.data.opportunities.push(newOpp);
     this.saveState();
+    this.apiSave('opportunities', newOpp, 'save');
     return newOpp;
   }
 
@@ -1469,6 +1547,7 @@ class Store {
         updatedAt: new Date().toISOString()
       };
       this.saveState();
+      this.apiSave('opportunities', this.data.opportunities[idx], 'save');
       return this.data.opportunities[idx];
     }
     return null;
@@ -1477,6 +1556,7 @@ class Store {
   deleteOpportunity(oppId) {
     this.data.opportunities = this.data.opportunities.filter(o => o.id !== oppId);
     this.saveState();
+    this.apiSave('opportunities', { id: oppId }, 'delete');
     return true;
   }
 
@@ -1520,6 +1600,7 @@ class Store {
           updatedAt: new Date().toISOString()
         };
         this.saveState();
+        this.apiSave('calendar_events', this.data.events[idx], 'save');
         return this.data.events[idx];
       }
     }
@@ -1540,6 +1621,7 @@ class Store {
     };
     this.data.events.push(newEvent);
     this.saveState();
+    this.apiSave('calendar_events', newEvent, 'save');
     return newEvent;
   }
 
@@ -1547,6 +1629,7 @@ class Store {
     if (!this.data.events) this.data.events = [];
     this.data.events = this.data.events.filter(e => e.id !== eventId);
     this.saveState();
+    this.apiSave('calendar_events', { id: eventId }, 'delete');
     return true;
   }
 
@@ -1629,6 +1712,7 @@ class Store {
           updatedAt: new Date().toISOString()
         };
         this.saveState();
+        this.apiSave('quick_notes', this.data.notes[idx], 'save');
         return this.data.notes[idx];
       }
     }
@@ -1646,6 +1730,7 @@ class Store {
     };
     this.data.notes.push(newNote);
     this.saveState();
+    this.apiSave('quick_notes', newNote, 'save');
     return newNote;
   }
 
@@ -1656,6 +1741,7 @@ class Store {
       note.pinned = !note.pinned;
       note.updatedAt = new Date().toISOString();
       this.saveState();
+      this.apiSave('quick_notes', note, 'save');
       return note;
     }
     return null;
@@ -1691,6 +1777,7 @@ class Store {
     };
     this.data.subscriptionPlans.push(newPlan);
     this.saveState();
+    this.apiSave('subscription_plans', newPlan, 'save');
     return newPlan;
   }
 
@@ -1709,6 +1796,7 @@ class Store {
         updatedAt: new Date().toISOString()
       };
       this.saveState();
+      this.apiSave('subscription_plans', this.data.subscriptionPlans[idx], 'save');
       return this.data.subscriptionPlans[idx];
     }
     return null;
@@ -1718,13 +1806,38 @@ class Store {
     if (!this.data.subscriptionPlans) this.data.subscriptionPlans = [];
     this.data.subscriptionPlans = this.data.subscriptionPlans.filter(p => p.id !== planId);
     this.saveState();
+    this.apiSave('subscription_plans', { id: planId }, 'delete');
     return true;
   }
 
   getClientSubscriptions() {
     if (!this.data.subscriptions) {
-      this.data.subscriptions = INITIAL_STATE.subscriptions ? [...INITIAL_STATE.subscriptions] : [];
+      this.data.subscriptions = [];
     }
+
+    // Normalizar suscripciones existentes a camelCase
+    this.data.subscriptions = this.data.subscriptions.map(s => ({
+      id: s.id,
+      userId: s.userId || s.user_id || null,
+      workspaceId: s.workspaceId || s.workspace_id || null,
+      clientName: s.clientName || s.client_name || 'Emprendedor Humm',
+      clientEmail: s.clientEmail || s.client_email || '',
+      clientPhone: s.clientPhone || s.client_phone || '',
+      businessName: s.businessName || s.business_name || 'Emprendimiento',
+      planId: s.planId || s.plan_id || 'plan-base',
+      planName: s.planName || s.plan_name || 'Plan Base',
+      monthlyPrice: parseInt(s.monthlyPrice ?? s.monthly_price ?? 0) || 0,
+      status: s.status || 'trial',
+      trialDaysTotal: parseInt(s.trialDaysTotal ?? s.trial_days_total ?? 14) || 14,
+      trialDaysLeft: parseInt(s.trialDaysLeft ?? s.trial_days_left ?? 14) || 0,
+      isTrial: s.isTrial !== undefined ? !!s.isTrial : (s.is_trial !== undefined ? !!s.is_trial : (s.status === 'trial')),
+      paymentStatus: s.paymentStatus || s.payment_status || 'pending',
+      joinedDate: s.joinedDate || s.joined_date || new Date().toISOString().substring(0, 10),
+      lastPaymentDate: s.lastPaymentDate || s.last_payment_date || null,
+      nextBillingDate: s.nextBillingDate || s.next_billing_date || null,
+      paymentMethod: s.paymentMethod || s.payment_method || 'Webpay',
+      paymentLink: s.paymentLink || s.payment_link || `https://pagos.humm.cl/checkout?sub=${s.id}`
+    }));
 
     // Sincronizar con nuevos usuarios emprendedores creados en la plataforma
     const users = this.getAllUsers().filter(u => u.role === 'entrepreneur');
@@ -1732,18 +1845,18 @@ class Store {
     const defaultPlan = this.getSubscriptionPlans()[0] || { id: 'plan-base', name: 'Plan Emprendedor Base', price: 19990, trialDays: 14 };
 
     users.forEach(u => {
-      const exists = this.data.subscriptions.some(s => s.userId === u.id);
+      const subId = 'sub-' + u.id.replace('usr-', '');
+      const exists = this.data.subscriptions.some(s => s.userId === u.id || s.id === subId);
       if (!exists) {
         const ws = u.workspaceId ? workspaces.find(w => w.id === u.workspaceId) : null;
-        const subId = 'sub-' + u.id.replace('usr-', '');
         const newSub = {
           id: subId,
           userId: u.id,
           workspaceId: u.workspaceId || null,
-          clientName: u.name,
-          clientEmail: u.email,
+          clientName: u.name || 'Emprendedor Humm',
+          clientEmail: u.email || '',
           clientPhone: (ws && ws.phone) ? ws.phone : '+56900000000',
-          businessName: ws ? ws.name : 'Emprendimiento',
+          businessName: ws ? ws.name : (u.name || 'Emprendimiento'),
           planId: defaultPlan.id,
           planName: defaultPlan.name,
           monthlyPrice: defaultPlan.price,
@@ -1788,6 +1901,7 @@ class Store {
         updatedAt: new Date().toISOString()
       };
       this.saveState();
+      this.apiSave('subscriptions', this.data.subscriptions[idx], 'save');
       return this.data.subscriptions[idx];
     }
     return null;

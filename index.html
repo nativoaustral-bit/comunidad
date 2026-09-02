@@ -659,9 +659,15 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="modal-cust-company">Empresa o Emprendimiento (opcional)</label>
-            <input type="text" id="modal-cust-company" class="form-control" placeholder="Nombre de empresa si aplica" />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-rut">RUT (opcional)</label>
+              <input type="text" id="modal-cust-rut" class="form-control" placeholder="12.345.678-9" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-company">Empresa o Emprendimiento (opcional)</label>
+              <input type="text" id="modal-cust-company" class="form-control" placeholder="Nombre de empresa si aplica" />
+            </div>
           </div>
 
           <div class="form-row">
@@ -675,11 +681,50 @@
             </div>
           </div>
 
+          <!-- UBICACIÓN GEOGRÁFICA -->
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="modal-cust-city">Ciudad / Comuna</label>
-              <input type="text" id="modal-cust-city" class="form-control" placeholder="Ej. Frutillar" />
+              <label class="form-label" for="modal-cust-region">Región</label>
+              <select id="modal-cust-region" class="form-control">
+                <option value="">Selecciona una región...</option>
+                <option value="Arica y Parinacota">Arica y Parinacota</option>
+                <option value="Tarapacá">Tarapacá</option>
+                <option value="Antofagasta">Antofagasta</option>
+                <option value="Atacama">Atacama</option>
+                <option value="Coquimbo">Coquimbo</option>
+                <option value="Valparaíso">Valparaíso</option>
+                <option value="Metropolitana de Santiago">Metropolitana de Santiago</option>
+                <option value="Libertador G. Bernardo O'Higgins">Libertador G. Bernardo O'Higgins</option>
+                <option value="Maule">Maule</option>
+                <option value="Ñuble">Ñuble</option>
+                <option value="Biobío">Biobío</option>
+                <option value="La Araucanía">La Araucanía</option>
+                <option value="Los Ríos">Los Ríos</option>
+                <option value="Los Lagos">Los Lagos</option>
+                <option value="Aysén del G. Carlos Ibáñez del Campo">Aysén del G. Carlos Ibáñez del Campo</option>
+                <option value="Magallanes y de la Antártica Chilena">Magallanes y de la Antártica Chilena</option>
+              </select>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-comuna">Comuna</label>
+              <select id="modal-cust-comuna" class="form-control" disabled>
+                <option value="">Primero selecciona una región...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-city">Ciudad o Localidad</label>
+              <input type="text" id="modal-cust-city" class="form-control" placeholder="Ej. Frutillar Bajo, Sector Centro, Población..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-address">Dirección</label>
+              <input type="text" id="modal-cust-address" class="form-control" placeholder="Calle, número, depto u oficina..." />
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="modal-cust-channel">Canal de origen</label>
               <select id="modal-cust-channel" class="form-control">
@@ -693,14 +738,13 @@
                 <option value="Otro">Otro</option>
               </select>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="modal-cust-status">Estado del cliente</label>
-            <select id="modal-cust-status" class="form-control">
-              <option value="active" selected>Activo</option>
-              <option value="inactive">Inactivo</option>
-            </select>
+            <div class="form-group">
+              <label class="form-label" for="modal-cust-status">Estado del cliente</label>
+              <select id="modal-cust-status" class="form-control">
+                <option value="active" selected>Activo</option>
+                <option value="inactive">Inactivo</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
@@ -2140,6 +2184,6 @@
   <div id="toast-container" aria-live="polite"></div>
 
   <!-- Script Principal de la App (ES6 Module con cache-busting) -->
-  <script type="module" src="js/app.js?v=3.2"></script>
+  <script type="module" src="js/app.js?v=3.8"></script>
 </body>
 </html>

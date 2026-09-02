@@ -9,13 +9,15 @@ import { auth } from '../auth.js';
 export function renderToolsView(container) {
   const ws = auth.getCurrentWorkspace();
   const currentUser = auth.getCurrentUser();
-  if (!ws) return;
+  if (!ws && currentUser?.role !== 'admin') return;
 
-  const allTools = store.getAllTools().filter(t => t.isVisible);
+  const allTools = store.getAllTools().filter(t => t.isVisible !== false);
   // Herramientas asignadas específicamente al usuario o a su workspace
-  const assignedToolIds = currentUser && Array.isArray(currentUser.assignedToolIds) && currentUser.assignedToolIds.length > 0
-    ? currentUser.assignedToolIds
-    : (ws.assignedTools || []);
+  const assignedToolIds = currentUser?.role === 'admin'
+    ? allTools.map(t => t.id)
+    : (currentUser && Array.isArray(currentUser.assignedToolIds) && currentUser.assignedToolIds.length > 0
+        ? currentUser.assignedToolIds
+        : (ws?.assignedTools && ws.assignedTools.length > 0 ? ws.assignedTools : allTools.map(t => t.id)));
 
   const categoryIcons = {
     'Ventas': '💰',
@@ -69,9 +71,10 @@ export function renderToolsView(container) {
 
     grid.innerHTML = filtered.map(tool => {
       const isAssigned = assignedToolIds.includes(tool.id);
-      const effectiveStatus = tool.status === 'proximamente'
-        ? 'proximamente'
-        : (isAssigned ? 'disponible' : 'requiere_activacion');
+      let effectiveStatus = tool.status || 'disponible';
+      if (effectiveStatus === 'disponible' && !isAssigned) {
+        effectiveStatus = 'requiere_activacion';
+      }
 
       const badgeCfg = statusBadges[effectiveStatus] || statusBadges['disponible'];
 

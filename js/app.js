@@ -486,14 +486,16 @@ class App {
           notes: document.getElementById('modal-sale-notes') ? document.getElementById('modal-sale-notes').value : ''
         };
         this.returnToSaleAfterCustomerCreate = true;
-        
-        const formCust = document.getElementById('form-modal-customer');
-        if (formCust) {
-          formCust.removeAttribute('data-edit-id');
-          formCust.reset();
-          document.getElementById('modal-cust-header-title').textContent = 'Nuevo Cliente';
-        }
-        this.openModal('modal-customer');
+        this.openCreateCustomerModal();
+      });
+    }
+
+    // Cambio dinámico de comunas según región seleccionada en Modal de Cliente
+    const custRegionSelect = document.getElementById('modal-cust-region');
+    const custComunaSelect = document.getElementById('modal-cust-comuna');
+    if (custRegionSelect && custComunaSelect) {
+      custRegionSelect.addEventListener('change', () => {
+        populateComunasSelect(custRegionSelect, custComunaSelect);
       });
     }
 
@@ -508,21 +510,25 @@ class App {
         const editId = formCust.getAttribute('data-edit-id');
         const firstName = document.getElementById('modal-cust-name').value.trim();
         const lastName = document.getElementById('modal-cust-lastname').value.trim();
+        const rut = document.getElementById('modal-cust-rut') ? document.getElementById('modal-cust-rut').value.trim() : '';
         const company = document.getElementById('modal-cust-company').value.trim();
         const phone = document.getElementById('modal-cust-phone').value.trim();
         const email = document.getElementById('modal-cust-email').value.trim();
+        const region = document.getElementById('modal-cust-region') ? document.getElementById('modal-cust-region').value : '';
+        const comuna = document.getElementById('modal-cust-comuna') ? document.getElementById('modal-cust-comuna').value : '';
         const city = document.getElementById('modal-cust-city').value.trim();
+        const address = document.getElementById('modal-cust-address') ? document.getElementById('modal-cust-address').value.trim() : '';
         const sourceChannel = document.getElementById('modal-cust-channel').value;
         const status = document.getElementById('modal-cust-status').value;
         const notes = document.getElementById('modal-cust-notes').value.trim();
 
         if (editId) {
-          store.updateCustomer(editId, { firstName, lastName, company, phone, email, city, sourceChannel, status, notes });
+          store.updateCustomer(editId, { firstName, lastName, rut, company, phone, email, region, comuna, city, address, sourceChannel, status, notes });
           this.showToast('Cliente actualizado correctamente', 'success');
           this.closeAllModals();
           this.refreshCurrentView();
         } else {
-          const newCust = store.createCustomer(ws.id, { firstName, lastName, company, phone, email, city, sourceChannel, status, notes });
+          const newCust = store.createCustomer(ws.id, { firstName, lastName, rut, company, phone, email, region, comuna, city, address, sourceChannel, status, notes });
           
           // Si venía desde el modal de ventas, retornar directamente a la venta con el cliente seleccionado
           if (this.returnToSaleAfterCustomerCreate) {
@@ -646,14 +652,7 @@ class App {
             description: document.getElementById('modal-event-desc') ? document.getElementById('modal-event-desc').value : ''
           };
           this.returnToEventAfterCustomerCreate = true;
-
-          const formCust = document.getElementById('form-modal-customer');
-          if (formCust) {
-            formCust.removeAttribute('data-edit-id');
-            formCust.reset();
-            document.getElementById('modal-cust-header-title').textContent = 'Nuevo Cliente';
-          }
-          this.openModal('modal-customer');
+          this.openCreateCustomerModal();
         });
       }
     }
@@ -1549,6 +1548,25 @@ class App {
     this.openModal('modal-sale');
   }
 
+  openCreateCustomerModal() {
+    const form = document.getElementById('form-modal-customer');
+    if (form) {
+      form.removeAttribute('data-edit-id');
+      form.reset();
+      document.getElementById('modal-cust-header-title').textContent = 'Nuevo Cliente';
+      if (document.getElementById('modal-cust-rut')) document.getElementById('modal-cust-rut').value = '';
+      if (document.getElementById('modal-cust-address')) document.getElementById('modal-cust-address').value = '';
+      const regionSelect = document.getElementById('modal-cust-region');
+      const comunaSelect = document.getElementById('modal-cust-comuna');
+      if (regionSelect) regionSelect.value = '';
+      if (comunaSelect) {
+        comunaSelect.innerHTML = '<option value="">Primero selecciona una región...</option>';
+        comunaSelect.disabled = true;
+      }
+    }
+    this.openModal('modal-customer');
+  }
+
   openEditCustomerModal(customerId) {
     const c = store.getCustomer(customerId);
     if (!c) return;
@@ -1558,13 +1576,25 @@ class App {
 
     form.setAttribute('data-edit-id', c.id);
     document.getElementById('modal-cust-header-title').textContent = 'Editar Cliente';
-    document.getElementById('modal-cust-name').value = c.firstName;
+    document.getElementById('modal-cust-name').value = c.firstName || '';
     document.getElementById('modal-cust-lastname').value = c.lastName || '';
+    if (document.getElementById('modal-cust-rut')) document.getElementById('modal-cust-rut').value = c.rut || '';
     document.getElementById('modal-cust-company').value = c.company || '';
     document.getElementById('modal-cust-phone').value = c.phone || '';
     document.getElementById('modal-cust-email').value = c.email || '';
+    
+    const regionSelect = document.getElementById('modal-cust-region');
+    const comunaSelect = document.getElementById('modal-cust-comuna');
+    if (regionSelect) {
+      regionSelect.value = c.region || '';
+      if (comunaSelect) {
+        populateComunasSelect(regionSelect, comunaSelect, c.comuna || '');
+      }
+    }
+
     document.getElementById('modal-cust-city').value = c.city || '';
-    document.getElementById('modal-cust-channel').value = c.sourceChannel || 'Otro';
+    if (document.getElementById('modal-cust-address')) document.getElementById('modal-cust-address').value = c.address || '';
+    document.getElementById('modal-cust-channel').value = c.sourceChannel || 'Recomendación';
     document.getElementById('modal-cust-status').value = c.status || 'active';
     document.getElementById('modal-cust-notes').value = c.notes || '';
 

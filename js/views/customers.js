@@ -76,8 +76,10 @@ export function renderCustomersView(container) {
       const fullName = `${c.firstName} ${c.lastName || ''}`.toLowerCase();
       const company = (c.company || '').toLowerCase();
       const phone = (c.phone || '').toLowerCase();
+      const rut = (c.rut || '').toLowerCase();
+      const location = `${c.region || ''} ${c.comuna || ''} ${c.city || ''} ${c.address || ''}`.toLowerCase();
 
-      if (searchVal && !fullName.includes(searchVal) && !company.includes(searchVal) && !phone.includes(searchVal)) {
+      if (searchVal && !fullName.includes(searchVal) && !company.includes(searchVal) && !phone.includes(searchVal) && !rut.includes(searchVal) && !location.includes(searchVal)) {
         return false;
       }
       if (statusVal !== 'all' && c.status !== statusVal) {
@@ -103,16 +105,10 @@ export function renderCustomersView(container) {
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
           </div>
-          <h4 class="empty-state-title">Registra a tus primeros clientes</h4>
-          <p class="empty-state-desc">Mantén sus datos organizados para no perder oportunidades de contacto y facilitar el seguimiento comercial.</p>
-          <button class="btn btn-primary" id="btn-empty-create-cust">
-            Agregar mi primer cliente
-          </button>
+          <div class="empty-state-title">Aún no tienes clientes registrados</div>
+          <div class="empty-state-description">Comienza a registrar los contactos de tus clientes para gestionar pedidos y recompra.</div>
         </div>
       `;
-      listWrapper.querySelector('#btn-empty-create-cust')?.addEventListener('click', () => {
-        if (window.MiHummApp) window.MiHummApp.openModal('modal-customer');
-      });
       return;
     }
 
@@ -121,10 +117,10 @@ export function renderCustomersView(container) {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Cliente / Contacto</th>
-              <th>Empresa / Emprendimiento</th>
+              <th>Cliente / Ubicación</th>
+              <th>Empresa</th>
               <th>Contacto</th>
-              <th>Canal de Origen</th>
+              <th>Origen</th>
               <th>Estado</th>
               <th>Oportunidades</th>
               <th style="text-align: right;">Acciones</th>
@@ -134,6 +130,7 @@ export function renderCustomersView(container) {
             ${filtered.length > 0 ? filtered.map(c => {
               const cleanPhone = sanitizeWhatsAppPhone(c.phone);
               const oppsCount = opportunities.filter(o => o.customerId === c.id).length;
+              const locationText = [c.city, c.comuna, c.region].filter(Boolean).join(', ');
 
               return `
                 <tr>
@@ -141,7 +138,14 @@ export function renderCustomersView(container) {
                     <div style="font-weight: 700; color: var(--text-primary);">
                       ${c.firstName} ${c.lastName || ''}
                     </div>
-                    ${c.city ? `<div class="text-xs text-muted">📍 ${c.city}</div>` : ''}
+                    ${c.rut ? `<div class="text-xs text-muted" style="font-weight: 600;">RUT: ${c.rut}</div>` : ''}
+                    ${locationText ? `
+                      <div class="text-xs text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                        <span>📍</span>
+                        <span>${locationText}</span>
+                      </div>
+                    ` : ''}
+                    ${c.address ? `<div class="text-xs text-muted" style="margin-top: 1px;">🏠 ${c.address}</div>` : ''}
                   </td>
                   <td>
                     ${c.company ? `<strong>${c.company}</strong>` : '<span class="text-muted">—</span>'}
@@ -201,6 +205,8 @@ export function renderCustomersView(container) {
         <div class="responsive-cards-grid">
           ${filtered.length > 0 ? filtered.map(c => {
             const cleanPhone = sanitizeWhatsAppPhone(c.phone);
+            const locationText = [c.city, c.comuna, c.region].filter(Boolean).join(', ');
+
             return `
               <div class="adaptive-item-card">
                 <div class="adaptive-card-header">
@@ -213,9 +219,11 @@ export function renderCustomersView(container) {
                   </span>
                 </div>
                 <div class="adaptive-card-body">
+                  ${c.rut ? `<div><strong>RUT:</strong> ${c.rut}</div>` : ''}
                   ${c.phone ? `<div><strong>Teléfono:</strong> ${c.phone}</div>` : ''}
                   ${c.email ? `<div><strong>Correo:</strong> ${c.email}</div>` : ''}
-                  ${c.city ? `<div><strong>Ciudad:</strong> ${c.city}</div>` : ''}
+                  ${locationText ? `<div><strong>Ubicación:</strong> ${locationText}</div>` : ''}
+                  ${c.address ? `<div><strong>Dirección:</strong> ${c.address}</div>` : ''}
                   <div><strong>Origen:</strong> ${c.sourceChannel}</div>
                   ${c.notes ? `<div style="margin-top: 4px; padding: 6px; background: var(--bg-surface-secondary); border-radius: 4px;">${c.notes}</div>` : ''}
                 </div>
@@ -229,33 +237,30 @@ export function renderCustomersView(container) {
                     <button class="btn btn-secondary btn-sm btn-edit-customer" data-customer-id="${c.id}">
                       Editar
                     </button>
-                    <button class="btn btn-outline-danger btn-sm btn-delete-customer" data-customer-id="${c.id}">
+                    <button class="btn btn-ghost btn-sm btn-delete-customer" data-customer-id="${c.id}" style="color: var(--danger);">
                       Eliminar
                     </button>
                   </div>
                 </div>
               </div>
             `;
-          }).join('') : '<p class="text-xs text-muted text-center py-4">No hay clientes que coincidan con la búsqueda.</p>'}
+          }).join('') : ''}
         </div>
       </div>
     `;
 
-    attachEvents();
-  }
-
-  function attachEvents() {
-    container.querySelectorAll('.btn-edit-customer').forEach(btn => {
+    // Event Listeners para editar y eliminar
+    listWrapper.querySelectorAll('.btn-edit-customer').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-customer-id');
         if (window.MiHummApp) window.MiHummApp.openEditCustomerModal(id);
       });
     });
 
-    container.querySelectorAll('.btn-delete-customer').forEach(btn => {
+    listWrapper.querySelectorAll('.btn-delete-customer').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-customer-id');
-        if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+        if (confirm('¿Estás seguro de eliminar este cliente?')) {
           store.deleteCustomer(id);
           if (window.MiHummApp) {
             window.MiHummApp.showToast('Cliente eliminado', 'success');
@@ -272,7 +277,7 @@ export function renderCustomersView(container) {
   container.querySelector('#customer-filter-channel')?.addEventListener('change', filterAndRender);
 
   container.querySelector('#btn-create-customer-main')?.addEventListener('click', () => {
-    if (window.MiHummApp) window.MiHummApp.openModal('modal-customer');
+    if (window.MiHummApp) window.MiHummApp.openCreateCustomerModal();
   });
 
   filterAndRender();
