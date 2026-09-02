@@ -320,7 +320,7 @@ class AuthService {
           return { success: true, user: userObj };
         } else {
           // El servidor rechazó la autenticación con error explícito
-          return { success: false, message: json.error || json.message || 'Credenciales incorrectas o usuario no registrado.' };
+          return { success: false, message: json.error || json.message || 'Usuario o clave incorrecta.' };
         }
       } catch (err) {
         console.error('Error de red al intentar autenticar:', err);

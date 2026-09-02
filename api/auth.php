@@ -27,7 +27,7 @@ switch ($action) {
         $user = $stmt->fetch();
 
         if (!$user) {
-            DB::jsonResponse(false, null, 'Credenciales incorrectas o usuario no registrado.', 401);
+            DB::jsonResponse(false, null, 'Usuario o clave incorrecta.', 401);
         }
 
         if ((int)$user['is_active'] !== 1) {
@@ -37,7 +37,7 @@ switch ($action) {
         // Validación segura y estricta de contraseña con hash Bcrypt (sin excepciones)
         $passwordValid = password_verify($password, $user['password_hash']);
         if (!$passwordValid) {
-            DB::jsonResponse(false, null, 'Contraseña incorrecta.', 401);
+            DB::jsonResponse(false, null, 'Usuario o clave incorrecta.', 401);
         }
 
         // Actualizar último acceso
