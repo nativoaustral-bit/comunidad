@@ -29,6 +29,7 @@ class App {
     this.applyTheme(this.theme);
     this.setupEventListeners();
     this.setupModals();
+    this.setupActivityAndSecurityMonitors();
     this.checkAuthenticationState();
 
     // Suscribirse a cambios en autenticación
@@ -48,6 +49,35 @@ class App {
 
     // Iniciar con la vista actual según URL o inicio
     this.handleHashChange();
+  }
+
+  // =========================================================================
+  // SEGURIDAD DE SESIÓN Y MONITOREO DE INACTIVIDAD
+  // =========================================================================
+  setupActivityAndSecurityMonitors() {
+    // 1. Registro de actividad interactiva del usuario
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach(evt => {
+      window.addEventListener(evt, () => {
+        auth.recordActivity();
+      }, { passive: true });
+    });
+
+    // 2. Verificación inmediata cuando el usuario vuelve a enfocar la pestaña tras horas
+    window.addEventListener('focus', () => {
+      auth.checkSessionValidity(true);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        auth.checkSessionValidity(true);
+      }
+    });
+
+    // 3. Verificación periódica cada 30 segundos
+    setInterval(() => {
+      auth.checkSessionValidity(true);
+    }, 30000);
   }
 
   // =========================================================================
