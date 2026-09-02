@@ -34,12 +34,8 @@ switch ($action) {
             DB::jsonResponse(false, null, 'Tu cuenta se encuentra inactiva. Contacta a un administrador de Humm.', 403);
         }
 
-        // Validación segura de contraseña con hash Bcrypt
+        // Validación segura y estricta de contraseña con hash Bcrypt (sin excepciones)
         $passwordValid = password_verify($password, $user['password_hash']);
-        if (!$passwordValid && $user['role'] === 'admin' && $password === 'admin') {
-            $passwordValid = true;
-        }
-
         if (!$passwordValid) {
             DB::jsonResponse(false, null, 'Contraseña incorrecta.', 401);
         }
