@@ -35,8 +35,8 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
-                $sql = 'INSERT INTO sales (id, workspace_id, customer_id, customer_name, total_amount, payment_status, payment_method, sale_date, notes)
-                        VALUES (:id, :workspace_id, :customer_id, :customer_name, :total_amount, :payment_status, :payment_method, :sale_date, :notes)
+                $sql = 'INSERT INTO sales (id, workspace_id, customer_id, customer_name, total_amount, payment_status, payment_method, sale_date, due_date, notes)
+                        VALUES (:id, :workspace_id, :customer_id, :customer_name, :total_amount, :payment_status, :payment_method, :sale_date, :due_date, :notes)
                         ON DUPLICATE KEY UPDATE
                         customer_id = VALUES(customer_id),
                         customer_name = VALUES(customer_name),
@@ -44,17 +44,19 @@ try {
                         payment_status = VALUES(payment_status),
                         payment_method = VALUES(payment_method),
                         sale_date = VALUES(sale_date),
+                        due_date = VALUES(due_date),
                         notes = VALUES(notes)';
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':id' => $item['id'],
-                    ':workspace_id' => $item['workspaceId'] ?? $item['workspace_id'],
-                    ':customer_id' => $item['customerId'] ?? $item['customer_id'] ?? null,
-                    ':customer_name' => $item['customerName'] ?? $item['customer_name'] ?? 'Venta General',
-                    ':total_amount' => (int)($item['totalAmount'] ?? $item['total_amount'] ?? 0),
-                    ':payment_status' => $item['paymentStatus'] ?? $item['payment_status'] ?? 'pagado',
-                    ':payment_method' => $item['paymentMethod'] ?? $item['payment_method'] ?? 'Transferencia',
-                    ':sale_date' => $item['saleDate'] ?? $item['sale_date'] ?? date('Y-m-d'),
+                    ':workspace_id' => $item['workspaceId'] ?? ($item['workspace_id'] ?? null),
+                    ':customer_id' => $item['customerId'] ?? ($item['customer_id'] ?? null),
+                    ':customer_name' => $item['customerName'] ?? ($item['customer_name'] ?? 'Venta General'),
+                    ':total_amount' => (int)($item['amount'] ?? ($item['totalAmount'] ?? ($item['total_amount'] ?? 0))),
+                    ':payment_status' => $item['paymentStatus'] ?? ($item['payment_status'] ?? 'pagado'),
+                    ':payment_method' => $item['paymentMethod'] ?? ($item['payment_method'] ?? 'Transferencia'),
+                    ':sale_date' => $item['date'] ?? ($item['saleDate'] ?? ($item['sale_date'] ?? date('Y-m-d'))),
+                    ':due_date' => $item['dueDate'] ?? ($item['due_date'] ?? null),
                     ':notes' => $item['notes'] ?? ''
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
@@ -105,7 +107,7 @@ try {
                     ':city' => $item['city'] ?? null,
                     ':address' => $item['address'] ?? null,
                     ':source_channel' => $item['sourceChannel'] ?? ($item['source_channel'] ?? 'Recomendación'),
-                    ':status' => $item['status'] ?? 'activo',
+                    ':status' => $item['status'] ?? 'active',
                     ':total_purchases' => (int)($item['totalPurchases'] ?? ($item['total_purchases'] ?? 0)),
                     ':last_purchase_date' => $item['lastPurchaseDate'] ?? ($item['last_purchase_date'] ?? null),
                     ':notes' => $item['notes'] ?? null
@@ -167,6 +169,7 @@ try {
         // 4. EVENTOS CALENDARIO (calendar_events)
         // -----------------------------------------------------------------
         case 'calendar_events':
+        case 'events':
             if ($action === 'delete') {
                 $id = $targetId;
                 $stmt = $pdo->prepare('DELETE FROM calendar_events WHERE id = :id');
@@ -174,14 +177,15 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
-                $sql = 'INSERT INTO calendar_events (id, workspace_id, title, event_type, customer_id, event_date, event_time, location, meeting_link, status, notes)
-                        VALUES (:id, :workspace_id, :title, :event_type, :customer_id, :event_date, :event_time, :location, :meeting_link, :status, :notes)
+                $sql = 'INSERT INTO calendar_events (id, workspace_id, title, event_type, customer_id, event_date, event_time, end_time, location, meeting_link, status, notes)
+                        VALUES (:id, :workspace_id, :title, :event_type, :customer_id, :event_date, :event_time, :end_time, :location, :meeting_link, :status, :notes)
                         ON DUPLICATE KEY UPDATE
                         title = VALUES(title),
                         event_type = VALUES(event_type),
                         customer_id = VALUES(customer_id),
                         event_date = VALUES(event_date),
                         event_time = VALUES(event_time),
+                        end_time = VALUES(end_time),
                         location = VALUES(location),
                         meeting_link = VALUES(meeting_link),
                         status = VALUES(status),
@@ -189,16 +193,17 @@ try {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':id' => $item['id'],
-                    ':workspace_id' => $item['workspaceId'] ?? $item['workspace_id'],
+                    ':workspace_id' => $item['workspaceId'] ?? ($item['workspace_id'] ?? null),
                     ':title' => $item['title'],
-                    ':event_type' => $item['eventType'] ?? $item['event_type'] ?? 'reunion',
-                    ':customer_id' => $item['customerId'] ?? $item['customer_id'] ?? null,
-                    ':event_date' => $item['eventDate'] ?? $item['event_date'] ?? date('Y-m-d'),
-                    ':event_time' => $item['eventTime'] ?? $item['event_time'] ?? null,
+                    ':event_type' => $item['type'] ?? ($item['eventType'] ?? ($item['event_type'] ?? 'reunion')),
+                    ':customer_id' => $item['customerId'] ?? ($item['customer_id'] ?? null),
+                    ':event_date' => $item['date'] ?? ($item['eventDate'] ?? ($item['event_date'] ?? date('Y-m-d'))),
+                    ':event_time' => $item['startTime'] ?? ($item['eventTime'] ?? ($item['event_time'] ?? null)),
+                    ':end_time' => $item['endTime'] ?? ($item['end_time'] ?? null),
                     ':location' => $item['location'] ?? null,
-                    ':meeting_link' => $item['meetingLink'] ?? $item['meeting_link'] ?? null,
+                    ':meeting_link' => $item['meetUrl'] ?? ($item['meetingLink'] ?? ($item['meeting_link'] ?? null)),
                     ':status' => $item['status'] ?? 'programado',
-                    ':notes' => $item['notes'] ?? null
+                    ':notes' => $item['description'] ?? ($item['notes'] ?? null)
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
@@ -500,8 +505,8 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
-                $sql = 'INSERT INTO workspaces (id, name, owner_name, email, phone, city, region, industry, description, membership_status, membership_type, advisor_name, advisor_email)
-                        VALUES (:id, :name, :owner_name, :email, :phone, :city, :region, :industry, :description, :membership_status, :membership_type, :advisor_name, :advisor_email)
+                $sql = 'INSERT INTO workspaces (id, name, owner_name, email, phone, city, region, industry, description, kanban_columns, membership_status, membership_type, advisor_name, advisor_email)
+                        VALUES (:id, :name, :owner_name, :email, :phone, :city, :region, :industry, :description, :kanban_columns, :membership_status, :membership_type, :advisor_name, :advisor_email)
                         ON DUPLICATE KEY UPDATE
                         name = VALUES(name),
                         owner_name = VALUES(owner_name),
@@ -511,6 +516,7 @@ try {
                         region = VALUES(region),
                         industry = VALUES(industry),
                         description = VALUES(description),
+                        kanban_columns = VALUES(kanban_columns),
                         membership_status = VALUES(membership_status),
                         membership_type = VALUES(membership_type),
                         advisor_name = VALUES(advisor_name),
@@ -526,10 +532,70 @@ try {
                     ':region' => $item['region'] ?? null,
                     ':industry' => $item['industry'] ?? null,
                     ':description' => $item['description'] ?? null,
+                    ':kanban_columns' => is_array($item['kanbanColumns'] ?? null) ? json_encode($item['kanbanColumns'], JSON_UNESCAPED_UNICODE) : ($item['kanban_columns'] ?? null),
                     ':membership_status' => $item['membershipStatus'] ?? ($item['membership_status'] ?? 'active'),
                     ':membership_type' => $item['membershipType'] ?? ($item['membership_type'] ?? 'Membresía Humm Co-Creation'),
                     ':advisor_name' => !empty($item['advisorName'] ?? $item['advisor_name']) ? ($item['advisorName'] ?? $item['advisor_name']) : null,
                     ':advisor_email' => !empty($item['advisorEmail'] ?? $item['advisor_email']) ? ($item['advisorEmail'] ?? $item['advisor_email']) : null
+                ]);
+                DB::jsonResponse(true, ['item' => $item]);
+            }
+            break;
+
+        // -----------------------------------------------------------------
+        // 11.5. OPORTUNIDADES COMERCIALES (opportunities)
+        // -----------------------------------------------------------------
+        case 'opportunities':
+        case 'opportunity':
+            if ($action === 'delete') {
+                $id = $targetId;
+                $stmt = $pdo->prepare('DELETE FROM opportunities WHERE id = :id');
+                $stmt->execute([':id' => $id]);
+                DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
+                $item = $input['item'] ?? $input;
+                $sql = 'INSERT INTO opportunities (id, workspace_id, title, contact_name, customer_name, phone, email, product_interest, estimated_amount, estimated_value, status, stage, next_action, follow_up_date, expected_close_date, source_channel, notes, customer_id)
+                        VALUES (:id, :workspace_id, :title, :contact_name, :customer_name, :phone, :email, :product_interest, :estimated_amount, :estimated_value, :status, :stage, :next_action, :follow_up_date, :expected_close_date, :source_channel, :notes, :customer_id)
+                        ON DUPLICATE KEY UPDATE
+                        title = VALUES(title),
+                        contact_name = VALUES(contact_name),
+                        customer_name = VALUES(customer_name),
+                        phone = VALUES(phone),
+                        email = VALUES(email),
+                        product_interest = VALUES(product_interest),
+                        estimated_amount = VALUES(estimated_amount),
+                        estimated_value = VALUES(estimated_value),
+                        status = VALUES(status),
+                        stage = VALUES(stage),
+                        next_action = VALUES(next_action),
+                        follow_up_date = VALUES(follow_up_date),
+                        expected_close_date = VALUES(expected_close_date),
+                        source_channel = VALUES(source_channel),
+                        notes = VALUES(notes),
+                        customer_id = VALUES(customer_id)';
+                $stmt = $pdo->prepare($sql);
+                $contact = $item['contactName'] ?? ($item['contact_name'] ?? ($item['customerName'] ?? ($item['customer_name'] ?? 'Contacto')));
+                $amount = (int)($item['estimatedAmount'] ?? ($item['estimated_amount'] ?? ($item['estimatedValue'] ?? ($item['estimated_value'] ?? ($item['value'] ?? 0)))));
+                $stageVal = $item['stage'] ?? ($item['status'] ?? 'prospecto');
+                $stmt->execute([
+                    ':id' => $item['id'] ?? ('opp-' . round(microtime(true) * 1000)),
+                    ':workspace_id' => $item['workspaceId'] ?? ($item['workspace_id'] ?? null),
+                    ':title' => $item['title'] ?? 'Oportunidad',
+                    ':contact_name' => $contact,
+                    ':customer_name' => $contact,
+                    ':phone' => $item['phone'] ?? null,
+                    ':email' => $item['email'] ?? null,
+                    ':product_interest' => $item['productInterest'] ?? ($item['product_interest'] ?? null),
+                    ':estimated_amount' => $amount,
+                    ':estimated_value' => $amount,
+                    ':status' => $item['status'] ?? ($item['stage'] ?? 'nuevo'),
+                    ':stage' => $stageVal,
+                    ':next_action' => $item['nextAction'] ?? ($item['next_action'] ?? null),
+                    ':follow_up_date' => $item['followUpDate'] ?? ($item['follow_up_date'] ?? null),
+                    ':expected_close_date' => $item['followUpDate'] ?? ($item['expectedCloseDate'] ?? ($item['expected_close_date'] ?? null)),
+                    ':source_channel' => $item['sourceChannel'] ?? ($item['source_channel'] ?? 'Otro'),
+                    ':notes' => $item['notes'] ?? null,
+                    ':customer_id' => $item['customerId'] ?? ($item['customer_id'] ?? null)
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }

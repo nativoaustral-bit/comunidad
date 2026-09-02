@@ -218,6 +218,7 @@ try {
                 'region' => $w['region'] ?? '',
                 'industry' => $w['industry'] ?? '',
                 'description' => $w['description'] ?? '',
+                'kanbanColumns' => !empty($w['kanban_columns']) ? json_decode($w['kanban_columns'], true) : null,
                 'membershipStatus' => $w['membership_status'] ?? 'active',
                 'membershipType' => $w['membership_type'] ?? 'Membresía Humm Co-Creation',
                 'advisorName' => $w['advisor_name'] ?? null,
@@ -257,7 +258,7 @@ try {
                 'city' => $c['city'] ?? '',
                 'address' => $c['address'] ?? '',
                 'sourceChannel' => $c['source_channel'] ?? 'Recomendación',
-                'status' => $c['status'] ?? 'active',
+                'status' => (!empty($c['status']) && $c['status'] !== 'inactivo' && $c['status'] !== 'inactive') ? 'active' : ($c['status'] === 'inactive' || $c['status'] === 'inactivo' ? 'inactive' : 'active'),
                 'totalPurchases' => (float)($c['total_purchases'] ?? 0),
                 'lastPurchaseDate' => $c['last_purchase_date'] ?? null,
                 'notes' => $c['notes'] ?? '',
@@ -271,17 +272,22 @@ try {
         $rawSales = $stmtSales->fetchAll();
         $sales = [];
         foreach ($rawSales as $s) {
+            $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
             $sales[] = [
                 'id' => $s['id'],
                 'workspaceId' => $s['workspace_id'],
                 'customerId' => $s['customer_id'] ?? null,
                 'customerName' => $s['customer_name'] ?? '',
-                'amount' => (float)($s['amount'] ?? 0),
+                'amount' => $salesAmount,
+                'totalAmount' => $salesAmount,
                 'saleDate' => $s['sale_date'] ?? null,
                 'date' => $s['sale_date'] ?? null,
+                'dueDate' => $s['due_date'] ?? null,
                 'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
-                'status' => $s['status'] ?? 'completed',
-                'description' => $s['description'] ?? '',
+                'paymentStatus' => $s['payment_status'] ?? 'pagado',
+                'status' => $s['payment_status'] ?? 'pagado',
+                'notes' => $s['notes'] ?? '',
+                'description' => $s['notes'] ?? '',
                 'createdAt' => $s['created_at'] ?? null
             ];
         }
@@ -320,50 +326,80 @@ try {
         $rawEvents = $stmtEvents->fetchAll();
         $events = [];
         foreach ($rawEvents as $ev) {
+            $startTime = !empty($ev['event_time']) ? substr($ev['event_time'], 0, 5) : '09:00';
+            $endTime = !empty($ev['end_time']) ? substr($ev['end_time'], 0, 5) : '10:00';
             $events[] = [
                 'id' => $ev['id'],
                 'workspaceId' => $ev['workspace_id'],
                 'title' => $ev['title'],
+                'date' => $ev['event_date'],
                 'eventDate' => $ev['event_date'],
+                'startTime' => $startTime,
+                'endTime' => $endTime,
                 'eventTime' => $ev['event_time'] ?? '',
-                'type' => $ev['type'] ?? 'reunion',
-                'description' => $ev['description'] ?? '',
+                'type' => $ev['event_type'] ?? 'reunion',
+                'eventType' => $ev['event_type'] ?? 'reunion',
+                'customerId' => $ev['customer_id'] ?? null,
+                'location' => $ev['location'] ?? '',
+                'meetUrl' => $ev['meeting_link'] ?? '',
+                'meetingLink' => $ev['meeting_link'] ?? '',
+                'description' => $ev['notes'] ?? '',
+                'notes' => $ev['notes'] ?? '',
+                'status' => $ev['status'] ?? 'programado',
                 'createdAt' => $ev['created_at'] ?? null
             ];
         }
         $data['calendar_events'] = $events;
+        $data['events'] = $events;
 
         $stmtNotes = $pdo->prepare('SELECT * FROM quick_notes WHERE workspace_id = :ws ORDER BY is_pinned DESC, updated_at DESC');
         $stmtNotes->execute([':ws' => $workspaceId]);
         $rawNotes = $stmtNotes->fetchAll();
         $notes = [];
         foreach ($rawNotes as $n) {
+            $isPinned = (bool)($n['is_pinned'] ?? 0);
             $notes[] = [
                 'id' => $n['id'],
                 'workspaceId' => $n['workspace_id'],
                 'title' => $n['title'] ?? '',
                 'content' => $n['content'] ?? '',
+                'category' => $n['category'] ?? 'general',
                 'color' => $n['color'] ?? 'yellow',
-                'isPinned' => (bool)($n['is_pinned'] ?? 0),
+                'pinned' => $isPinned,
+                'isPinned' => $isPinned,
                 'updatedAt' => $n['updated_at'] ?? null,
                 'createdAt' => $n['created_at'] ?? null
             ];
         }
         $data['quick_notes'] = $notes;
+        $data['notes'] = $notes;
 
-        $stmtOpps = $pdo->prepare('SELECT * FROM opportunities WHERE workspace_id = :ws ORDER BY expected_close_date ASC');
+        $stmtOpps = $pdo->prepare('SELECT * FROM opportunities WHERE workspace_id = :ws ORDER BY created_at DESC');
         $stmtOpps->execute([':ws' => $workspaceId]);
         $rawOpps = $stmtOpps->fetchAll();
         $opps = [];
         foreach ($rawOpps as $o) {
+            $oppAmount = (float)($o['estimated_amount'] ?? ($o['estimated_value'] ?? 0));
             $opps[] = [
                 'id' => $o['id'],
                 'workspaceId' => $o['workspace_id'],
                 'title' => $o['title'],
-                'customerName' => $o['customer_name'] ?? '',
-                'value' => (float)($o['value'] ?? 0),
-                'stage' => $o['stage'] ?? 'prospeccion',
-                'expectedCloseDate' => $o['expected_close_date'] ?? null,
+                'contactName' => $o['contact_name'] ?? ($o['customer_name'] ?? ''),
+                'customerName' => $o['customer_name'] ?? ($o['contact_name'] ?? ''),
+                'phone' => $o['phone'] ?? '',
+                'email' => $o['email'] ?? '',
+                'productInterest' => $o['product_interest'] ?? '',
+                'estimatedAmount' => $oppAmount,
+                'estimatedValue' => $oppAmount,
+                'value' => $oppAmount,
+                'status' => $o['status'] ?? ($o['stage'] ?? 'nuevo'),
+                'stage' => $o['stage'] ?? ($o['status'] ?? 'prospecto'),
+                'nextAction' => $o['next_action'] ?? '',
+                'followUpDate' => $o['follow_up_date'] ?? ($o['expected_close_date'] ?? null),
+                'expectedCloseDate' => $o['expected_close_date'] ?? ($o['follow_up_date'] ?? null),
+                'sourceChannel' => $o['source_channel'] ?? 'Otro',
+                'notes' => $o['notes'] ?? '',
+                'customerId' => $o['customer_id'] ?? null,
                 'createdAt' => $o['created_at'] ?? null
             ];
         }

@@ -258,8 +258,10 @@ class Store {
           if (Array.isArray(json.data.customers)) this.data.customers = json.data.customers;
           if (Array.isArray(json.data.sales)) this.data.sales = json.data.sales;
           if (Array.isArray(json.data.tasks)) this.data.tasks = json.data.tasks;
-          if (Array.isArray(json.data.calendar_events)) this.data.calendarEvents = json.data.calendar_events;
-          if (Array.isArray(json.data.quick_notes)) this.data.quickNotes = json.data.quick_notes;
+          if (Array.isArray(json.data.calendar_events)) this.data.events = json.data.calendar_events;
+          else if (Array.isArray(json.data.events)) this.data.events = json.data.events;
+          if (Array.isArray(json.data.quick_notes)) this.data.notes = json.data.quick_notes;
+          else if (Array.isArray(json.data.notes)) this.data.notes = json.data.notes;
           if (Array.isArray(json.data.opportunities)) this.data.opportunities = json.data.opportunities;
           this.saveState();
           this.notify();
