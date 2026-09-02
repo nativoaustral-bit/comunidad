@@ -238,8 +238,8 @@ class AuthService {
 
     // Auto-recuperación de cuenta admin inicial si la BD está vacía
     if (!user) {
-      const cleanEmail = (email || '').trim().toLowerCase();
-      if (cleanEmail === 'admin@humm.cl') {
+      // Solo inicializar si no hay usuarios en la base de datos local
+      if (store.getAllUsers().length === 0) {
         user = store.createUser({
           id: 'usr-admin',
           name: 'Administrador Humm',
@@ -260,13 +260,7 @@ class AuthService {
     }
 
     if (user.password !== password.trim()) {
-      const cleanEmail = (email || '').trim().toLowerCase();
-      if (cleanEmail === 'admin@humm.cl' && password.trim() === 'admin') {
-        user.password = 'admin';
-        store.updateUser(user.id, { password: 'admin' });
-      } else {
-        return { success: false, message: 'Contraseña incorrecta. Verifica tus datos o solicita restablecerla.' };
-      }
+      return { success: false, message: 'Contraseña incorrecta. Verifica tus datos o solicita restablecerla.' };
     }
 
     // Actualizar último acceso

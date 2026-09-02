@@ -168,23 +168,27 @@ class Store {
         const parsed = JSON.parse(stored);
         
         let loadedUsers = (parsed.users || INITIAL_STATE.users).filter(u => 
-          u.email.toLowerCase() === 'admin@humm.cl' || 
+          u.role === 'admin' || 
           (!['usr-carolina', 'usr-juan', 'usr-ignacia', 'usr-diego', 'usr-patricia', 'usr-valentina'].includes(u.id) &&
-           !['carolina@humm.cl', 'juan@humm.cl', 'ignacia@humm.cl', 'diego@humm.cl', 'patricia@humm.cl', 'valentina@humm.cl'].includes(u.email.toLowerCase()))
+           !['carolina@humm.cl', 'juan@humm.cl', 'ignacia@humm.cl', 'diego@humm.cl', 'patricia@humm.cl', 'valentina@humm.cl'].includes((u.email || '').toLowerCase()))
         );
 
-        // Deduplicar usuarios por email
+        // Deduplicar usuarios por ID y por email
+        const seenUserIds = new Set();
         const seenUserEmails = new Set();
         loadedUsers = loadedUsers.filter(u => {
+          const id = u.id;
           const email = (u.email || '').toLowerCase().trim();
+          if (!id || seenUserIds.has(id)) return false;
           if (!email || seenUserEmails.has(email)) return false;
+          seenUserIds.add(id);
           seenUserEmails.add(email);
           return true;
         });
 
-        // Asegurar que el administrador siempre esté disponible
-        const adminExists = loadedUsers.some(u => u.email.toLowerCase() === 'admin@humm.cl');
-        if (!adminExists) {
+        // Asegurar que exista al menos un administrador en el sistema
+        const hasAdmin = loadedUsers.some(u => u.role === 'admin');
+        if (!hasAdmin && loadedUsers.length === 0) {
           loadedUsers.push(INITIAL_STATE.users[0]);
         }
 

@@ -290,13 +290,27 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
+                $userId = $item['id'] ?? ('usr-' . round(microtime(true) * 1000));
+
+                $passHash = '';
+                if (!empty($item['password'])) {
+                    $passHash = password_hash($item['password'], PASSWORD_BCRYPT);
+                } else {
+                    $checkUser = $pdo->prepare('SELECT password_hash FROM users WHERE id = :id LIMIT 1');
+                    $checkUser->execute([':id' => $userId]);
+                    $existing = $checkUser->fetch();
+                    if (!$existing) {
+                        $passHash = password_hash('humm2026', PASSWORD_BCRYPT);
+                    }
+                }
+
                 $sql = 'INSERT INTO users (id, workspace_id, name, email, password_hash, role, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email, must_change_password, reset_token)
                         VALUES (:id, :workspace_id, :name, :email, :password_hash, :role, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email, :must_change_password, :reset_token)
                         ON DUPLICATE KEY UPDATE
                         name = VALUES(name),
                         email = VALUES(email),
                         workspace_id = VALUES(workspace_id),
-                        password_hash = IF(VALUES(password_hash) != "", VALUES(password_hash), password_hash),
+                        password_hash = IF(VALUES(password_hash) != "" AND VALUES(password_hash) IS NOT NULL, VALUES(password_hash), password_hash),
                         role = VALUES(role),
                         avatar = VALUES(avatar),
                         is_active = VALUES(is_active),
@@ -307,11 +321,11 @@ try {
                         reset_token = VALUES(reset_token)';
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
-                    ':id' => $item['id'],
+                    ':id' => $userId,
                     ':workspace_id' => $item['workspaceId'] ?? $item['workspace_id'] ?? null,
-                    ':name' => $item['name'],
-                    ':email' => $item['email'],
-                    ':password_hash' => !empty($item['password']) ? password_hash($item['password'], PASSWORD_BCRYPT) : '$2y$10$7rXmFhLgN5PjTwH9kQ3beeU2vK4yN1oM7sT3qP8wO0sT4qR8wN2h6',
+                    ':name' => $item['name'] ?? '',
+                    ':email' => $item['email'] ?? '',
+                    ':password_hash' => $passHash,
                     ':role' => $item['role'] ?? 'entrepreneur',
                     ':avatar' => $item['avatar'] ?? 'U',
                     ':is_active' => isset($item['isActive']) ? ($item['isActive'] ? 1 : 0) : 1,
