@@ -14,6 +14,162 @@
   <link rel="stylesheet" href="styles/main.css?v=4.0" />
   <link rel="stylesheet" href="styles/layout.css?v=4.0" />
   <link rel="stylesheet" href="styles/components.css?v=4.0" />
+
+  <script>
+    window.togglePasswordVisibility = function(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      var passInp = document.getElementById('login-password');
+      var toggleBtn = document.getElementById('btn-toggle-password-visibility');
+      if (passInp && toggleBtn) {
+        var isPass = passInp.getAttribute('type') === 'password';
+        passInp.setAttribute('type', isPass ? 'text' : 'password');
+        toggleBtn.textContent = isPass ? 'Ocultar' : 'Mostrar';
+      }
+      return false;
+    };
+
+    window.handleDirectLogin = async function(e) {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+
+      var emailInp = document.getElementById('login-email');
+      var passInp = document.getElementById('login-password');
+      var errAlert = document.getElementById('login-error-alert');
+      var btnSubmit = document.getElementById('btn-submit-login');
+
+      var email = (emailInp ? emailInp.value : '').trim();
+      var password = (passInp ? passInp.value : '').trim();
+
+      if (errAlert) {
+        errAlert.style.display = 'none';
+        errAlert.textContent = '';
+      }
+
+      if (!email || !password) {
+        if (errAlert) {
+          errAlert.style.display = 'block';
+          errAlert.style.backgroundColor = '#fee2e2';
+          errAlert.style.border = '1px solid #f87171';
+          errAlert.style.color = '#991b1b';
+          errAlert.textContent = 'Por favor ingresa tu correo y contraseña.';
+        }
+        return false;
+      }
+
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '⏳ Verificando credenciales...';
+      }
+
+      try {
+        var res = await fetch('api/auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', email: email, password: password })
+        });
+
+        var json = await res.json();
+        console.log('Login result:', json);
+
+        if (json.success && json.data && json.data.user) {
+          var user = json.data.user;
+          var ws = json.data.workspace || null;
+
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#dcfce7';
+            errAlert.style.border = '1px solid #86efac';
+            errAlert.style.color = '#166534';
+            errAlert.textContent = '✓ ¡Acceso exitoso! Abriendo tu plataforma...';
+          }
+
+          var now = Date.now();
+          var isAdmin = user.role === 'admin';
+          var maxLifetime = isAdmin ? (4 * 3600 * 1000) : (8 * 3600 * 1000);
+
+          var sessionObj = {
+            userId: user.id,
+            role: user.role,
+            rememberMe: true,
+            loginTime: now,
+            lastActivityTime: now,
+            expiresAt: now + maxLifetime,
+            impersonatedWorkspaceId: null,
+            cachedUser: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone || '',
+              role: user.role,
+              specialty: user.specialty || '',
+              avatar: user.avatar || (user.name ? user.name.substring(0, 2).toUpperCase() : 'U'),
+              isActive: true,
+              is_active: 1,
+              workspaceId: user.workspace_id || null,
+              assignedToolIds: user.assigned_tool_ids || []
+            },
+            cachedWorkspace: ws
+          };
+
+          var sessionStr = JSON.stringify(sessionObj);
+          try {
+            localStorage.setItem('mi_humm_active_session_v1', sessionStr);
+            sessionStorage.setItem('mi_humm_active_session_v1', sessionStr);
+          } catch(err) {}
+
+          var authScreen = document.getElementById('auth-screen');
+          var mainApp = document.getElementById('main-app');
+          if (authScreen) authScreen.style.display = 'none';
+          if (mainApp) mainApp.style.display = 'flex';
+
+          var targetHash = isAdmin ? '#admin-dashboard' : '#inicio';
+          window.location.hash = targetHash;
+
+          if (window.MiHummApp) {
+            try {
+              if (window.MiHummApp.checkAuthenticationState) window.MiHummApp.checkAuthenticationState();
+              if (window.MiHummApp.handleHashChange) window.MiHummApp.handleHashChange();
+            } catch(ex) {
+              window.location.reload();
+            }
+          } else {
+            setTimeout(function() {
+              window.location.reload();
+            }, 250);
+          }
+        } else {
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#fee2e2';
+            errAlert.style.border = '1px solid #f87171';
+            errAlert.style.color = '#991b1b';
+            errAlert.textContent = json.error || json.message || 'Contraseña o usuario incorrecto.';
+          }
+          if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = 'Ingresar a Mi Humm';
+          }
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        if (errAlert) {
+          errAlert.style.display = 'block';
+          errAlert.style.backgroundColor = '#fee2e2';
+          errAlert.style.border = '1px solid #f87171';
+          errAlert.style.color = '#991b1b';
+          errAlert.textContent = 'Error al conectar: ' + (err.message || 'Falla de red');
+        }
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = 'Ingresar a Mi Humm';
+        }
+      }
+
+      return false;
+    };
+  </script>
 </head>
 <body>
 
@@ -35,10 +191,10 @@
         Organiza tus tareas, clientes, ventas y herramientas desde un solo lugar.
       </div>
 
-      <form id="form-login" autocomplete="off" onsubmit="return handleDirectLogin(event)">
+      <form id="form-login" autocomplete="off" onsubmit="handleDirectLogin(event); return false;">
         <div class="form-group">
           <label class="form-label" for="login-email">Correo electrónico</label>
-          <input type="email" id="login-email" class="form-control" placeholder="tu@correo.cl" required autocomplete="off" value="" />
+          <input type="text" id="login-email" class="form-control" placeholder="tu@correo.cl" required autocomplete="username" value="" onkeydown="if(event.key==='Enter'){handleDirectLogin(event);}" />
         </div>
 
         <div class="form-group">
@@ -47,8 +203,8 @@
             <a href="#" id="link-forgot-password" class="text-xs" style="color: var(--humm-red-primary); font-weight: 600; cursor: pointer;">¿Olvidaste tu contraseña?</a>
           </div>
           <div class="input-with-action" style="position: relative;">
-            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="new-password" value="" style="padding-right: 75px;" />
-            <button type="button" id="btn-toggle-password-visibility" class="toggle-btn text-xs font-semibold" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 12px; z-index: 5; padding: 4px 8px;">
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password" value="" style="padding-right: 75px;" onkeydown="if(event.key==='Enter'){handleDirectLogin(event);}" />
+            <button type="button" id="btn-toggle-password-visibility" class="toggle-btn text-xs font-semibold" onclick="togglePasswordVisibility(event)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 12px; z-index: 5; padding: 4px 8px;">
               Mostrar
             </button>
           </div>
@@ -56,14 +212,14 @@
 
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
           <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-xs); color: var(--text-secondary); cursor: pointer; user-select: none;">
-            <input type="checkbox" id="login-remember" style="accent-color: var(--humm-red-primary); width: 16px; height: 16px;" />
+            <input type="checkbox" id="login-remember" style="accent-color: var(--humm-red-primary); width: 16px; height: 16px;" checked />
             Recordar sesión en este dispositivo
           </label>
         </div>
 
-        <div id="login-error-alert" style="display: none; padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; text-align: center; font-weight: 600;"></div>
+        <div id="login-error-alert" style="display: none; padding: 12px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; text-align: center; font-weight: 600; line-height: 1.4;"></div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-login">
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-submit-login" onclick="handleDirectLogin(event)">
           Ingresar a Mi Humm
         </button>
       </form>
@@ -2444,169 +2600,5 @@
 
   <!-- Script Principal de la App (ES6 Module con cache-busting v=6.0) -->
   <script type="module" src="js/app.js?v=6.0"></script>
-
-  <!-- Script Inline de Soporte y Manejo Directo de UI en Login -->
-  <script>
-    (function() {
-      const emailInp = document.getElementById('login-email');
-      const passInp = document.getElementById('login-password');
-      const toggleBtn = document.getElementById('btn-toggle-password-visibility');
-
-      if (emailInp) emailInp.value = '';
-      if (passInp) passInp.value = '';
-
-      if (toggleBtn && passInp) {
-        toggleBtn.onclick = function(e) {
-          e.preventDefault();
-          const isPass = passInp.getAttribute('type') === 'password';
-          passInp.setAttribute('type', isPass ? 'text' : 'password');
-          toggleBtn.textContent = isPass ? 'Ocultar' : 'Mostrar';
-        };
-      }
-    })();
-
-    window.handleDirectLogin = async function(event) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      const emailInp = document.getElementById('login-email');
-      const passInp = document.getElementById('login-password');
-      const rememberInp = document.getElementById('login-remember');
-      const btnSubmit = document.getElementById('btn-submit-login');
-      const errAlert = document.getElementById('login-error-alert');
-
-      if (errAlert) errAlert.style.display = 'none';
-
-      const email = (emailInp ? emailInp.value : '').trim();
-      const password = (passInp ? passInp.value : '').trim();
-      const remember = rememberInp ? rememberInp.checked : false;
-
-      if (!email || !password) {
-        if (errAlert) {
-          errAlert.style.display = 'block';
-          errAlert.style.backgroundColor = '#fee2e2';
-          errAlert.style.borderColor = '#f87171';
-          errAlert.style.color = '#991b1b';
-          errAlert.textContent = 'Por favor ingresa tu correo y contraseña.';
-        }
-        return false;
-      }
-
-      const origText = btnSubmit ? btnSubmit.innerHTML : 'Ingresar a Mi Humm';
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '⏳ Verificando credenciales...';
-      }
-
-      try {
-        const res = await fetch('api/auth.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'login',
-            email: email,
-            password: password
-          })
-        });
-
-        const json = await res.json();
-        console.log('Respuesta de autenticación:', json);
-
-        if (json.success && json.data && json.data.user) {
-          const user = json.data.user;
-          const workspace = json.data.workspace || null;
-
-          if (errAlert) {
-            errAlert.style.display = 'block';
-            errAlert.style.backgroundColor = '#dcfce7';
-            errAlert.style.borderColor = '#86efac';
-            errAlert.style.color = '#166534';
-            errAlert.textContent = '✓ ¡Acceso correcto! Abriendo tu escritorio...';
-          }
-
-          const now = Date.now();
-          const isAdmin = user.role === 'admin';
-          const maxLifetime = isAdmin ? (4 * 3600 * 1000) : (8 * 3600 * 1000);
-
-          const sessionPayload = {
-            userId: user.id,
-            role: user.role,
-            rememberMe: !!remember,
-            loginTime: now,
-            lastActivityTime: now,
-            expiresAt: now + maxLifetime,
-            impersonatedWorkspaceId: null,
-            cachedUser: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              phone: user.phone || '',
-              role: user.role,
-              specialty: user.specialty || '',
-              avatar: user.avatar || (user.name ? user.name.substring(0, 2).toUpperCase() : 'U'),
-              isActive: true,
-              workspaceId: user.workspace_id || null,
-              assignedToolIds: user.assigned_tool_ids || []
-            },
-            cachedWorkspace: workspace
-          };
-
-          const sessionStr = JSON.stringify(sessionPayload);
-          try {
-            localStorage.setItem('mi_humm_active_session_v1', sessionStr);
-            sessionStorage.setItem('mi_humm_active_session_v1', sessionStr);
-          } catch (e) {}
-
-          // Forzar conmutación visual inmediata
-          const authScreen = document.getElementById('auth-screen');
-          const mainApp = document.getElementById('main-app');
-          if (authScreen) authScreen.style.display = 'none';
-          if (mainApp) mainApp.style.display = 'flex';
-
-          const targetHash = isAdmin ? '#admin-dashboard' : '#inicio';
-          window.location.hash = targetHash;
-
-          if (window.MiHummApp) {
-            try {
-              if (window.MiHummApp.checkAuthenticationState) window.MiHummApp.checkAuthenticationState();
-              if (window.MiHummApp.handleHashChange) window.MiHummApp.handleHashChange();
-            } catch (e) {
-              window.location.reload();
-            }
-          } else {
-            window.location.reload();
-          }
-        } else {
-          if (errAlert) {
-            errAlert.style.display = 'block';
-            errAlert.style.backgroundColor = '#fee2e2';
-            errAlert.style.borderColor = '#f87171';
-            errAlert.style.color = '#991b1b';
-            errAlert.textContent = json.error || json.message || 'Contraseña o usuario incorrecto.';
-          }
-          if (btnSubmit) {
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = origText;
-          }
-        }
-      } catch (err) {
-        console.error('Error durante login:', err);
-        if (errAlert) {
-          errAlert.style.display = 'block';
-          errAlert.style.backgroundColor = '#fee2e2';
-          errAlert.style.borderColor = '#f87171';
-          errAlert.style.color = '#991b1b';
-          errAlert.textContent = 'Error al conectar con el servidor: ' + (err.message || 'Error de red.');
-        }
-        if (btnSubmit) {
-          btnSubmit.disabled = false;
-          btnSubmit.innerHTML = origText;
-        }
-      }
-
-      return false;
-    };
 </body>
 </html>
