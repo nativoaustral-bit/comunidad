@@ -2438,12 +2438,27 @@ class App {
     if (formLogin) {
       formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-password').value;
+        e.stopPropagation();
+        const email = (document.getElementById('login-email')?.value || '').trim();
+        const pass = (document.getElementById('login-password')?.value || '').trim();
         const remember = document.getElementById('login-remember')?.checked || false;
+        const errAlert = document.getElementById('login-error-alert');
+
+        if (errAlert) errAlert.style.display = 'none';
+
+        if (!email || !pass) {
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#fee2e2';
+            errAlert.style.borderColor = '#f87171';
+            errAlert.style.color = '#991b1b';
+            errAlert.textContent = 'Por favor ingresa tu correo y contraseña.';
+          }
+          return;
+        }
 
         const btnSubmit = formLogin.querySelector('button[type="submit"]');
-        const originalText = btnSubmit ? btnSubmit.innerHTML : 'Ingresar a mi Plataforma';
+        const originalText = btnSubmit ? btnSubmit.innerHTML : 'Ingresar a Mi Humm';
         if (btnSubmit) {
           btnSubmit.disabled = true;
           btnSubmit.innerHTML = 'Verificando credenciales...';
@@ -2452,16 +2467,44 @@ class App {
         try {
           const res = await auth.login(email, pass, remember);
           if (res.success) {
+            if (errAlert) {
+              errAlert.style.display = 'block';
+              errAlert.style.backgroundColor = '#dcfce7';
+              errAlert.style.borderColor = '#86efac';
+              errAlert.style.color = '#166534';
+              errAlert.textContent = '✓ ¡Acceso correcto! Abriendo tu escritorio...';
+            }
             this.showToast(`¡Bienvenido a Mi Humm, ${res.user.name.split(' ')[0]}!`, 'success');
             const targetHash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+
+            // Forzar conmutación visual inmediata
+            const authScreen = document.getElementById('auth-screen');
+            const mainApp = document.getElementById('main-app');
+            if (authScreen) authScreen.style.display = 'none';
+            if (mainApp) mainApp.style.display = 'flex';
+
             window.location.hash = targetHash;
             this.checkAuthenticationState();
             this.handleHashChange();
           } else {
+            if (errAlert) {
+              errAlert.style.display = 'block';
+              errAlert.style.backgroundColor = '#fee2e2';
+              errAlert.style.borderColor = '#f87171';
+              errAlert.style.color = '#991b1b';
+              errAlert.textContent = res.message || 'Contraseña o usuario incorrecto.';
+            }
             this.showToast(res.message || 'Error al verificar credenciales. Verifica tu correo y contraseña.', 'danger');
           }
         } catch (err) {
           console.error('Error al iniciar sesión:', err);
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#fee2e2';
+            errAlert.style.borderColor = '#f87171';
+            errAlert.style.color = '#991b1b';
+            errAlert.textContent = 'Error de conexión con el servidor. Intenta de nuevo.';
+          }
           this.showToast('Ocurrió un error al procesar el ingreso. Intenta nuevamente.', 'danger');
         } finally {
           if (btnSubmit) {
