@@ -259,7 +259,32 @@ class Store {
           if (Array.isArray(json.data.workspaces)) this.data.workspaces = json.data.workspaces;
           if (Array.isArray(json.data.subscriptions)) this.data.subscriptions = json.data.subscriptions;
           if (Array.isArray(json.data.customers)) this.data.customers = json.data.customers;
-          if (Array.isArray(json.data.sales)) this.data.sales = json.data.sales;
+          if (Array.isArray(json.data.sales)) {
+            this.data.sales = json.data.sales.map(s => {
+              let year = s.year ? parseInt(s.year, 10) : null;
+              let month = s.month ? parseInt(s.month, 10) : null;
+              const dateStr = s.date || s.saleDate || s.createdAt;
+              if ((!year || !month) && dateStr) {
+                const parts = dateStr.split('-');
+                if (parts.length >= 2) {
+                  year = parseInt(parts[0], 10);
+                  month = parseInt(parts[1], 10);
+                }
+              }
+              const now = new Date();
+              year = year || now.getFullYear();
+              month = month || (now.getMonth() + 1);
+              const amt = Math.max(0, parseInt(s.amount, 10) || parseInt(s.totalAmount, 10) || 0);
+              return {
+                ...s,
+                amount: amt,
+                totalAmount: amt,
+                year,
+                month,
+                date: s.date || s.saleDate || `${year}-${String(month).padStart(2, '0')}-01`
+              };
+            });
+          }
           if (Array.isArray(json.data.tasks)) this.data.tasks = json.data.tasks;
           if (Array.isArray(json.data.calendar_events)) this.data.events = json.data.calendar_events;
           else if (Array.isArray(json.data.events)) this.data.events = json.data.events;
@@ -1477,8 +1502,32 @@ class Store {
   // VENTAS (REGISTRO POR FECHA, CLIENTE, SEGUIMIENTO DE PAGO & HISTÓRICO)
   // =========================================================================
   getSales(workspaceId) {
-    return this.data.sales
+    return (this.data.sales || [])
       .filter(s => s.workspaceId === workspaceId)
+      .map(s => {
+        let year = s.year ? parseInt(s.year, 10) : null;
+        let month = s.month ? parseInt(s.month, 10) : null;
+        const dateStr = s.date || s.saleDate || s.createdAt;
+        if ((!year || !month) && dateStr) {
+          const parts = dateStr.split('-');
+          if (parts.length >= 2) {
+            year = parseInt(parts[0], 10);
+            month = parseInt(parts[1], 10);
+          }
+        }
+        const now = new Date();
+        year = year || now.getFullYear();
+        month = month || (now.getMonth() + 1);
+        const amt = Math.max(0, parseInt(s.amount, 10) || parseInt(s.totalAmount, 10) || 0);
+        return {
+          ...s,
+          amount: amt,
+          totalAmount: amt,
+          year,
+          month,
+          date: s.date || s.saleDate || `${year}-${String(month).padStart(2, '0')}-01`
+        };
+      })
       .sort((a, b) => {
         const dateA = a.date || `${a.year}-${String(a.month).padStart(2, '0')}-01`;
         const dateB = b.date || `${b.year}-${String(b.month).padStart(2, '0')}-01`;

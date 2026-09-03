@@ -239,6 +239,47 @@ try {
             ];
         }
         $data['benefit_requests'] = $benefitRequests;
+
+        $stmtSalesAll = $pdo->query('SELECT * FROM sales ORDER BY sale_date DESC, created_at DESC');
+        $rawSalesAll = $stmtSalesAll->fetchAll();
+        $salesAll = [];
+        foreach ($rawSalesAll as $s) {
+            $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
+            $saleDate = $s['sale_date'] ?? null;
+            $year = null;
+            $month = null;
+            if (!empty($saleDate)) {
+                $parts = explode('-', $saleDate);
+                if (count($parts) >= 2) {
+                    $year = (int)$parts[0];
+                    $month = (int)$parts[1];
+                }
+            } elseif (!empty($s['created_at'])) {
+                $year = (int)date('Y', strtotime($s['created_at']));
+                $month = (int)date('n', strtotime($s['created_at']));
+            }
+
+            $salesAll[] = [
+                'id' => $s['id'],
+                'workspaceId' => $s['workspace_id'],
+                'customerId' => $s['customer_id'] ?? null,
+                'customerName' => $s['customer_name'] ?? '',
+                'amount' => $salesAmount,
+                'totalAmount' => $salesAmount,
+                'saleDate' => $saleDate,
+                'date' => $saleDate,
+                'year' => $year,
+                'month' => $month,
+                'dueDate' => $s['due_date'] ?? null,
+                'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
+                'paymentStatus' => $s['payment_status'] ?? 'pagado',
+                'status' => $s['payment_status'] ?? 'pagado',
+                'notes' => $s['notes'] ?? '',
+                'description' => $s['notes'] ?? '',
+                'createdAt' => $s['created_at'] ?? null
+            ];
+        }
+        $data['sales'] = $salesAll;
     } elseif (!empty($workspaceId)) {
         // Si no es admin pero tiene workspace asignado
         $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
@@ -313,6 +354,20 @@ try {
         $sales = [];
         foreach ($rawSales as $s) {
             $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
+            $saleDate = $s['sale_date'] ?? null;
+            $year = null;
+            $month = null;
+            if (!empty($saleDate)) {
+                $parts = explode('-', $saleDate);
+                if (count($parts) >= 2) {
+                    $year = (int)$parts[0];
+                    $month = (int)$parts[1];
+                }
+            } elseif (!empty($s['created_at'])) {
+                $year = (int)date('Y', strtotime($s['created_at']));
+                $month = (int)date('n', strtotime($s['created_at']));
+            }
+
             $sales[] = [
                 'id' => $s['id'],
                 'workspaceId' => $s['workspace_id'],
@@ -320,8 +375,10 @@ try {
                 'customerName' => $s['customer_name'] ?? '',
                 'amount' => $salesAmount,
                 'totalAmount' => $salesAmount,
-                'saleDate' => $s['sale_date'] ?? null,
-                'date' => $s['sale_date'] ?? null,
+                'saleDate' => $saleDate,
+                'date' => $saleDate,
+                'year' => $year,
+                'month' => $month,
                 'dueDate' => $s['due_date'] ?? null,
                 'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
                 'paymentStatus' => $s['payment_status'] ?? 'pagado',

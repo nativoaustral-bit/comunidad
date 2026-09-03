@@ -29,29 +29,28 @@ export function renderDashboard(container) {
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
-  const currentMonthSale = sales.find(s => s.year === currentYear && s.month === currentMonth);
-  const prevMonthSale = sales.find(s => s.year === prevYear && s.month === prevMonth);
+  const getSaleYear = (s) => s.year || (s.date ? parseInt(s.date.split('-')[0], 10) : (s.saleDate ? parseInt(s.saleDate.split('-')[0], 10) : currentYear));
+  const getSaleMonth = (s) => s.month || (s.date ? parseInt(s.date.split('-')[1], 10) : (s.saleDate ? parseInt(s.saleDate.split('-')[1], 10) : currentMonth));
 
-  const currentMonthAmount = currentMonthSale ? currentMonthSale.amount : 0;
-  const prevMonthAmount = prevMonthSale ? prevMonthSale.amount : 0;
+  const currentMonthSales = sales.filter(s => getSaleYear(s) === currentYear && getSaleMonth(s) === currentMonth);
+  const prevMonthSales = sales.filter(s => getSaleYear(s) === prevYear && getSaleMonth(s) === prevMonth);
+
+  const currentMonthAmount = currentMonthSales.reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
+  const prevMonthAmount = prevMonthSales.reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
 
   let comparisonHtml = '';
-  if (currentMonthSale && prevMonthSale) {
-    if (prevMonthAmount === 0) {
-      comparisonHtml = `<span class="comparison-neutral">Sin registro previo comparable</span>`;
+  if (currentMonthAmount > 0 && prevMonthAmount > 0) {
+    const diff = currentMonthAmount - prevMonthAmount;
+    const pct = Math.round((diff / prevMonthAmount) * 100);
+    if (diff >= 0) {
+      comparisonHtml = `<span class="comparison-positive">↑ +${pct}% vs mes anterior (${formatCLP(diff)})</span>`;
     } else {
-      const diff = currentMonthAmount - prevMonthAmount;
-      const pct = Math.round((diff / prevMonthAmount) * 100);
-      if (diff >= 0) {
-        comparisonHtml = `<span class="comparison-positive">↑ +${pct}% vs mes anterior (${formatCLP(diff)})</span>`;
-      } else {
-        comparisonHtml = `<span class="comparison-negative">↓ ${pct}% vs mes anterior (${formatCLP(diff)})</span>`;
-      }
+      comparisonHtml = `<span class="comparison-negative">↓ ${pct}% vs mes anterior (${formatCLP(diff)})</span>`;
     }
-  } else if (currentMonthSale && !prevMonthSale) {
-    comparisonHtml = `<span class="comparison-neutral">Primer mes con registro</span>`;
+  } else if (currentMonthAmount > 0 && prevMonthAmount === 0) {
+    comparisonHtml = `<span class="comparison-positive">${currentMonthSales.length} ${currentMonthSales.length === 1 ? 'venta registrada' : 'ventas registradas'} en ${formatMonthName(currentMonth)}</span>`;
   } else {
-    comparisonHtml = `<span class="comparison-neutral">Aún sin registro para este mes</span>`;
+    comparisonHtml = `<span class="comparison-neutral">Aún sin ventas registradas en ${formatMonthName(currentMonth)}</span>`;
   }
 
   const activeCustomersCount = customers.filter(c => c.status === 'active').length;

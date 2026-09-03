@@ -26,25 +26,27 @@ export function renderSalesView(container) {
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
+  const getSaleYear = (s) => s.year || (s.date ? parseInt(s.date.split('-')[0], 10) : (s.saleDate ? parseInt(s.saleDate.split('-')[0], 10) : currentYear));
+  const getSaleMonth = (s) => s.month || (s.date ? parseInt(s.date.split('-')[1], 10) : (s.saleDate ? parseInt(s.saleDate.split('-')[1], 10) : currentMonth));
+
   // Años disponibles en los registros de ventas
-  const availableYears = Array.from(new Set(sales.map(s => s.year || (s.date ? parseInt(s.date.split('-')[0], 10) : currentYear)))).sort((a, b) => b - a);
+  const availableYears = Array.from(new Set(sales.map(s => getSaleYear(s)).filter(Boolean))).sort((a, b) => b - a);
   if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
 
   // Ventas del mes actual
-  const currentMonthSales = sales.filter(s => s.year === currentYear && s.month === currentMonth);
-  const prevMonthSales = sales.filter(s => s.year === prevYear && s.month === prevMonth);
+  const currentMonthSales = sales.filter(s => getSaleYear(s) === currentYear && getSaleMonth(s) === currentMonth);
+  const prevMonthSales = sales.filter(s => getSaleYear(s) === prevYear && getSaleMonth(s) === prevMonth);
 
-  const currentMonthTotal = currentMonthSales.reduce((sum, s) => sum + s.amount, 0);
-  const prevMonthTotal = prevMonthSales.reduce((sum, s) => sum + s.amount, 0);
+  const currentMonthTotal = currentMonthSales.reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
+  const prevMonthTotal = prevMonthSales.reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
 
   // Total cobrado vs pendiente general (incluye pendientes, en cobranza, abonos y ventas por facturar)
-  const totalPaid = sales.filter(s => s.paymentStatus === 'pagado').reduce((sum, s) => sum + s.amount, 0);
-  const totalPending = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').reduce((sum, s) => sum + s.amount, 0);
+  const totalPaid = sales.filter(s => s.paymentStatus === 'pagado').reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
+  const totalPending = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
   const pendingCount = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').length;
 
-  // Total últimos 12 meses
-  const recent12Sales = sales.slice(-12);
-  const total12Months = recent12Sales.reduce((acc, curr) => acc + curr.amount, 0);
+  // Total acumulado general de ventas
+  const total12Months = sales.reduce((acc, curr) => acc + (Number(curr.amount) || Number(curr.totalAmount) || 0), 0);
 
   let diffText = '';
   let diffClass = 'comparison-neutral';
@@ -59,15 +61,16 @@ export function renderSalesView(container) {
       diffClass = 'comparison-negative';
     }
   } else if (currentMonthTotal > 0 && prevMonthTotal === 0) {
-    diffText = 'Primer mes registrado';
+    diffText = `${currentMonthSales.length} ${currentMonthSales.length === 1 ? 'venta registrada' : 'ventas registradas'} en ${formatMonthName(currentMonth)}`;
+    diffClass = 'comparison-positive';
   } else {
-    diffText = 'Sin registro previo';
+    diffText = `Sin ventas registradas en ${formatMonthName(currentMonth)}`;
   }
 
   // Filtrado de ventas en la tabla por Mes, Año, Estado y Búsqueda
   const filteredSales = sales.filter(sale => {
-    const saleYear = sale.year || (sale.date ? parseInt(sale.date.split('-')[0], 10) : null);
-    const saleMonth = sale.month || (sale.date ? parseInt(sale.date.split('-')[1], 10) : null);
+    const saleYear = getSaleYear(sale);
+    const saleMonth = getSaleMonth(sale);
 
     // Filtro Año
     if (currentYearFilter !== 'all') {
