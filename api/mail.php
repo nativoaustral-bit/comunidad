@@ -222,6 +222,70 @@ HTML;
 </body>
 </html>
 HTML;
+} elseif ($action === 'auth_help_alert') {
+    $clientEmail = htmlspecialchars($input['email'] ?? $email);
+    $clientName = htmlspecialchars($input['name'] ?? $name);
+    $clientMsg = htmlspecialchars($input['message'] ?? 'Solicitud de asistencia para inicio de sesión en plataforma');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'Desconocida';
+    $now = date('d/m/Y H:i:s');
+
+    $subject = "🚨 Alerta de Acceso: {$clientName} ({$clientEmail}) solicita ayuda para ingresar a Mi Humm";
+    $toEmail = 'contacto@humm.cl';
+
+    $htmlBody = <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Alerta de Acceso a Plataforma</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
+    .card { max-width: 540px; margin: 0 auto; background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .header { background: #e5383b; color: #fff; padding: 20px; text-align: center; }
+    .body { padding: 24px; line-height: 1.6; }
+    .item { margin-bottom: 12px; }
+    .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+    .val { font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 2px; }
+    .msg-box { background: #fff1f2; border: 1px solid #fecdd3; padding: 12px; border-radius: 6px; margin-top: 14px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h2 style="margin:0; font-size: 18px;">🚨 Solicitud de Ayuda de Acceso</h2>
+      <p style="margin:4px 0 0; font-size: 12px; opacity: 0.9;">Plataforma Comunidad Humm Co-Creation</p>
+    </div>
+    <div class="body">
+      <p>Un usuario ha indicado que tiene problemas para ingresar a la plataforma y solicita asistencia:</p>
+      <div class="item">
+        <div class="label">Nombre / Emprendedor:</div>
+        <div class="val">{$clientName}</div>
+      </div>
+      <div class="item">
+        <div class="label">Correo Electrónico:</div>
+        <div class="val"><a href="mailto:{$clientEmail}">{$clientEmail}</a></div>
+      </div>
+      <div class="item">
+        <div class="label">Fecha y Hora:</div>
+        <div class="val">{$now}</div>
+      </div>
+      <div class="item">
+        <div class="label">Dirección IP:</div>
+        <div class="val">{$ip}</div>
+      </div>
+      <div class="msg-box">
+        <div class="label" style="color: #991b1b;">Mensaje / Observaciones:</div>
+        <div style="margin-top: 4px; color: #1e293b;">{$clientMsg}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+HTML;
+
+    $sent = @mail($toEmail, $subject, $htmlBody, implode("\r\n", $headers));
+    DB::jsonResponse(true, ['sent' => !!$sent, 'message' => 'Alerta enviada al equipo de administración Humm.']);
+    exit;
 } else {
     DB::jsonResponse(false, null, 'Acción de correo no reconocida.', 400);
 }

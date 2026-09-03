@@ -375,30 +375,39 @@ class AuthService {
     }
   }
 
-  requestPasswordReset(email) {
-    const user = store.getUserByEmail(email);
-    if (!user) {
+  async requestPasswordReset(email) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, message: 'Ingresa un correo electrónico válido.' };
+    }
+
+    try {
+      const res = await fetch('api/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'request_reset',
+          email: cleanEmail
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        return {
+          success: true,
+          message: json.data?.message || `Hemos enviado las instrucciones para restablecer tu contraseña al correo ${cleanEmail}.`
+        };
+      } else {
+        return {
+          success: false,
+          message: json.error || json.message || 'No se pudo enviar el correo de recuperación. Verifica el correo ingresado.'
+        };
+      }
+    } catch (e) {
       return {
         success: false,
-        message: 'No existe ninguna cuenta asociada a este correo electrónico.'
+        message: 'Error al conectar con el servidor para recuperación de contraseña.'
       };
     }
-    
-    // Despacho real de correo de restablecimiento vía PHP
-    fetch('api/mail.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'reset_password',
-        email: user.email,
-        name: user.name
-      })
-    }).catch(err => console.warn('Reset email dispatch notice:', err));
-
-    return {
-      success: true,
-      message: `Hemos enviado el enlace para cambiar tu contraseña al correo ${email}. Revisa tu bandeja de entrada.`
-    };
   }
 
   changePassword(currentPassword, newPassword) {

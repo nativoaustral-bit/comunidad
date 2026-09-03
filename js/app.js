@@ -115,6 +115,10 @@ class App {
     if (!auth.isAuthenticated()) {
       if (authScreen) authScreen.style.display = 'flex';
       if (mainApp) mainApp.style.display = 'none';
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-password');
+      if (emailInput) emailInput.value = '';
+      if (passInput) passInput.value = '';
     } else {
       if (authScreen) authScreen.style.display = 'none';
       if (mainApp) mainApp.style.display = 'flex';
@@ -2473,37 +2477,43 @@ class App {
     // Toggle de visibilidad de contraseña en login
     const togglePassBtn = document.getElementById('btn-toggle-password-visibility');
     if (togglePassBtn) {
-      togglePassBtn.addEventListener('click', () => {
+      togglePassBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const passInput = document.getElementById('login-password');
         if (passInput) {
-          const isPass = passInput.type === 'password';
-          passInput.type = isPass ? 'text' : 'password';
+          const isPass = passInput.getAttribute('type') === 'password';
+          passInput.setAttribute('type', isPass ? 'text' : 'password');
           togglePassBtn.textContent = isPass ? 'Ocultar' : 'Mostrar';
         }
       });
     }
 
-    // Botones de demo rápida en login
-    document.querySelectorAll('.btn-demo-login').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const email = btn.getAttribute('data-email') || 'carolina@humm.cl';
-        const pass = btn.getAttribute('data-pass') || 'humm';
-        this.loginDemo(email, pass);
-      });
-    });
-
     // Recuperar contraseña
     document.getElementById('link-forgot-password')?.addEventListener('click', (e) => {
       e.preventDefault();
+      const loginEmail = document.getElementById('login-email')?.value || '';
+      const forgotEmailInput = document.getElementById('forgot-email');
+      if (forgotEmailInput && loginEmail) forgotEmailInput.value = loginEmail;
       this.openModal('modal-forgot-password');
     });
 
-    document.getElementById('form-forgot-password')?.addEventListener('submit', (e) => {
+    document.getElementById('form-forgot-password')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('forgot-email').value;
-      const res = auth.requestPasswordReset(email);
+      const email = (document.getElementById('forgot-email')?.value || '').trim();
+      const btnSubmit = e.target.querySelector('button[type="submit"]');
+      const origText = btnSubmit ? btnSubmit.textContent : 'Enviar enlace';
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Enviando...';
+      }
+
+      const res = await auth.requestPasswordReset(email);
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = origText;
+      }
+
       if (res.success) {
         this.showToast(res.message, 'success');
         this.closeAllModals();
@@ -2529,7 +2539,7 @@ class App {
         return;
       }
 
-      const res = store.resetUserPassword(email, passNew);
+      const res = await store.resetUserPassword(email, passNew);
       if (res.success) {
         this.showToast('¡Contraseña actualizada exitosamente! Iniciando sesión...', 'success');
         this.closeAllModals();
@@ -2549,10 +2559,50 @@ class App {
       }
     });
 
-    // Enlace de ayuda Humm
+    // Enlace de ayuda Humm y envío de alerta a contacto@humm.cl
     document.getElementById('link-auth-help')?.addEventListener('click', (e) => {
       e.preventDefault();
+      const loginEmail = document.getElementById('login-email')?.value || '';
+      const helpEmailInput = document.getElementById('auth-help-email');
+      if (helpEmailInput && loginEmail) helpEmailInput.value = loginEmail;
       this.openModal('modal-auth-help');
+    });
+
+    document.getElementById('form-auth-help')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = (document.getElementById('auth-help-name')?.value || '').trim();
+      const email = (document.getElementById('auth-help-email')?.value || '').trim();
+      const message = (document.getElementById('auth-help-message')?.value || '').trim();
+      const btnSubmit = document.getElementById('btn-submit-auth-help');
+
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Enviando alerta...';
+      }
+
+      try {
+        const res = await fetch('api/mail.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'auth_help_alert',
+            name,
+            email,
+            message
+          })
+        });
+        const json = await res.json();
+        this.showToast('🚨 Alerta enviada a contacto@humm.cl. Te contactaremos a la brevedad.', 'success');
+        this.closeAllModals();
+        e.target.reset();
+      } catch (err) {
+        this.showToast('Error al enviar la alerta. Puedes escribir directamente a contacto@humm.cl.', 'danger');
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = '🚨 Enviar Alerta a Soporte';
+        }
+      }
     });
 
     // Botón Cerrar Sesión

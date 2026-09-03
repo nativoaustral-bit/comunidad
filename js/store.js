@@ -1225,17 +1225,35 @@ class Store {
     return newUser;
   }
 
-  resetUserPassword(email, newPassword) {
-    const cleanEmail = email.trim().toLowerCase();
-    const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (user) {
-      user.password = newPassword.trim();
-      user.mustChangePassword = 0;
-      this.saveState();
-      this.apiSave('users', user, 'save');
-      return { success: true, user };
+  async resetUserPassword(email, newPassword) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (newPassword || '').trim();
+
+    try {
+      const res = await fetch('api/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reset_password_direct',
+          email: cleanEmail,
+          new_password: cleanPass
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+        if (user) {
+          user.password = cleanPass;
+          user.mustChangePassword = 0;
+          this.saveState();
+        }
+        return { success: true, message: json.data?.message || 'Contraseña actualizada con éxito.' };
+      } else {
+        return { success: false, message: json.error || 'Error al actualizar contraseña.' };
+      }
+    } catch (e) {
+      return { success: false, message: 'Error de conexión al restablecer contraseña.' };
     }
-    return { success: false, message: 'Usuario no encontrado con ese correo.' };
   }
 
   toggleUserStatus(userId) {
