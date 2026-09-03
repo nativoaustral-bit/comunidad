@@ -654,7 +654,29 @@ class App {
           this.returnToEventAfterCustomerCreate = true;
           this.openCreateCustomerModal();
         });
-      }
+      // Conmutador entre Evento y Tarea desde el modal de agendar
+      document.querySelectorAll('input[name="modal-event-kind"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          if (e.target.value === 'task') {
+            const title = document.getElementById('modal-event-title') ? document.getElementById('modal-event-title').value.trim() : '';
+            const targetDate = document.getElementById('modal-event-date') ? document.getElementById('modal-event-date').value : '';
+            const customerId = document.getElementById('modal-event-customer') ? document.getElementById('modal-event-customer').value : null;
+            const description = document.getElementById('modal-event-desc') ? document.getElementById('modal-event-desc').value.trim() : '';
+            
+            // Reestablecer radio a "event" para próximas aperturas
+            const evtRadio = document.querySelector('input[name="modal-event-kind"][value="event"]');
+            if (evtRadio) evtRadio.checked = true;
+
+            this.closeAllModals();
+            this.openCreateTaskModal(targetDate, 'todo', {
+              title,
+              description,
+              customerId,
+              dueDate: targetDate
+            });
+          }
+        });
+      });
     }
 
     // Submit de Nota Rápida (Bloc de Notas)
@@ -1472,6 +1494,13 @@ class App {
         this.populateSaleModalSelects();
       }
 
+      // Si es modal evento, poblar selector de clientes y asegurar radio en evento
+      if (modalId === 'modal-event') {
+        const evtRadio = document.querySelector('input[name="modal-event-kind"][value="event"]');
+        if (evtRadio) evtRadio.checked = true;
+        this.populateEventModalSelects();
+      }
+
       // Si es modal crear usuario, poblar selector de workspaces
       if (modalId === 'modal-create-user') {
         const wsSelect = document.getElementById('admin-user-workspace');
@@ -1579,6 +1608,35 @@ class App {
       oppSelect.innerHTML = '<option value="">(Opcional) Ninguna</option>' +
         opps.map(o => `<option value="${o.id}" ${o.id === selectedOppId ? 'selected' : ''}>${o.title} (${o.contactName})</option>`).join('');
     }
+  }
+
+  openCreateTaskModal(initialDate = null, initialStatus = 'todo', extraData = {}) {
+    const form = document.getElementById('form-modal-task');
+    if (form) {
+      form.removeAttribute('data-edit-id');
+      form.reset();
+      document.getElementById('modal-task-header-title').textContent = initialDate ? `Nueva Tarea para el ${formatDateCL(initialDate)}` : 'Nueva Tarea';
+      if (document.getElementById('modal-task-title')) {
+        document.getElementById('modal-task-title').value = extraData.title || '';
+      }
+      if (document.getElementById('modal-task-desc')) {
+        document.getElementById('modal-task-desc').value = extraData.description || '';
+      }
+      if (document.getElementById('modal-task-due-date')) {
+        document.getElementById('modal-task-due-date').value = initialDate || extraData.dueDate || '';
+      }
+      if (document.getElementById('modal-task-start-date')) {
+        document.getElementById('modal-task-start-date').value = initialDate || extraData.startDate || '';
+      }
+      if (document.getElementById('modal-task-tag')) {
+        document.getElementById('modal-task-tag').value = extraData.tag || '';
+      }
+    }
+    this.populateTaskModalSelects(extraData.customerId || null, extraData.opportunityId || null, initialStatus || 'todo');
+    if (document.getElementById('modal-task-status')) {
+      document.getElementById('modal-task-status').value = initialStatus || 'todo';
+    }
+    this.openModal('modal-task');
   }
 
   openEditTaskModal(taskId) {
@@ -2522,13 +2580,7 @@ class App {
 
     // Botón de acción rápida superior: + Nueva tarea
     document.getElementById('btn-topbar-quick-action')?.addEventListener('click', () => {
-      const form = document.getElementById('form-modal-task');
-      if (form) {
-        form.removeAttribute('data-edit-id');
-        form.reset();
-        document.getElementById('modal-task-header-title').textContent = 'Nueva Tarea';
-      }
-      this.openModal('modal-task');
+      this.openCreateTaskModal(null, 'todo');
     });
 
     // Mobile Drawer Toggle & Overlay

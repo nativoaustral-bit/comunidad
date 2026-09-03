@@ -66,6 +66,14 @@ export function renderCalendarView(container) {
           Exportar .ICS
         </button>
 
+        <button class="btn btn-secondary" id="btn-open-modal-task-cal" title="Crear una nueva tarea en el tablero vinculada al calendario">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          📋 + Nueva Tarea
+        </button>
+
         <button class="btn btn-primary" id="btn-open-modal-event">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -726,6 +734,13 @@ function attachCalendarEventListeners(container, ws, events, tasks, customers) {
         document.getElementById('modal-event-header-title').textContent = 'Agendar Reunión o Evento';
       }
       window.MiHummApp.openModal('modal-event');
+    }
+  });
+
+  // Botón abrir modal nueva tarea desde el calendario
+  container.querySelector('#btn-open-modal-task-cal')?.addEventListener('click', () => {
+    if (window.MiHummApp) {
+      window.MiHummApp.openCreateTaskModal(new Date().toISOString().split('T')[0], 'todo');
     }
   });
 

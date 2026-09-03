@@ -542,8 +542,9 @@
               <input type="date" id="modal-task-start-date" class="form-control" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="modal-task-due-date">Fecha de vencimiento</label>
+              <label class="form-label" for="modal-task-due-date">Fecha de vencimiento / Plazo</label>
               <input type="date" id="modal-task-due-date" class="form-control" />
+              <span class="form-hint" style="font-size: 11px; color: var(--text-muted);">💡 Al ingresar una fecha, esta tarea se sincronizará automáticamente con el Calendario.</span>
             </div>
           </div>
 
@@ -2179,6 +2180,21 @@
       </div>
       <form id="form-modal-event">
         <div class="modal-body">
+          <!-- Selector de creación rápida: Compromiso vs Tarea -->
+          <div style="background: var(--bg-surface-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 16px;">
+            <label class="form-label" style="font-weight: 700; margin-bottom: 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em;">¿Qué deseas programar en esta fecha?</label>
+            <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--font-size-xs); font-weight: 600;">
+                <input type="radio" name="modal-event-kind" value="event" checked />
+                📅 Reunión / Compromiso
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: var(--font-size-xs); font-weight: 600; color: var(--humm-red-primary);">
+                <input type="radio" name="modal-event-kind" value="task" />
+                📋 Crear como Tarea (se agregará al Kanban en "Por hacer")
+              </label>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label" for="modal-event-title">Título del Evento o Compromiso *</label>
             <input type="text" id="modal-event-title" class="form-control" placeholder="Ej. Reunión de coordinación, Visita a taller, Entrega de pedido..." required />

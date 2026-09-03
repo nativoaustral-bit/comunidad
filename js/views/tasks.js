@@ -307,14 +307,7 @@ export function renderTasksView(container) {
       btn.addEventListener('click', () => {
         const colId = btn.getAttribute('data-col-id');
         if (window.MiHummApp) {
-          const form = document.getElementById('form-modal-task');
-          if (form) {
-            form.removeAttribute('data-edit-id');
-            form.reset();
-            document.getElementById('modal-task-header-title').textContent = 'Nueva Tarea';
-            document.getElementById('modal-task-status').value = colId;
-          }
-          window.MiHummApp.openModal('modal-task');
+          window.MiHummApp.openCreateTaskModal(null, colId);
         }
       });
     });
@@ -435,7 +428,7 @@ export function renderTasksView(container) {
   });
 
   container.querySelector('#btn-create-task-main')?.addEventListener('click', () => {
-    if (window.MiHummApp) window.MiHummApp.openModal('modal-task');
+    if (window.MiHummApp) window.MiHummApp.openCreateTaskModal(null, 'todo');
   });
 
   filterAndRenderColumns();
