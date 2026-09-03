@@ -939,8 +939,12 @@ class App {
         const name = document.getElementById('admin-user-name').value.trim();
         const email = document.getElementById('admin-user-email').value.trim();
         const password = document.getElementById('admin-user-password').value.trim();
-        const role = document.getElementById('admin-user-role').value;
-        const workspaceId = document.getElementById('admin-user-workspace').value || null;
+        let workspaceId = document.getElementById('admin-user-workspace').value || null;
+        // Si no seleccionó workspace y es emprendedor, buscar coincidencia por email
+        if (!workspaceId && role === 'entrepreneur' && email) {
+          const matchWs = store.getAllWorkspaces().find(w => (w.email || '').toLowerCase().trim() === email.toLowerCase().trim());
+          if (matchWs) workspaceId = matchWs.id;
+        }
         const isActive = document.getElementById('admin-user-is-active') ? document.getElementById('admin-user-is-active').checked : true;
 
         // Recolectar herramientas seleccionadas
@@ -1984,7 +1988,14 @@ class App {
       document.getElementById('admin-user-password').value = '';
       document.getElementById('admin-user-password-hint').textContent = 'Dejar vacío para conservar la contraseña actual';
       document.getElementById('admin-user-role').value = user.role || 'entrepreneur';
-      if (wsSelect) wsSelect.value = user.workspaceId || '';
+      if (wsSelect) {
+        let wsVal = user.workspaceId || '';
+        if (!wsVal && user.email) {
+          const matchWs = workspaces.find(w => (w.email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim());
+          if (matchWs) wsVal = matchWs.id;
+        }
+        wsSelect.value = wsVal;
+      }
       if (document.getElementById('admin-user-is-active')) {
         document.getElementById('admin-user-is-active').checked = user.isActive !== false;
       }

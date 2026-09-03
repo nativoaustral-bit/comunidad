@@ -57,12 +57,24 @@ switch ($action) {
         $upStmt = $pdo->prepare('UPDATE users SET last_access = NOW() WHERE id = :id');
         $upStmt->execute([':id' => $user['id']]);
 
-        // Cargar workspace asociado si existe
+        // Cargar workspace asociado si existe o auto-vincular por email si está desvinculado
         $workspace = null;
         if (!empty($user['workspace_id'])) {
             $wsStmt = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws_id LIMIT 1');
             $wsStmt->execute([':ws_id' => $user['workspace_id']]);
             $workspace = $wsStmt->fetch() ?: null;
+        }
+
+        // Auto-reparar si el usuario no tiene workspace_id pero existe un workspace con su mismo email
+        if (!$workspace && !empty($user['email'])) {
+            $wsStmt = $pdo->prepare('SELECT * FROM workspaces WHERE LOWER(TRIM(email)) = LOWER(TRIM(:email)) LIMIT 1');
+            $wsStmt->execute([':email' => $user['email']]);
+            $workspace = $wsStmt->fetch() ?: null;
+            if ($workspace) {
+                $user['workspace_id'] = $workspace['id'];
+                $upLink = $pdo->prepare('UPDATE users SET workspace_id = :ws_id WHERE id = :user_id');
+                $upLink->execute([':ws_id' => $workspace['id'], ':user_id' => $user['id']]);
+            }
         }
 
         // Parsear JSON de herramientas asignadas
@@ -98,6 +110,18 @@ switch ($action) {
             $wsStmt = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws_id LIMIT 1');
             $wsStmt->execute([':ws_id' => $user['workspace_id']]);
             $workspace = $wsStmt->fetch() ?: null;
+        }
+
+        // Auto-reparar si el usuario no tiene workspace_id pero existe un workspace con su mismo email
+        if (!$workspace && !empty($user['email'])) {
+            $wsStmt = $pdo->prepare('SELECT * FROM workspaces WHERE LOWER(TRIM(email)) = LOWER(TRIM(:email)) LIMIT 1');
+            $wsStmt->execute([':email' => $user['email']]);
+            $workspace = $wsStmt->fetch() ?: null;
+            if ($workspace) {
+                $user['workspace_id'] = $workspace['id'];
+                $upLink = $pdo->prepare('UPDATE users SET workspace_id = :ws_id WHERE id = :user_id');
+                $upLink->execute([':ws_id' => $workspace['id'], ':user_id' => $user['id']]);
+            }
         }
 
         $user['assigned_tool_ids'] = !empty($user['assigned_tool_ids']) ? json_decode($user['assigned_tool_ids'], true) : [];

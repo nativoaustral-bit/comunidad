@@ -194,6 +194,17 @@ class Store {
 
         const loadedWorkspaces = (parsed.workspaces || []).filter(w => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(w.id));
 
+        // Auto-reparar en memoria usuarios emprendedores sin workspace que coincidan por email
+        loadedUsers.forEach(u => {
+          if (u.role === 'entrepreneur' && !u.workspaceId && u.email) {
+            const cleanEmail = u.email.toLowerCase().trim();
+            const matchWs = loadedWorkspaces.find(w => (w.email || '').toLowerCase().trim() === cleanEmail);
+            if (matchWs) {
+              u.workspaceId = matchWs.id;
+            }
+          }
+        });
+
         return {
           workspaces: loadedWorkspaces,
           users: loadedUsers,
@@ -260,6 +271,19 @@ class Store {
             });
           }
           if (Array.isArray(json.data.workspaces)) this.data.workspaces = json.data.workspaces;
+
+          // Auto-reparar en memoria usuarios emprendedores sin workspace que coincidan por email
+          if (Array.isArray(this.data.users) && Array.isArray(this.data.workspaces)) {
+            this.data.users.forEach(u => {
+              if (u.role === 'entrepreneur' && !u.workspaceId && u.email) {
+                const cleanEmail = u.email.toLowerCase().trim();
+                const matchWs = this.data.workspaces.find(w => (w.email || '').toLowerCase().trim() === cleanEmail);
+                if (matchWs) {
+                  u.workspaceId = matchWs.id;
+                }
+              }
+            });
+          }
           if (Array.isArray(json.data.subscriptions)) this.data.subscriptions = json.data.subscriptions;
           if (Array.isArray(json.data.customers)) this.data.customers = json.data.customers;
           if (Array.isArray(json.data.sales)) {
@@ -401,6 +425,17 @@ class Store {
       assignedTools: ['tool-reloop', 'tool-hummailing', 'tool-kinetic', 'tool-humm-radar', 'tool-humm-link']
     };
     this.data.workspaces.push(newWs);
+
+    // Auto-vincular bidireccionalmente al usuario que tenga este mismo correo
+    if (newWs.email) {
+      const cleanEmail = newWs.email.toLowerCase().trim();
+      const matchUser = this.data.users.find(u => (u.email || '').toLowerCase().trim() === cleanEmail);
+      if (matchUser && !matchUser.workspaceId) {
+        matchUser.workspaceId = newWs.id;
+        this.apiSave('users', matchUser, 'save');
+      }
+    }
+
     this.saveState();
     this.apiSave('workspaces', newWs, 'save');
     return newWs;
@@ -1207,13 +1242,19 @@ class Store {
     }
 
     const id = userData.id || ('usr-' + Date.now());
+    let targetWsId = userData.workspaceId || null;
+    if (!targetWsId && cleanEmail && (userData.role || 'entrepreneur') === 'entrepreneur') {
+      const matchWs = this.data.workspaces.find(w => (w.email || '').toLowerCase().trim() === cleanEmail);
+      if (matchWs) targetWsId = matchWs.id;
+    }
+
     const newUser = {
       id,
       name: userData.name || '',
       email: cleanEmail,
       password: userData.password || 'humm2026',
       role: userData.role || 'entrepreneur',
-      workspaceId: userData.workspaceId || null,
+      workspaceId: targetWsId,
       avatar: (userData.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
       theme: 'light',
       lastAccess: null,

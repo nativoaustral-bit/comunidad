@@ -109,6 +109,17 @@ try {
 
     // 4. Gestión Global para Administradores
     if ($role === 'admin') {
+        // Auto-reparar cualquier usuario emprendedor que no tenga workspace_id pero exista un workspace con su mismo correo
+        try {
+            $pdo->exec('UPDATE users u 
+                        JOIN workspaces w ON LOWER(TRIM(u.email)) = LOWER(TRIM(w.email)) 
+                        SET u.workspace_id = w.id 
+                        WHERE (u.workspace_id IS NULL OR u.workspace_id = "") 
+                          AND u.role = "entrepreneur"');
+        } catch (Exception $e) {
+            // Silencioso
+        }
+
         $stmtUsers = $pdo->query('SELECT id, workspace_id, name, email, phone, role, specialty, avatar, theme, is_active, assigned_tool_ids, advisor_name, advisor_email, last_access, must_change_password, created_at FROM users ORDER BY name ASC');
         $rawUsers = $stmtUsers->fetchAll();
         $users = [];

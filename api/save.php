@@ -378,13 +378,24 @@ try {
                     }
                 }
 
+                // Resolver workspace_id: si no viene en el item, intentar autovincular con workspace de igual email
+                $wsIdToSave = $item['workspaceId'] ?? ($item['workspace_id'] ?? null);
+                if (empty($wsIdToSave) && !empty($item['email']) && ($item['role'] ?? 'entrepreneur') === 'entrepreneur') {
+                    $findWs = $pdo->prepare('SELECT id FROM workspaces WHERE LOWER(TRIM(email)) = LOWER(TRIM(:email)) LIMIT 1');
+                    $findWs->execute([':email' => $item['email']]);
+                    $matchedWs = $findWs->fetch();
+                    if ($matchedWs) {
+                        $wsIdToSave = $matchedWs['id'];
+                    }
+                }
+
                 $sql = 'INSERT INTO users (id, workspace_id, name, email, phone, password_hash, role, specialty, avatar, is_active, assigned_tool_ids, advisor_name, advisor_email, must_change_password, reset_token)
                         VALUES (:id, :workspace_id, :name, :email, :phone, :password_hash, :role, :specialty, :avatar, :is_active, :assigned_tool_ids, :advisor_name, :advisor_email, :must_change_password, :reset_token)
                         ON DUPLICATE KEY UPDATE
                         name = VALUES(name),
                         email = VALUES(email),
                         phone = VALUES(phone),
-                        workspace_id = VALUES(workspace_id),
+                        workspace_id = IF(VALUES(workspace_id) IS NOT NULL AND VALUES(workspace_id) != "", VALUES(workspace_id), workspace_id),
                         password_hash = IF(VALUES(password_hash) != "" AND VALUES(password_hash) IS NOT NULL, VALUES(password_hash), password_hash),
                         role = VALUES(role),
                         specialty = VALUES(specialty),
@@ -398,7 +409,7 @@ try {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':id' => $userId,
-                    ':workspace_id' => $item['workspaceId'] ?? ($item['workspace_id'] ?? null),
+                    ':workspace_id' => $wsIdToSave,
                     ':name' => $item['name'],
                     ':email' => $item['email'],
                     ':phone' => $item['phone'] ?? null,
@@ -719,6 +730,14 @@ try {
                     ':advisor_name' => !empty($item['advisorName'] ?? $item['advisor_name']) ? ($item['advisorName'] ?? $item['advisor_name']) : null,
                     ':advisor_email' => !empty($item['advisorEmail'] ?? $item['advisor_email']) ? ($item['advisorEmail'] ?? $item['advisor_email']) : null
                 ]);
+
+                // Auto-vincular de inmediato al usuario que tenga este mismo correo si aún no tiene workspace asignado
+                if (!empty($item['email']) && !empty($item['id'])) {
+                    $cleanWsEmail = strtolower(trim($item['email']));
+                    $linkUser = $pdo->prepare('UPDATE users SET workspace_id = :ws_id WHERE LOWER(TRIM(email)) = :email AND (workspace_id IS NULL OR workspace_id = "")');
+                    $linkUser->execute([':ws_id' => $item['id'], ':email' => $cleanWsEmail]);
+                }
+
                 DB::jsonResponse(true, ['item' => $item]);
             }
             break;

@@ -274,7 +274,22 @@ class AuthService {
       return store.getWorkspace(this.session.impersonatedWorkspaceId);
     }
 
-    const wsId = user.workspaceId || user.workspace_id || (this.session && this.session.cachedWorkspace ? this.session.cachedWorkspace.id : null);
+    let wsId = user.workspaceId || user.workspace_id || (this.session && this.session.cachedWorkspace ? this.session.cachedWorkspace.id : null);
+
+    // Auto-reparar si el usuario no tiene workspaceId asignado pero existe un workspace con su email
+    if (!wsId && user.email) {
+      const cleanEmail = user.email.toLowerCase().trim();
+      const matchWs = store.getAllWorkspaces().find(w => (w.email || '').toLowerCase().trim() === cleanEmail);
+      if (matchWs) {
+        wsId = matchWs.id;
+        user.workspaceId = matchWs.id;
+        store.updateUser(user.id, { workspaceId: matchWs.id });
+        if (this.session) {
+          this.session.cachedWorkspace = matchWs;
+          this.saveSession(this.session);
+        }
+      }
+    }
 
     if (wsId) {
       let ws = store.getWorkspace(wsId);
