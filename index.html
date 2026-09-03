@@ -35,7 +35,7 @@
         Organiza tus tareas, clientes, ventas y herramientas desde un solo lugar.
       </div>
 
-      <form id="form-login" autocomplete="off">
+      <form id="form-login" autocomplete="off" onsubmit="return handleDirectLogin(event)">
         <div class="form-group">
           <label class="form-label" for="login-email">Correo electrónico</label>
           <input type="email" id="login-email" class="form-control" placeholder="tu@correo.cl" required autocomplete="off" value="" />
@@ -2448,7 +2448,6 @@
   <!-- Script Inline de Soporte y Manejo Directo de UI en Login -->
   <script>
     (function() {
-      const loginForm = document.getElementById('form-login');
       const emailInp = document.getElementById('login-email');
       const passInp = document.getElementById('login-password');
       const toggleBtn = document.getElementById('btn-toggle-password-visibility');
@@ -2465,6 +2464,149 @@
         };
       }
     })();
-  </script>
+
+    window.handleDirectLogin = async function(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const emailInp = document.getElementById('login-email');
+      const passInp = document.getElementById('login-password');
+      const rememberInp = document.getElementById('login-remember');
+      const btnSubmit = document.getElementById('btn-submit-login');
+      const errAlert = document.getElementById('login-error-alert');
+
+      if (errAlert) errAlert.style.display = 'none';
+
+      const email = (emailInp ? emailInp.value : '').trim();
+      const password = (passInp ? passInp.value : '').trim();
+      const remember = rememberInp ? rememberInp.checked : false;
+
+      if (!email || !password) {
+        if (errAlert) {
+          errAlert.style.display = 'block';
+          errAlert.style.backgroundColor = '#fee2e2';
+          errAlert.style.borderColor = '#f87171';
+          errAlert.style.color = '#991b1b';
+          errAlert.textContent = 'Por favor ingresa tu correo y contraseña.';
+        }
+        return false;
+      }
+
+      const origText = btnSubmit ? btnSubmit.innerHTML : 'Ingresar a Mi Humm';
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '⏳ Verificando credenciales...';
+      }
+
+      try {
+        const res = await fetch('api/auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login',
+            email: email,
+            password: password
+          })
+        });
+
+        const json = await res.json();
+        console.log('Respuesta de autenticación:', json);
+
+        if (json.success && json.data && json.data.user) {
+          const user = json.data.user;
+          const workspace = json.data.workspace || null;
+
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#dcfce7';
+            errAlert.style.borderColor = '#86efac';
+            errAlert.style.color = '#166534';
+            errAlert.textContent = '✓ ¡Acceso correcto! Abriendo tu escritorio...';
+          }
+
+          const now = Date.now();
+          const isAdmin = user.role === 'admin';
+          const maxLifetime = isAdmin ? (4 * 3600 * 1000) : (8 * 3600 * 1000);
+
+          const sessionPayload = {
+            userId: user.id,
+            role: user.role,
+            rememberMe: !!remember,
+            loginTime: now,
+            lastActivityTime: now,
+            expiresAt: now + maxLifetime,
+            impersonatedWorkspaceId: null,
+            cachedUser: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone || '',
+              role: user.role,
+              specialty: user.specialty || '',
+              avatar: user.avatar || (user.name ? user.name.substring(0, 2).toUpperCase() : 'U'),
+              isActive: true,
+              workspaceId: user.workspace_id || null,
+              assignedToolIds: user.assigned_tool_ids || []
+            },
+            cachedWorkspace: workspace
+          };
+
+          const sessionStr = JSON.stringify(sessionPayload);
+          try {
+            localStorage.setItem('mi_humm_active_session_v1', sessionStr);
+            sessionStorage.setItem('mi_humm_active_session_v1', sessionStr);
+          } catch (e) {}
+
+          // Forzar conmutación visual inmediata
+          const authScreen = document.getElementById('auth-screen');
+          const mainApp = document.getElementById('main-app');
+          if (authScreen) authScreen.style.display = 'none';
+          if (mainApp) mainApp.style.display = 'flex';
+
+          const targetHash = isAdmin ? '#admin-dashboard' : '#inicio';
+          window.location.hash = targetHash;
+
+          if (window.MiHummApp) {
+            try {
+              if (window.MiHummApp.checkAuthenticationState) window.MiHummApp.checkAuthenticationState();
+              if (window.MiHummApp.handleHashChange) window.MiHummApp.handleHashChange();
+            } catch (e) {
+              window.location.reload();
+            }
+          } else {
+            window.location.reload();
+          }
+        } else {
+          if (errAlert) {
+            errAlert.style.display = 'block';
+            errAlert.style.backgroundColor = '#fee2e2';
+            errAlert.style.borderColor = '#f87171';
+            errAlert.style.color = '#991b1b';
+            errAlert.textContent = json.error || json.message || 'Contraseña o usuario incorrecto.';
+          }
+          if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = origText;
+          }
+        }
+      } catch (err) {
+        console.error('Error durante login:', err);
+        if (errAlert) {
+          errAlert.style.display = 'block';
+          errAlert.style.backgroundColor = '#fee2e2';
+          errAlert.style.borderColor = '#f87171';
+          errAlert.style.color = '#991b1b';
+          errAlert.textContent = 'Error al conectar con el servidor: ' + (err.message || 'Error de red.');
+        }
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = origText;
+        }
+      }
+
+      return false;
+    };
 </body>
 </html>
