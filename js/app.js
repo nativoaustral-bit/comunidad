@@ -654,6 +654,8 @@ class App {
           this.returnToEventAfterCustomerCreate = true;
           this.openCreateCustomerModal();
         });
+      }
+
       // Conmutador entre Evento y Tarea desde el modal de agendar
       document.querySelectorAll('input[name="modal-event-kind"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
