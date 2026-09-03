@@ -1,6 +1,6 @@
 # 🚀 Comunidad Humm Co-Creation - Plataforma de Gestión y Ecosistema Emprendedor
 
-Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`), una solución web integral y modular concebida para potenciar la organización comercial, herramientas digitales, acompañamiento y crecimiento de emprendedores en Chile.
+Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`), una solución web integral, modular y de alto rendimiento concebida para potenciar la organización comercial, herramientas digitales, acompañamiento y crecimiento de emprendedores en Chile.
 
 ---
 
@@ -10,7 +10,7 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 3. [Estructura del Proyecto](#-estructura-del-proyecto)
 4. [Módulos y Funcionalidades](#-módulos-y-funcionalidades)
 5. [Modelo de Datos y Base de Datos (MySQL)](#-modelo-de-datos-y-base-de-datos-mysql)
-6. [Seguridad, Autenticación y Sincronización](#-seguridad-autenticación-y-sincronización)
+6. [Seguridad, Autenticación y Cambio de Clave](#-seguridad-autenticación-y-cambio-de-clave)
 7. [Despliegue y Mantenimiento en Servidor Producción](#-despliegue-y-mantenimiento-en-servidor-producción)
 8. [Credenciales y Accesos](#-credenciales-y-accesos)
 
@@ -18,16 +18,17 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 
 ## 🌟 Visión General del Proyecto
 
-**Comunidad Humm** es una plataforma web híbrida (Single Page Application moderna y ultraliviana sin dependencias pesadas de frameworks) que provee:
-* **Entorno de Gestión para Emprendedores**: Panel de control comercial (KPIs), registro de ventas, gestión de clientes (CRM), embudo de oportunidades comerciales, tareas y compromisos estilo Kanban, calendario de eventos, bloc de notas rápidas, catálogo de herramientas Humm y red de convenios/beneficios.
-* **Panel de Administración Central (Admin Humm)**: Monitoreo de métricas globales del ecosistema, creación y gestión de espacios de emprendimiento (workspaces), administración de usuarios y tutores/ejecutivos, control de planes y suscripciones mensuales (+IVA), catálogo global de herramientas y convenios comerciales.
+**Comunidad Humm** es una plataforma web híbrida (Single Page Application moderna, ultraliviana y reactiva sin dependencias de frameworks pesados) que provee:
+* **Entorno de Gestión para Emprendedores**: Panel de control comercial (KPIs), registro de ventas, gestión de clientes (CRM), embudo de oportunidades comerciales, tareas y compromisos estilo Kanban, calendario comercial de eventos con exportación iCal / sincronización, bloc de notas rápidas, catálogo de herramientas Humm y red de convenios/beneficios.
+* **Panel de Administración Central (Admin Humm)**: Monitoreo de métricas globales del ecosistema, creación y gestión de espacios de emprendimiento (*workspaces* aislados), administración de usuarios y tutores/ejecutivos, control de planes y suscripciones mensuales (+IVA), catálogo global de herramientas y convenios comerciales.
 
 ---
 
 ## 🛠️ Arquitectura y Stack Tecnológico
 
 ### 1. Frontend
-* **Core**: HTML5 Semántico y JavaScript ES6+ Modular nativo (sin dependencias ni frameworks pesados, garantizando tiempos de carga inferiores a 200 ms).
+* **Core**: HTML5 Semántico y JavaScript ES6+ Modular nativo (sin frameworks pesados, garantizando tiempos de carga inferiores a 200 ms).
+* **Módulos ES6 Unificados**: Arquitectura singleton limpia donde todos los submódulos y vistas importan instancias compartidas de estado (`store.js`) y autenticación (`auth.js`).
 * **Estilos (CSS)**: Vanilla CSS estructurado con variables de diseño (Design Tokens), soporte para **Modo Claro / Modo Oscuro**, layout responsivo y componentes accesibles.
 * **Gestión de Estado**: Patrón de Store reactivo (`js/store.js`) con arquitectura *Offline-First / Cache-First* (LocalStorage + Sincronización bidireccional en tiempo real con MySQL vía API REST).
 * **Visualización de Datos**: Gráficos analíticos mediante SVG / Canvas nativo (`js/chart.js`).
@@ -36,10 +37,10 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 * **Lenguaje**: PHP 8.x nativo orientado a microservicios livianos con salida JSON estricta (`setApiHeaders()`).
 * **Capa de Persistencia**: PDO con sentencias preparadas y parametrizadas contra inyecciones SQL (`api/db.php`).
 * **Endpoints Principales**:
-  * `api/auth.php`: Autenticación segura asíncrona mediante Bcrypt (`password_verify`).
+  * `api/auth.php`: Autenticación segura asíncrona mediante Bcrypt (`password_verify`), cambio de contraseña desde perfil y recuperación por correo.
   * `api/data.php`: Endpoint consolidado de lectura y mapeo de datos por rol y workspace.
   * `api/save.php`: Endpoint transaccional de guardado y eliminación con `INSERT ... ON DUPLICATE KEY UPDATE` y `DELETE`.
-  * `api/mail.php`: Despacho de correos HTML con diseño responsivo institucional desde el servidor de producción.
+  * `api/mail.php`: Despacho de correos HTML institucionales (alertas de acceso, bienvenida con credenciales y recuperación de contraseñas).
 
 ### 3. Base de Datos
 * **Motor**: MySQL / MariaDB (InnoDB, Charset `utf8mb4`, Collation `utf8mb4_unicode_ci`).
@@ -51,24 +52,24 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 
 ```text
 COMUNIDAD/
-├── index.html               # SPA principal: estructura, modales, vistas y contenedor de la app
-├── schema.sql               # Esquema DDL de tablas relacionales para MySQL en producción
+├── index.html               # SPA principal: estructura, login limpio, modales y contenedor de vistas
+├── schema.sql               # Esquema DDL de las 15 tablas relacionales para MySQL en producción
 ├── deploy.sh                # Script Bash automatizado para despliegue (Git + Rsync a HostGator)
 ├── .htaccess                # Configuración Apache con políticas anti-caché para scripts y vistas
 ├── GUIA_HOSTGATOR.md        # Manual técnico y credenciales de configuración de hosting
 ├── README.md                # Esta documentación técnica y operativa
 │
 ├── api/                     # Microservicios backend PHP
-│   ├── config.php           # Configuración de credenciales de base de datos
+│   ├── config.php           # Configuración de credenciales de base de datos MySQL
 │   ├── db.php               # Clase singleton DB para conexión PDO y respuestas JSON normalizadas
 │   ├── data.php             # Endpoint GET: carga y mapeo de datos consolidados según rol
 │   ├── save.php             # Endpoint POST: persistencia y mutaciones transaccionales en MySQL
-│   ├── auth.php             # Endpoint de autenticación y verificación de contraseñas Bcrypt
-│   └── mail.php             # Servicio de despacho de correos HTML (Bienvenida y Recuperación)
+│   ├── auth.php             # Endpoint de autenticación, verificación y actualización Bcrypt
+│   └── mail.php             # Servicio de despacho de correos HTML (Alertas, Bienvenida, Recuperación)
 │
 ├── js/                      # Lógica JavaScript Modular (ES6)
 │   ├── app.js               # Controlador central: enrutador hash, eventos globales, modales y temas
-│   ├── auth.js              # Manejador de sesiones asíncronas, roles y auditoría
+│   ├── auth.js              # Manejador de sesiones asíncronas, roles, permisos y cambio de clave
 │   ├── store.js             # Estado reactivo global, persistencia local y sincronización con API REST
 │   ├── chart.js             # Generador de gráficos analíticos de ventas y rendimiento
 │   ├── chile-data.js        # Dataset completo de las 16 regiones y 346 comunas de Chile
@@ -82,7 +83,7 @@ COMUNIDAD/
 │       ├── opportunities.js # Vista Oportunidades y Pipeline Comercial
 │       ├── tools.js         # Vista Catálogo de Soluciones Humm
 │       ├── discounts.js     # Vista Red de Convenios y Descuentos
-│       ├── account.js       # Vista Mi Cuenta y Configuración de Perfil
+│       ├── account.js       # Vista Mi Cuenta y Configuración de Perfil (con cambio de clave)
 │       └── admin.js         # Vista Panel de Administración Central (Métricas, Planes, Usuarios...)
 │
 └── styles/                  # Hojas de Estilo CSS
@@ -96,9 +97,9 @@ COMUNIDAD/
 ## 🎯 Módulos y Funcionalidades
 
 ### 1. Panel de Emprendedores (`#inicio`)
-* **Métricas Principales**: Total de ventas del mes, tareas pendientes, clientes activos y oportunidades abiertas.
+* **Métricas Principales**: Total de ventas del mes, comparación vs mes anterior, tareas pendientes, clientes activos y oportunidades abiertas.
 * **Tutor Humm Asignado**: Tarjeta con nombre, correo y botón de contacto directo con el asesor.
-* **Accesos Rápidos a Soluciones**: Tarjetas con los accesos directos a las herramientas contratadas.
+* **Accesos Rápidos a Soluciones**: Tarjetas con accesos directos a las herramientas contratadas.
 
 ### 2. Gestión Comercial
 * **Ventas (`#ventas`)**: Registro de ingresos, método de pago, cliente asociado, fechas y estado (pagado, pendiente, abono, vencido).
@@ -107,24 +108,22 @@ COMUNIDAD/
 
 ### 3. Organización y Productividad
 * **Tareas (`#tareas`)**: Tablero Kanban interactivo con columnas personalizables, prioridades y fechas límite.
-* **Calendario (`#calendario`)**: Hitos comerciales, reuniones virtuales, mentorías y entregas.
+* **Calendario (`#calendario`)**: Hitos comerciales, reuniones virtuales, mentorías y entregas con exportación iCal y sincronización Google/Outlook.
 * **Notas Rápidas (`#notas`)**: Tarjetas de notas estilo Post-it con colores personalizables, fijado prioritario y categorías.
 
 ### 4. Catálogo de Soluciones y Red de Convenios Comerciales
-* **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento. Soporte de logos en imagen oficial (`PNG`, `JPG`, `WebP`, `SVG`) o emojis.
+* **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento.
 * **Alianzas y Beneficios (`#beneficios`)**: Convenios comerciales exclusivos con empresas colaboradoras.
-  * **Contacto Comercial Directo**: Conexión inmediata vía WhatsApp (principal), Instagram Direct (con copia automática de mensaje), Correo Electrónico o Sitio Web.
-  * **Generador de Códigos Personales**: Asignación de código único y trazable `HUMM-[ALIAS]-[XXXX]` al momento de solicitar el convenio (sin cupones genéricos expuestos).
-  * **Mis Beneficios Solicitados**: Historial de convenios solicitados por el miembro con opción de retomar conversación, marcar como utilizado (indicando compra y ahorro) o reportar motivo de no concreción.
+  * **Contacto Comercial Directo**: Conexión inmediata vía WhatsApp (principal), Instagram Direct, Correo Electrónico o Sitio Web.
+  * **Generador de Códigos Personales**: Asignación de código único y trazable `HUMM-[ALIAS]-[XXXX]` al solicitar el convenio.
+  * **Mis Beneficios Solicitados**: Historial de convenios solicitados con opción de retomar conversación o reportar uso.
 
 ### 5. Panel de Administración Central (`#admin-dashboard` / `#admin`)
 * **Métricas Globales**: Ventas totales del ecosistema, número de emprendimientos activos, solicitudes de soporte.
-* **Contactos Generados por Beneficios (`#admin-benefit-requests`)**: Dashboard de trazabilidad comercial con KPIs (solicitudes totales, del mes, compras concretadas, ahorro total informado y no concretadas), filtros multicriterio por aliado, canal y estado, auditoría y exportación a planilla CSV.
-* **Crear Espacio de Emprendimiento**: Formulario con comunas de Chile y selector dinámico de tutor/asesor que autocompleta el correo de apoyo.
-* **Ventas y Suscripciones**: Gestión de planes de venta mensual con formato `/mes +IVA` (Plan Emprendedor Base, Plan Crecimiento Humm, Plan Pro Co-Creation), control de períodos de prueba y emisión de links de pago por WhatsApp y Correo.
-* **Gestión de Tutores y Ejecutivos**: Creación, activación/desactivación y asignación de tutores y asesores de la red Humm.
-* **Creación de Usuarios**: Asignación de rol, vinculación a negocio, selección de herramientas permitidas, envío automático de correo de bienvenida y botón directo para compartir credenciales por WhatsApp.
-* **Difusión y Comunicados Masivos**: Publicación de noticias y comunicados hacia toda la comunidad.
+* **Trazabilidad de Beneficios (`#admin-benefit-requests`)**: Dashboard de solicitudes comerciales con auditoría y exportación CSV.
+* **Crear Espacio de Emprendimiento**: Formulario con comunas de Chile y selector dinámico de tutor/asesor.
+* **Ventas y Suscripciones**: Gestión de planes de venta mensual con formato `/mes +IVA` y control de pruebas gratuitas.
+* **Gestión de Tutores y Usuarios**: Creación, activación/desactivación y asignación de tutores y emprendedores.
 
 ---
 
@@ -145,26 +144,30 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 | 9 | `calendar_events` | Eventos, reuniones y compromisos agendados en el calendario. |
 | 10 | `quick_notes` | Notas rápidas y recordatorios categorizados. |
 | 11 | `support_requests` | Requerimientos de soporte enviados a tutores o administración. |
-| 12 | `company_discounts` | Convenios y beneficios de empresas aliadas con canales de contacto directo (WhatsApp, Instagram, Email, Web) y condiciones comerciales. |
-| 13 | `benefit_requests` | Trazabilidad y solicitudes de beneficios por emprendedor con código personal `HUMM-[ALIAS]-[XXXX]`, canal, estado y feedback de uso. |
+| 12 | `company_discounts` | Convenios y beneficios de empresas aliadas con canales de contacto directo y condiciones comerciales. |
+| 13 | `benefit_requests` | Trazabilidad de convenios por emprendedor con código personal `HUMM-[ALIAS]-[XXXX]`. |
 | 14 | `tools` | Catálogo de herramientas con logos en `MEDIUMTEXT`, estados y URLs. |
 | 15 | `broadcasts` | Comunicados, noticias y avisos de difusión masiva para la comunidad. |
 
 ---
 
-## 🔐 Seguridad, Autenticación y Sincronización
+## 🔐 Seguridad, Autenticación y Cambio de Clave
 
 1. **Autenticación Asíncrona con Bcrypt**:
    * Las contraseñas en MySQL se procesan y validan exclusivamente mediante hash **Bcrypt** (`$2y$10$...`) en `api/auth.php`.
-   * El sistema no utiliza contraseñas genéricas en texto plano ni mecanismos de bypass offline.
-   * Mensaje de seguridad estándar unificado: `"Usuario o clave incorrecta."`.
-2. **Persistencia y Sincronización Integral**:
-   * Cualquier mutación en el frontend (creación, edición o eliminación de planes, convenios, herramientas, ventas, clientes, etc.) actualiza inmediatamente el estado local e invoca `this.apiSave(...)` hacia `api/save.php`.
+   * Formulario de login limpio por defecto: los campos parten vacíos por seguridad (`autocomplete="off"`).
+   * Botón para mostrar / ocultar contraseña interactivo en el formulario de login.
+   * Mensaje de error visual en tiempo real en caso de credenciales inválidas.
+2. **Asistencia y Soporte de Acceso**:
+   * Enlace directo *"¿Necesitas ayuda para ingresar? Habla con Humm"* que dispara una alerta automática por correo hacia `contacto@humm.cl` indicando la cuenta afectada.
+3. **Flujos de Cambio y Recuperación de Contraseña**:
+   * **Desde "Mi Cuenta" (`#cuenta`)**: Permite al usuario autenticado ingresar su contraseña actual y actualizar a una nueva contraseña en tiempo real, validando la clave actual y grabando el nuevo hash Bcrypt en MySQL.
+   * **Recuperación "¿Olvidaste tu contraseña?"**: Envío de correo con enlace directo (`#cambiar-clave?email=...`) que abre el modal seguro para restablecer la contraseña sin recordar la clave anterior.
+4. **Persistencia y Sincronización Integral**:
+   * Cualquier mutación en el frontend actualiza inmediatamente el estado local e invoca `this.apiSave(...)` hacia `api/save.php`.
    * Al iniciar sesión, `store.syncWithBackend()` descarga el estado consolidado desde MySQL garantizando consistencia absoluta entre sesiones.
-3. **Flujo de Cambio de Contraseña**:
-   * Permite actualizar la clave desde el perfil (`#mi-cuenta`) o mediante el enlace de recuperación (`#cambiar-clave?email=...`), invalidando inmediatamente la contraseña anterior.
-4. **Control de Caché en Producción**:
-   * Configuración en `.htaccess` y query strings de versión (`?v=3.5`) en [index.html](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/index.html) para asegurar la carga inmediata de los scripts actualizados en el navegador.
+5. **Control de Caché en Producción**:
+   * Configuración en `.htaccess` y control de versión dinámico (`?v=9.1`) en `index.html` para asegurar la carga inmediata de los scripts actualizados en el navegador.
 
 ---
 
@@ -180,10 +183,10 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 ### Cómo Desplegar Actualizaciones
 Para realizar un despliegue completo y seguro en un solo comando:
 ```bash
-./deploy.sh
+./deploy.sh "mensaje de commit descriptivo"
 ```
 El script `./deploy.sh` ejecuta automáticamente:
-1. Sincronización y `git push origin main` hacia GitHub.
+1. `git add`, `git commit` y `git push origin main` hacia GitHub.
 2. Sincronización diferencial rápida con `rsync` hacia el servidor HostGator.
 
 ---
@@ -193,7 +196,10 @@ El script `./deploy.sh` ejecuta automáticamente:
 * **Acceso Administrador Central**:
   * **URL**: [https://comunidad.humm.cl](https://comunidad.humm.cl)
   * **Email**: `contacto@humm.cl`
-  * **Contraseña**: *(Definida por el administrador en la plataforma)*
+  * **Rol**: Administrador general del ecosistema.
+* **Acceso Emprendedor / Cuenta Principal**:
+  * **Email**: `rmerino@hummcocreation.com`
+  * **Rol**: Emprendedor con espacio de trabajo asignado.
 
 ---
 
