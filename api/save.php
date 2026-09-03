@@ -125,6 +125,7 @@ try {
                 $stmt = $pdo->prepare('DELETE FROM tasks WHERE id = :id');
                 $stmt->execute([':id' => $id]);
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
+            } else {
                 $item = $input['item'] ?? $input;
                 $status = $item['status'] ?? 'todo';
                 if ($status === '' || $status === 'pendiente') $status = 'todo';

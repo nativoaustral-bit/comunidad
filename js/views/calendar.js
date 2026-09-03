@@ -29,8 +29,9 @@ export function renderCalendarView(container) {
   });
 
   const thisMonthTasks = tasks.filter(t => {
-    if (!t.dueDate) return false;
-    const [ty, tm] = t.dueDate.split('-').map(Number);
+    const tDate = t.dueDate || t.startDate;
+    if (!tDate) return false;
+    const [ty, tm] = tDate.split('-').map(Number);
     return ty === year && tm === month + 1;
   });
 
@@ -387,17 +388,18 @@ function renderAgendaView(year, month, events, tasks, customers) {
   });
 
   tasks.forEach(t => {
-    if (t.dueDate) {
+    const taskDate = t.dueDate || t.startDate;
+    if (taskDate) {
       allItems.push({
         id: t.id,
         title: t.title,
         type: 'task',
-        date: t.dueDate,
-        startTime: 'Plazo Tarea',
+        date: taskDate,
+        startTime: t.dueDate ? 'Plazo Tarea' : 'Inicio Tarea',
         priority: t.priority,
         status: t.status,
         itemType: 'task',
-        sortDate: `${t.dueDate} 23:59`,
+        sortDate: `${taskDate} 23:59`,
         description: t.description
       });
     }
@@ -480,12 +482,12 @@ function getDayItems(dateKey, events, tasks) {
   });
 
   if (currentCalFilter === 'all' || currentCalFilter === 'tasks') {
-    tasks.filter(t => t.dueDate === dateKey).forEach(t => {
+    tasks.filter(t => (t.dueDate === dateKey || (!t.dueDate && t.startDate === dateKey))).forEach(t => {
       items.push({
         id: t.id,
         title: t.title,
         type: 'task',
-        date: t.dueDate,
+        date: t.dueDate || t.startDate,
         priority: t.priority,
         status: t.status,
         itemType: 'task'

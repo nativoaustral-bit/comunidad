@@ -280,6 +280,33 @@ try {
             ];
         }
         $data['sales'] = $salesAll;
+
+        $stmtTasksAll = $pdo->query('SELECT * FROM tasks ORDER BY due_date ASC, created_at DESC');
+        $rawTasksAll = $stmtTasksAll->fetchAll();
+        $tasksAll = [];
+        foreach ($rawTasksAll as $t) {
+            $rawStatus = $t['status'] ?? 'todo';
+            if ($rawStatus === '' || $rawStatus === 'pendiente') $rawStatus = 'todo';
+            elseif ($rawStatus === 'en_proceso' || $rawStatus === 'en_progreso') $rawStatus = 'in_progress';
+            elseif ($rawStatus === 'completada') $rawStatus = 'done';
+
+            $tasksAll[] = [
+                'id' => $t['id'],
+                'workspaceId' => $t['workspace_id'],
+                'title' => $t['title'],
+                'description' => $t['description'] ?? '',
+                'startDate' => $t['start_date'] ?? null,
+                'dueDate' => $t['due_date'] ?? null,
+                'priority' => $t['priority'] ?? 'media',
+                'status' => $rawStatus,
+                'tag' => $t['tag'] ?? '',
+                'customerId' => $t['customer_id'] ?? null,
+                'opportunityId' => $t['opportunity_id'] ?? null,
+                'completedAt' => $t['completed_at'] ?? null,
+                'createdAt' => $t['created_at'] ?? null
+            ];
+        }
+        $data['tasks'] = $tasksAll;
     } elseif (!empty($workspaceId)) {
         // Si no es admin pero tiene workspace asignado
         $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
