@@ -3,8 +3,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, sanitizeWhatsAppPhone } from '../store.js';
-import { auth } from '../auth.js';
+import { store, formatDateCL, sanitizeWhatsAppPhone } from '../store.js?v=5.0';
+import { auth } from '../auth.js?v=5.0';
 
 export function renderCustomersView(container) {
   const ws = auth.getCurrentWorkspace();

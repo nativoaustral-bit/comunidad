@@ -3,9 +3,9 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, isDateOverdue, formatMonthName } from '../store.js';
-import { auth } from '../auth.js';
-import { SalesChart } from '../chart.js';
+import { store, formatCLP, formatDateCL, isDateOverdue, formatMonthName } from '../store.js?v=5.0';
+import { auth } from '../auth.js?v=5.0';
+import { SalesChart } from '../chart.js?v=5.0';
 
 export function renderDashboard(container) {
   const ws = auth.getCurrentWorkspace();

@@ -3,8 +3,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, isDateOverdue, sanitizeWhatsAppPhone } from '../store.js';
-import { auth } from '../auth.js';
+import { store, formatCLP, formatDateCL, isDateOverdue, sanitizeWhatsAppPhone } from '../store.js?v=5.0';
+import { auth } from '../auth.js?v=5.0';
 
 export function renderOpportunitiesView(container) {
   const ws = auth.getCurrentWorkspace();

@@ -2442,7 +2442,29 @@
   <!-- Contenedor Global de Toasts -->
   <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Script Principal de la App (ES6 Module con cache-busting) -->
-  <script type="module" src="js/app.js?v=4.4"></script>
+  <!-- Script Principal de la App (ES6 Module con cache-busting v=5.0) -->
+  <script type="module" src="js/app.js?v=5.0"></script>
+
+  <!-- Script Inline de Soporte y Manejo Directo de UI en Login -->
+  <script>
+    (function() {
+      const loginForm = document.getElementById('form-login');
+      const emailInp = document.getElementById('login-email');
+      const passInp = document.getElementById('login-password');
+      const toggleBtn = document.getElementById('btn-toggle-password-visibility');
+
+      if (emailInp) emailInp.value = '';
+      if (passInp) passInp.value = '';
+
+      if (toggleBtn && passInp) {
+        toggleBtn.onclick = function(e) {
+          e.preventDefault();
+          const isPass = passInp.getAttribute('type') === 'password';
+          passInp.setAttribute('type', isPass ? 'text' : 'password');
+          toggleBtn.textContent = isPass ? 'Ocultar' : 'Mostrar';
+        };
+      }
+    })();
+  </script>
 </body>
 </html>

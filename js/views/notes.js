@@ -3,8 +3,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL } from '../store.js';
-import { auth } from '../auth.js';
+import { store, formatDateCL } from '../store.js?v=5.0';
+import { auth } from '../auth.js?v=5.0';
 
 let noteSearchQuery = '';
 let currentNoteCategory = 'all'; // 'all', 'ideas', 'tareas', 'clientes', 'proveedores', 'finanzas', 'general'

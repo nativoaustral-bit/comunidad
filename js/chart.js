@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { formatCLP, formatMonthName } from './store.js';
+import { formatCLP, formatMonthName } from './store.js?v=5.0';
 
 export class SalesChart {
   constructor(containerElement, options = {}) {

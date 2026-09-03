@@ -4,7 +4,7 @@
  * Protección con expiración por inactividad y límites máximos de tiempo
  */
 
-import { store } from './store.js';
+import { store } from './store.js?v=5.0';
 
 export const AUTH_CONFIG = {
   SESSION_KEY: 'mi_humm_active_session_v1',
