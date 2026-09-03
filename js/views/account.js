@@ -255,12 +255,24 @@ export function renderAccountView(container) {
   });
 
   // Listener para cambio de clave
-  container.querySelector('#form-change-password')?.addEventListener('submit', (e) => {
+  container.querySelector('#form-change-password')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const curr = container.querySelector('#pass-current').value;
-    const newP = container.querySelector('#pass-new').value;
+    const curr = (container.querySelector('#pass-current')?.value || '').trim();
+    const newP = (container.querySelector('#pass-new')?.value || '').trim();
+    const btnSubmit = e.target.querySelector('button[type="submit"]');
+    const origText = btnSubmit ? btnSubmit.textContent : 'Actualizar Contraseña';
 
-    const res = auth.changePassword(curr, newP);
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Actualizando...';
+    }
+
+    const res = await auth.changePassword(curr, newP);
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = origText;
+    }
+
     if (res.success) {
       if (window.MiHummApp) window.MiHummApp.showToast(res.message, 'success');
       e.target.reset();

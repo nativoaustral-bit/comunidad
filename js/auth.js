@@ -459,20 +459,42 @@ class AuthService {
     }
   }
 
-  changePassword(currentPassword, newPassword) {
+  async changePassword(currentPassword, newPassword) {
     const user = this.getCurrentUser();
     if (!user) return { success: false, message: 'Sesión no válida o expirada.' };
 
-    if (user.password !== currentPassword.trim()) {
-      return { success: false, message: 'La contraseña actual no es correcta.' };
+    const curr = (currentPassword || '').trim();
+    const newP = (newPassword || '').trim();
+
+    if (!curr) {
+      return { success: false, message: 'Debes ingresar tu contraseña actual.' };
     }
 
-    if (newPassword.trim().length < 4) {
+    if (newP.length < 4) {
       return { success: false, message: 'La nueva contraseña debe tener al menos 4 caracteres.' };
     }
 
-    store.updateUser(user.id, { password: newPassword.trim() });
-    return { success: true, message: 'Tu contraseña ha sido actualizada correctamente.' };
+    try {
+      const res = await fetch('api/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'change_password',
+          user_id: user.id,
+          current_password: curr,
+          new_password: newP
+        })
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        return { success: true, message: json.data?.message || 'Tu contraseña ha sido actualizada con éxito.' };
+      } else {
+        return { success: false, message: json.error || 'La contraseña actual no es correcta.' };
+      }
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor. Intenta de nuevo.' };
+    }
   }
 }
 
