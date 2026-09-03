@@ -28,6 +28,21 @@ define('DB_CHARSET', 'utf8mb4');
 define('SESSION_LIFETIME', 86400 * 7); // 7 días de sesión activa
 define('APP_SECRET', 'humm_co_creation_secret_key_2026_secure_jwt');
 
+// -------------------------------------------------------------------------
+// CONFIGURACIÓN DE CORREO SALIENTE (CPANEL HOSTGATOR / SMTP)
+// -------------------------------------------------------------------------
+define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: 'comunidad@humm.cl');
+define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Comunidad Humm Co-Creation');
+
+// Envío SMTP autenticado exclusivo para comunidad@humm.cl
+define('MAIL_USE_SMTP', filter_var(getenv('MAIL_USE_SMTP') ?: 'true', FILTER_VALIDATE_BOOLEAN));
+define('MAIL_SMTP_HOST', getenv('MAIL_SMTP_HOST') ?: 'localhost'); // 'localhost' en servidor cPanel o 'mail.humm.cl'
+define('MAIL_SMTP_PORT', (int)(getenv('MAIL_SMTP_PORT') ?: 465));      // 465 (SSL) o 587 (TLS)
+define('MAIL_SMTP_USER', getenv('MAIL_SMTP_USER') ?: 'comunidad@humm.cl');
+define('MAIL_SMTP_PASS', getenv('MAIL_SMTP_PASS') ?: 'Cocreation5181$$');
+define('MAIL_SMTP_SECURE', getenv('MAIL_SMTP_SECURE') ?: 'ssl');       // 'ssl' o 'tls'
+
+
 // Configuración de reporte de errores (desactivar visualización en producción)
 $isProduction = (isset($_SERVER['HTTP_HOST']) && !in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1', 'localhost:8080', 'localhost:3000']));
 if ($isProduction) {

@@ -160,18 +160,19 @@ switch ($action) {
         // Generar enlace seguro para restablecer clave
         $resetUrl = "https://comunidad.humm.cl/#cambiar-clave?email=" . urlencode($user['email']);
         $subject = "Restablece tu Contraseña - Mi Humm";
-        $fromEmail = 'contacto@humm.cl';
-        $fromName = 'Comunidad Humm Co-Creation';
+        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'comunidad@humm.cl';
+        $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Comunidad Humm Co-Creation';
         $headers = [
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=UTF-8',
             "From: {$fromName} <{$fromEmail}>",
             "Reply-To: {$fromEmail}",
+            "Return-Path: <{$fromEmail}>",
             'X-Mailer: PHP/' . phpversion()
         ];
         $userName = htmlspecialchars($user['name']);
         $html = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><title>Restablecer Contraseña</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;padding:20px;color:#1e293b;}.card{max-width:520px;margin:0 auto;background:#fff;padding:28px;border-radius:10px;border:1px solid #e2e8f0;}.btn{display:inline-block;background:#e5383b;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:700;margin:20px 0;}</style></head><body><div class='card'><h2 style='color:#0f172a;margin-top:0;'>Restablece tu Contraseña</h2><p>Hola, <strong>{$userName}</strong>:</p><p>Hemos recibido una solicitud para cambiar tu contraseña en <strong>Mi Humm</strong>. Haz clic en el botón siguiente para ingresar tu nueva clave:</p><div style='text-align:center;'><a href='{$resetUrl}' class='btn'>🔐 Cambiar mi Contraseña</a></div><p style='font-size:12px;color:#64748b;'>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p></div></body></html>";
-        @mail($user['email'], $subject, $html, implode("\r\n", $headers));
+        @mail($user['email'], $subject, $html, implode("\r\n", $headers), "-f{$fromEmail}");
 
         DB::jsonResponse(true, ['message' => "Hemos enviado las instrucciones para restablecer tu contraseña al correo {$user['email']}."]);
         break;

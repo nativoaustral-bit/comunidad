@@ -197,6 +197,31 @@ export function renderDashboard(container) {
       `;
     })()}
 
+    <!-- ACCIONES RÁPIDAS MÓVILES -->
+    <div class="mobile-quick-actions-bar" style="margin-bottom: 22px;">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 8px;">
+        Acceso Rápido en Terreno
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <button class="btn btn-secondary btn-sm" id="btn-dash-quick-sale" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px; gap: 4px; border-radius: var(--radius-md); font-size: 11px; height: auto;">
+          <span style="font-size: 1.25rem;">💰</span>
+          <span>+ Venta</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-dash-quick-task" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px; gap: 4px; border-radius: var(--radius-md); font-size: 11px; height: auto;">
+          <span style="font-size: 1.25rem;">✅</span>
+          <span>+ Tarea</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-dash-quick-note" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px; gap: 4px; border-radius: var(--radius-md); font-size: 11px; height: auto;">
+          <span style="font-size: 1.25rem;">📝</span>
+          <span>+ Nota</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-dash-quick-cust" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px; gap: 4px; border-radius: var(--radius-md); font-size: 11px; height: auto;">
+          <span style="font-size: 1.25rem;">👥</span>
+          <span>+ Cliente</span>
+        </button>
+      </div>
+    </div>
+
     <!-- INDICADORES CLAVE DEL NEGOCIO -->
     <div style="margin-bottom: 26px;">
       <h3 class="title-sm" style="margin-bottom: 12px;">Indicadores de tu negocio</h3>
@@ -286,11 +311,11 @@ export function renderDashboard(container) {
         </div>
       </div>
 
-      <div class="kanban-board ${kanbanCols.length > 3 ? 'kanban-scrollable' : ''}" style="${kanbanCols.length > 3 ? 'display: flex; overflow-x: auto; padding-bottom: 12px; gap: 16px;' : 'display: grid; grid-template-columns: repeat(' + kanbanCols.length + ', 1fr); gap: 16px;'}">
+      <div class="kanban-board kanban-responsive-board">
         ${kanbanCols.map(col => {
           const colTasks = tasks.filter(t => t.status === col.id);
           return `
-            <div class="kanban-column" data-status="${col.id}" style="${kanbanCols.length > 3 ? 'min-width: 280px; width: 280px; flex-shrink: 0;' : ''}">
+            <div class="kanban-column" data-status="${col.id}">
               <div class="kanban-column-header">
                 <div class="column-title-wrap">
                   <div class="column-indicator-dot ${col.dotClass || 'dot-todo'}"></div>
@@ -411,6 +436,22 @@ export function renderDashboard(container) {
   }
 
   // Event Listeners
+  container.querySelector('#btn-dash-quick-sale')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.openModal('modal-sale');
+  });
+
+  container.querySelector('#btn-dash-quick-task')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.openModal('modal-task');
+  });
+
+  container.querySelector('#btn-dash-quick-note')?.addEventListener('click', () => {
+    window.location.hash = '#notas';
+  });
+
+  container.querySelector('#btn-dash-quick-cust')?.addEventListener('click', () => {
+    if (window.MiHummApp) window.MiHummApp.openCreateCustomerModal();
+  });
+
   container.querySelector('#btn-dash-request-support')?.addEventListener('click', () => {
     if (window.MiHummApp) window.MiHummApp.openRequestSupportModal();
   });

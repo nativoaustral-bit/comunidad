@@ -1,7 +1,7 @@
 <?php
 /**
  * MI HUMM - SERVICIO DE ENVÍO DE CORREOS ELECTRÓNICOS
- * Plantillas HTML profesionales para Bienvenida, Credenciales y Cambio de Contraseña
+ * Soporte dual: SMTP Autenticado (HostGator cPanel / SSL / TLS) + Fallback PHP mail() con Envelope Sender
  */
 
 declare(strict_types=1);
@@ -11,31 +11,168 @@ require_once __DIR__ . '/db.php';
 setApiHeaders();
 $input = DB::getJsonInput();
 
-$action = $_GET['action'] ?? $input['action'] ?? 'welcome';
-$email = trim($input['email'] ?? $_POST['email'] ?? '');
-$name = trim($input['name'] ?? $_POST['name'] ?? 'Emprendedor/a');
-$password = trim($input['password'] ?? $_POST['password'] ?? 'humm2026');
-$resetUrl = trim($input['resetUrl'] ?? $_POST['resetUrl'] ?? 'https://comunidad.humm.cl');
+$action = strtolower(trim((string)($_GET['action'] ?? $input['action'] ?? 'welcome')));
+$fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'contacto@humm.cl';
+$fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Comunidad Humm Co-Creation';
 
-if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    DB::jsonResponse(false, null, 'Correo electrónico no válido o ausente.', 400);
+/**
+ * Envío directo a través de sockets SMTP con autenticación SSL/TLS (cPanel / HostGator / Externo)
+ */
+function sendSmtpMail(string $to, string $subject, string $htmlBody, string $fromEmail, string $fromName): array {
+    $host = defined('MAIL_SMTP_HOST') ? MAIL_SMTP_HOST : 'mail.humm.cl';
+    $port = defined('MAIL_SMTP_PORT') ? MAIL_SMTP_PORT : 465;
+    $user = defined('MAIL_SMTP_USER') ? MAIL_SMTP_USER : $fromEmail;
+    $pass = defined('MAIL_SMTP_PASS') ? MAIL_SMTP_PASS : '';
+    $secure = defined('MAIL_SMTP_SECURE') ? strtolower(MAIL_SMTP_SECURE) : 'ssl';
+
+    $protocol = ($secure === 'ssl') ? 'ssl://' : '';
+    $context = stream_context_create([
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true
+        ]
+    ]);
+
+    $socket = @stream_socket_client("{$protocol}{$host}:{$port}", $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $context);
+    if (!$socket) {
+        return ['success' => false, 'error' => "No se pudo conectar al servidor SMTP {$host}:{$port} ({$errstr})"];
+    }
+
+    stream_set_timeout($socket, 8);
+
+    $read = function() use ($socket) {
+        $response = '';
+        while ($line = fgets($socket, 515)) {
+            $response .= $line;
+            if (substr($line, 3, 1) === ' ') break;
+        }
+        return $response;
+    };
+
+    $sendCmd = function(string $cmd, array $expectedCodes) use ($socket, $read) {
+        fputs($socket, $cmd . "\r\n");
+        $response = $read();
+        $code = (int)substr($response, 0, 3);
+        if (!in_array($code, $expectedCodes, true)) {
+            throw new Exception("Comando SMTP [{$cmd}] falló: {$response}");
+        }
+        return $response;
+    };
+
+    try {
+        $read(); // Leer banner inicial del servidor
+
+        $clientHost = $_SERVER['SERVER_NAME'] ?? 'localhost';
+        $sendCmd("EHLO {$clientHost}", [250]);
+
+        if ($secure === 'tls') {
+            $sendCmd("STARTTLS", [220]);
+            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            $sendCmd("EHLO {$clientHost}", [250]);
+        }
+
+        if (!empty($user) && !empty($pass)) {
+            $sendCmd("AUTH LOGIN", [334]);
+            $sendCmd(base64_encode($user), [334]);
+            $sendCmd(base64_encode($pass), [235]);
+        }
+
+        $sendCmd("MAIL FROM: <{$fromEmail}>", [250]);
+        $sendCmd("RCPT TO: <{$to}>", [250, 251]);
+        $sendCmd("DATA", [354]);
+
+        $headers = [
+            "MIME-Version: 1.0",
+            "Content-Type: text/html; charset=UTF-8",
+            "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$fromEmail}>",
+            "To: <{$to}>",
+            "Reply-To: <{$fromEmail}>",
+            "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=",
+            "Date: " . date('r'),
+            "X-Mailer: MiHumm SMTP Service"
+        ];
+
+        $payload = implode("\r\n", $headers) . "\r\n\r\n" . $htmlBody . "\r\n.";
+        $sendCmd($payload, [250]);
+        $sendCmd("QUIT", [221]);
+        fclose($socket);
+
+        return ['success' => true];
+    } catch (Throwable $e) {
+        if (is_resource($socket)) {
+            @fputs($socket, "QUIT\r\n");
+            @fclose($socket);
+        }
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
 }
 
-// Configuración de remitente
-$fromEmail = 'contacto@humm.cl';
-$fromName = 'Comunidad Humm Co-Creation';
-$headers = [
-    'MIME-Version: 1.0',
-    'Content-type: text/html; charset=UTF-8',
-    "From: {$fromName} <{$fromEmail}>",
-    "Reply-To: {$fromEmail}",
-    'X-Mailer: PHP/' . phpversion()
-];
+/**
+ * Despachador maestro: Intenta SMTP si está activo; de lo contrario utiliza PHP mail() con envelope sender -f
+ */
+function dispatchHummMail(string $to, string $subject, string $htmlBody, string $fromEmail, string $fromName): array {
+    // 1. Intento por SMTP si está habilitado
+    if (defined('MAIL_USE_SMTP') && MAIL_USE_SMTP && defined('MAIL_SMTP_PASS') && MAIL_SMTP_PASS !== '') {
+        $smtpResult = sendSmtpMail($to, $subject, $htmlBody, $fromEmail, $fromName);
+        if ($smtpResult['success']) {
+            return [
+                'sent' => true,
+                'method' => 'smtp',
+                'message' => 'Correo entregado exitosamente vía SMTP autenticado.'
+            ];
+        }
+        error_log("MiHumm SMTP falló para {$to}: " . ($smtpResult['error'] ?? 'desconocido') . ". Intentando respaldo vía mail()...");
+    }
 
-if ($action === 'welcome') {
+    // 2. Envío nativo vía mail() con parámetro envelope sender (-f) indispensable en HostGator/cPanel
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-type: text/html; charset=UTF-8',
+        "From: {$fromName} <{$fromEmail}>",
+        "Reply-To: {$fromEmail}",
+        "Return-Path: <{$fromEmail}>",
+        'X-Mailer: PHP/' . phpversion(),
+        'X-Priority: 3'
+    ];
+
+    $sent = @mail($to, $subject, $htmlBody, implode("\r\n", $headers), "-f{$fromEmail}");
+
+    if ($sent) {
+        return [
+            'sent' => true,
+            'method' => 'php_mail',
+            'message' => "Correo despachado por el servidor a {$to}."
+        ];
+    } else {
+        $lastErr = error_get_last();
+        $errDetail = $lastErr ? $lastErr['message'] : 'La función mail() de PHP retornó false o el servidor no tiene servicio de correo configurado.';
+        error_log("MiHumm mail() falló al enviar a {$to}: {$errDetail}");
+        return [
+            'sent' => false,
+            'method' => 'php_mail',
+            'error' => $errDetail,
+            'message' => "El servidor no pudo despachar el correo a {$to}."
+        ];
+    }
+}
+
+// -----------------------------------------------------------------------------
+// ENRUTADOR DE ACCIONES
+// -----------------------------------------------------------------------------
+
+if ($action === 'welcome' || $action === 'welcome_user') {
+    $email = trim((string)($input['email'] ?? $input['to'] ?? $_POST['email'] ?? ''));
+    $name = trim((string)($input['name'] ?? $_POST['name'] ?? 'Emprendedor/a'));
+    $password = trim((string)($input['password'] ?? $input['tempPassword'] ?? $_POST['password'] ?? 'humm2026'));
+    $loginUrl = trim((string)($input['loginUrl'] ?? 'https://comunidad.humm.cl'));
+
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        DB::jsonResponse(false, null, 'Correo electrónico no válido o ausente.', 400);
+    }
+
     $subject = "¡Bienvenido/a a la Comunidad Humm! Tus credenciales de acceso";
-    $loginUrl = 'https://comunidad.humm.cl';
-    $changePassUrl = "https://comunidad.humm.cl/#cambiar-clave?email=" . urlencode($email);
+    $changePassUrl = "{$loginUrl}/#cambiar-clave?email=" . urlencode($email);
 
     $htmlBody = <<<HTML
 <!DOCTYPE html>
@@ -70,10 +207,9 @@ if ($action === 'welcome') {
       <div class="badge">Comunidad Humm Co-Creation</div>
       <h1>¡Te damos la bienvenida a Mi Humm!</h1>
     </div>
-    
     <div class="content">
       <div class="greeting">Hola, {$name} 👋</div>
-      <p>Tu cuenta en la plataforma de gestión y ecosistema de <strong>Comunidad Humm</strong> ha sido creada exitosamente. Desde ahora puedes acceder a tus herramientas, gestionar tus ventas y aprovechar todos los convenios y beneficios exclusivos.</p>
+      <p>Tu cuenta en la plataforma de gestión y ecosistema de <strong>Comunidad Humm</strong> ha sido creada exitosamente. Desde ahora puedes acceder a tus herramientas, gestionar tus clientes y ventas, y aprovechar los beneficios y alianzas exclusivas.</p>
       
       <div class="creds-box">
         <div class="cred-item">
@@ -96,20 +232,37 @@ if ($action === 'welcome') {
       </div>
 
       <div class="info-box">
-        💡 <strong>Recomendación de seguridad:</strong> Te sugerimos ingresar a la plataforma y cambiar tu contraseña inicial por una de tu preferencia desde el menú <em>"Mi Cuenta"</em> o haciendo clic en el botón <em>"Cambiar mi Contraseña"</em>.
+        💡 <strong>Recomendación de seguridad:</strong> Te sugerimos ingresar a la plataforma y cambiar tu contraseña inicial por una de tu preferencia desde el menú <em>"Mi Cuenta"</em> o haciendo clic en <em>"Cambiar mi Contraseña"</em>.
       </div>
     </div>
 
     <div class="footer">
       <p style="margin: 0 0 6px;">Este es un mensaje automático enviado por <strong>Comunidad Humm Co-Creation</strong>.</p>
-      <p style="margin: 0;">¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@humm.cl" style="color: #e5383b;">soporte@humm.cl</a> o a través de tu tutor asignado.</p>
+      <p style="margin: 0;">¿Necesitas ayuda? Escríbenos a <a href="mailto:soporte@humm.cl" style="color: #e5383b;">soporte@humm.cl</a>.</p>
     </div>
   </div>
 </body>
 </html>
 HTML;
 
+    $dispatch = dispatchHummMail($email, $subject, $htmlBody, $fromEmail, $fromName);
+    DB::jsonResponse(true, [
+        'sent' => $dispatch['sent'],
+        'method' => $dispatch['method'] ?? 'unknown',
+        'email' => $email,
+        'subject' => $subject,
+        'message' => $dispatch['message'],
+        'error' => $dispatch['error'] ?? null
+    ]);
+
 } elseif ($action === 'reset_password') {
+    $email = trim((string)($input['email'] ?? $_POST['email'] ?? ''));
+    $name = trim((string)($input['name'] ?? $_POST['name'] ?? 'Emprendedor/a'));
+
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        DB::jsonResponse(false, null, 'Correo electrónico no válido o ausente.', 400);
+    }
+
     $subject = "Restablecimiento de Contraseña - Mi Humm";
     $changePassUrl = "https://comunidad.humm.cl/#cambiar-clave?email=" . urlencode($email);
 
@@ -134,24 +287,36 @@ HTML;
     </div>
     <div class="content">
       <p>Hola, {$name}:</p>
-      <p>Hemos recibido una solicitud para cambiar tu contraseña en <strong>Mi Humm</strong>. Haz clic en el siguiente enlace para ingresar tu nueva clave:</p>
+      <p>Hemos recibido una solicitud para restablecer tu contraseña en <strong>Mi Humm</strong>. Haz clic en el siguiente enlace para ingresar tu nueva clave:</p>
       <div style="text-align: center; margin: 24px 0;">
         <a href="{$changePassUrl}" class="btn-primary">🔐 Cambiar mi Contraseña</a>
       </div>
-      <p style="font-size: 12px; color: #64748b;">Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+      <p style="font-size: 12px; color: #64748b;">Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.</p>
     </div>
   </div>
 </body>
 </html>
 HTML;
+
+    $dispatch = dispatchHummMail($email, $subject, $htmlBody, $fromEmail, $fromName);
+    DB::jsonResponse(true, [
+        'sent' => $dispatch['sent'],
+        'method' => $dispatch['method'] ?? 'unknown',
+        'email' => $email,
+        'subject' => $subject,
+        'message' => $dispatch['message'],
+        'error' => $dispatch['error'] ?? null
+    ]);
+
 } elseif ($action === 'benefit_request_notification') {
+    $toEmail = $fromEmail;
     $subject = "Nueva Solicitud de Beneficio en Comunidad Humm: " . ($input['benefitTitle'] ?? 'Convenio');
-    $userName = htmlspecialchars($input['userName'] ?? 'Miembro Humm');
-    $workspaceName = htmlspecialchars($input['workspaceName'] ?? 'Emprendimiento');
-    $benefitTitle = htmlspecialchars($input['benefitTitle'] ?? 'Beneficio');
-    $companyName = htmlspecialchars($input['companyName'] ?? 'Empresa Aliada');
-    $channel = strtoupper(htmlspecialchars($input['channel'] ?? 'WhatsApp'));
-    $personalCode = htmlspecialchars($input['personalCode'] ?? 'HUMM-CODE');
+    $userName = htmlspecialchars((string)($input['userName'] ?? 'Miembro Humm'));
+    $workspaceName = htmlspecialchars((string)($input['workspaceName'] ?? 'Emprendimiento'));
+    $benefitTitle = htmlspecialchars((string)($input['benefitTitle'] ?? 'Beneficio'));
+    $companyName = htmlspecialchars((string)($input['companyName'] ?? 'Empresa Aliada'));
+    $channel = strtoupper(htmlspecialchars((string)($input['channel'] ?? 'WhatsApp')));
+    $personalCode = htmlspecialchars((string)($input['personalCode'] ?? 'HUMM-CODE'));
     $reqDate = date('d/m/Y H:i');
 
     $htmlBody = <<<HTML
@@ -181,56 +346,42 @@ HTML;
       <h2 style="margin:0; font-size: 20px;">Nueva Solicitud de Beneficio</h2>
     </div>
     <div class="content">
-      <p>Un miembro de la Comunidad Humm ha iniciado contacto comercial para solicitar un beneficio de la red de alianzas:</p>
+      <p>Un miembro de la Comunidad Humm ha iniciado contacto para solicitar un beneficio de la red:</p>
       
       <div class="info-grid">
-        <div class="info-row">
-          <span class="label">Emprendedor/a:</span>
-          <span class="val">{$userName}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Emprendimiento / Workspace:</span>
-          <span class="val">{$workspaceName}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Empresa Aliada:</span>
-          <span class="val">{$companyName}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Beneficio / Descuento:</span>
-          <span class="val">{$benefitTitle}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Canal de Contacto:</span>
-          <span class="val">{$channel}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Código Personal Humm:</span>
-          <span class="val"><span class="code-badge">{$personalCode}</span></span>
-        </div>
-        <div class="info-row">
-          <span class="label">Fecha y Hora:</span>
-          <span class="val">{$reqDate}</span>
-        </div>
+        <div class="info-row"><span class="label">Emprendedor/a:</span><span class="val">{$userName}</span></div>
+        <div class="info-row"><span class="label">Emprendimiento:</span><span class="val">{$workspaceName}</span></div>
+        <div class="info-row"><span class="label">Empresa Aliada:</span><span class="val">{$companyName}</span></div>
+        <div class="info-row"><span class="label">Beneficio:</span><span class="val">{$benefitTitle}</span></div>
+        <div class="info-row"><span class="label">Canal de Contacto:</span><span class="val">{$channel}</span></div>
+        <div class="info-row"><span class="label">Código Personal:</span><span class="val"><span class="code-badge">{$personalCode}</span></span></div>
+        <div class="info-row"><span class="label">Fecha y Hora:</span><span class="val">{$reqDate}</span></div>
       </div>
-
       <p style="font-size: 13px; color: #64748b;">
-        Puedes gestionar y dar seguimiento a este contacto desde el panel de administración en la sección <strong>"Contactos generados por beneficios"</strong>.
+        Puedes gestionar este contacto desde el panel de administración en la sección <em>"Contactos generados por beneficios"</em>.
       </p>
     </div>
   </div>
 </body>
 </html>
 HTML;
+
+    $dispatch = dispatchHummMail($toEmail, $subject, $htmlBody, $fromEmail, $fromName);
+    DB::jsonResponse(true, [
+        'sent' => $dispatch['sent'],
+        'method' => $dispatch['method'] ?? 'unknown',
+        'message' => $dispatch['message']
+    ]);
+
 } elseif ($action === 'auth_help_alert') {
-    $clientEmail = htmlspecialchars($input['email'] ?? $email);
-    $clientName = htmlspecialchars($input['name'] ?? $name);
-    $clientMsg = htmlspecialchars($input['message'] ?? 'Solicitud de asistencia para inicio de sesión en plataforma');
+    $clientEmail = htmlspecialchars((string)($input['email'] ?? 'desconocido'));
+    $clientName = htmlspecialchars((string)($input['name'] ?? 'Usuario'));
+    $clientMsg = htmlspecialchars((string)($input['message'] ?? 'Solicitud de asistencia para inicio de sesión'));
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Desconocida';
     $now = date('d/m/Y H:i:s');
 
-    $subject = "🚨 Alerta de Acceso: {$clientName} ({$clientEmail}) solicita ayuda para ingresar a Mi Humm";
-    $toEmail = 'contacto@humm.cl';
+    $subject = "🚨 Alerta de Acceso: {$clientName} ({$clientEmail}) solicita ayuda en Mi Humm";
+    $toEmail = $fromEmail;
 
     $htmlBody = <<<HTML
 <!DOCTYPE html>
@@ -256,55 +407,38 @@ HTML;
       <p style="margin:4px 0 0; font-size: 12px; opacity: 0.9;">Plataforma Comunidad Humm Co-Creation</p>
     </div>
     <div class="body">
-      <p>Un usuario ha indicado que tiene problemas para ingresar a la plataforma y solicita asistencia:</p>
-      <div class="item">
-        <div class="label">Nombre / Emprendedor:</div>
-        <div class="val">{$clientName}</div>
-      </div>
-      <div class="item">
-        <div class="label">Correo Electrónico:</div>
-        <div class="val"><a href="mailto:{$clientEmail}">{$clientEmail}</a></div>
-      </div>
-      <div class="item">
-        <div class="label">Fecha y Hora:</div>
-        <div class="val">{$now}</div>
-      </div>
-      <div class="item">
-        <div class="label">Dirección IP:</div>
-        <div class="val">{$ip}</div>
-      </div>
-      <div class="msg-box">
-        <div class="label" style="color: #991b1b;">Mensaje / Observaciones:</div>
-        <div style="margin-top: 4px; color: #1e293b;">{$clientMsg}</div>
-      </div>
+      <p>Un usuario ha indicado problemas para ingresar a la plataforma:</p>
+      <div class="item"><div class="label">Nombre:</div><div class="val">{$clientName}</div></div>
+      <div class="item"><div class="label">Correo:</div><div class="val"><a href="mailto:{$clientEmail}">{$clientEmail}</a></div></div>
+      <div class="item"><div class="label">Fecha y Hora:</div><div class="val">{$now}</div></div>
+      <div class="item"><div class="label">IP:</div><div class="val">{$ip}</div></div>
+      <div class="msg-box"><div class="label" style="color:#991b1b;">Mensaje:</div><div style="margin-top:4px;">{$clientMsg}</div></div>
     </div>
   </div>
 </body>
 </html>
 HTML;
 
-    $sent = @mail($toEmail, $subject, $htmlBody, implode("\r\n", $headers));
-    DB::jsonResponse(true, ['sent' => !!$sent, 'message' => 'Alerta enviada al equipo de administración Humm.']);
-    exit;
-} else {
-    DB::jsonResponse(false, null, 'Acción de correo no reconocida.', 400);
-}
-
-// Envío a través de la función mail() de PHP en el servidor
-$sent = @mail($email, $subject, $htmlBody, implode("\r\n", $headers));
-
-if ($sent) {
-    DB::jsonResponse(true, [
-        'sent' => true,
-        'email' => $email,
-        'subject' => $subject,
-        'message' => "Correo de bienvenida enviado exitosamente a {$email}"
+    $dispatch = dispatchHummMail($toEmail, $subject, $htmlBody, $fromEmail, $fromName);
+    DB::jsonResponse($dispatch['sent'], [
+        'sent' => $dispatch['sent'],
+        'method' => $dispatch['method'] ?? 'unknown',
+        'message' => $dispatch['sent'] ? 'Alerta enviada al equipo de administración.' : 'No se pudo despachar la alerta automáticamente.',
+        'error' => $dispatch['error'] ?? null
     ]);
+
+} elseif ($action === 'test_connection') {
+    // Diagnóstico rápido del servicio de correo
+    $testTo = trim((string)($input['email'] ?? $fromEmail));
+    $dispatch = dispatchHummMail(
+        $testTo,
+        "Prueba de Diagnóstico de Correo - Mi Humm",
+        "<p>Este es un correo de prueba enviado desde Mi Humm para verificar la conectividad de correo.</p><p>Fecha: " . date('r') . "</p>",
+        $fromEmail,
+        $fromName
+    );
+    DB::jsonResponse($dispatch['sent'], $dispatch);
+
 } else {
-    DB::jsonResponse(true, [
-        'sent' => false,
-        'email' => $email,
-        'subject' => $subject,
-        'message' => "Datos de bienvenida preparados para {$email}"
-    ]);
+    DB::jsonResponse(false, null, "Acción de correo '{$action}' no reconocida.", 400);
 }

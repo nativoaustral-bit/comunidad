@@ -111,6 +111,62 @@ export function renderSalesView(container) {
   const filteredTotal = filteredSales.reduce((sum, s) => sum + s.amount, 0);
   const isFiltered = currentMonthFilter !== 'all' || currentYearFilter !== 'all' || currentPaymentFilter !== 'all' || salesSearchQuery.trim() !== '';
 
+  const recentSalesForMobile = [...sales].reverse().slice(0, 6);
+  const mobileSalesCardsHtml = recentSalesForMobile.length > 0 ? recentSalesForMobile.map(sale => {
+    const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+    const saleDate = sale.date ? formatDateCL(sale.date) : `${formatMonthName(sale.month)} ${sale.year}`;
+    const isToInvoice = sale.paymentStatus === 'por_facturar';
+    const isPending = sale.paymentStatus === 'pendiente' || sale.paymentStatus === 'vencido' || sale.paymentStatus === 'abono';
+    const isDueOver = sale.dueDate && isDateOverdue(sale.dueDate) && isPending;
+
+    let statusBadge = '<span class="badge badge-success text-xs">✅ Pagado</span>';
+    if (isToInvoice) {
+      statusBadge = '<span class="badge badge-neutral text-xs">📄 Por Facturar</span>';
+    } else if (sale.paymentStatus === 'pendiente') {
+      statusBadge = '<span class="badge badge-warning text-xs">⏳ Pendiente</span>';
+    } else if (sale.paymentStatus === 'abono') {
+      statusBadge = '<span class="badge badge-info text-xs">💳 Abonado</span>';
+    } else if (sale.paymentStatus === 'vencido' || isDueOver) {
+      statusBadge = '<span class="badge badge-danger text-xs">⚠️ En Cobranza</span>';
+    }
+
+    return `
+      <div class="adaptive-item-card" style="padding: 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+          <div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+              ${customer ? `👤 ${customer.firstName} ${customer.lastName || ''}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${sale.customerName}` : '🏪 Venta General')}
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              📅 ${saleDate} ${sale.notes ? `• <em>${sale.notes}</em>` : ''}
+            </div>
+          </div>
+          <div style="font-weight: 800; color: var(--humm-red-primary); font-size: 1.15rem;">
+            ${formatCLP(sale.amount)}
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle);">
+          <div>${statusBadge}</div>
+          <div style="display: flex; gap: 6px;">
+            ${(isPending || isToInvoice) ? `
+              <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${sale.id}" style="font-size: 11px; padding: 4px 10px; color: var(--success); font-weight: 700;">
+                💰 Pagado
+              </button>
+            ` : ''}
+            <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${sale.id}" style="padding: 4px 8px;" title="Editar">
+              ✏️
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('') : `
+    <div style="text-align: center; padding: 32px 16px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-subtle); color: var(--text-muted); font-size: 12px;">
+      Aún no hay ventas registradas. Pulsa arriba en <strong>"+ Registrar Nueva Venta"</strong> para comenzar.
+    </div>
+  `;
+
   container.innerHTML = `
     <div class="view-header">
       <div class="view-title-group">
@@ -131,13 +187,74 @@ export function renderSalesView(container) {
       </div>
     </div>
 
-    <!-- TARJETAS DE INDICADORES Y COBRANZA -->
-    <div class="metrics-grid" style="margin-bottom: 24px;">
-      <!-- Métrica 1: Ventas Mes Actual -->
-      <div class="metric-card">
-        <div class="metric-card-header">
-          <span class="metric-card-title">Ventas ${formatMonthName(currentMonth)}</span>
-          <div class="metric-icon-box">
+    <!-- MODO ÁGIL MÓVIL PARA TELÉFONOS -->
+    <div class="sales-mobile-agile-view">
+      <!-- Botón grande directo para registrar venta -->
+      <button class="btn btn-primary btn-block" id="btn-mobile-open-modal-sale" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 700; border-radius: var(--radius-lg); justify-content: center; box-shadow: 0 4px 14px var(--humm-red-glow); margin-bottom: 20px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        + Registrar Nueva Venta
+      </button>
+
+      <!-- 2 Indicadores Esenciales en Móvil -->
+      <div class="metrics-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <div class="metric-card" style="padding: 14px;">
+          <div class="metric-card-header" style="margin-bottom: 4px;">
+            <span class="metric-card-title" style="font-size: 11px;">Ventas ${formatMonthName(currentMonth)}</span>
+          </div>
+          <div class="metric-value" style="font-size: 1.25rem;">${formatCLP(currentMonthTotal)}</div>
+          <div class="metric-comparison" style="margin-top: 4px; font-size: 10.5px;">
+            <span class="${diffClass}">${diffText}</span>
+          </div>
+        </div>
+
+        <div class="metric-card" style="padding: 14px;">
+          <div class="metric-card-header" style="margin-bottom: 4px;">
+            <span class="metric-card-title" style="font-size: 11px;">Por Cobrar</span>
+          </div>
+          <div class="metric-value" style="font-size: 1.25rem; color: ${totalPending > 0 ? '#D97706' : 'var(--text-primary)'};">${formatCLP(totalPending)}</div>
+          <div class="metric-comparison" style="margin-top: 4px; font-size: 10.5px;">
+            <span class="${totalPending > 0 ? 'comparison-negative' : 'comparison-neutral'}">${pendingCount} cuentas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movimientos y Cobros Recientes -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: var(--font-size-base); font-weight: 700; color: var(--text-primary); margin: 0;">
+          Últimos Movimientos
+        </h3>
+        <span class="text-xs text-muted">${sales.length} transacciones</span>
+      </div>
+
+      <div class="mobile-sales-cards-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+        ${mobileSalesCardsHtml}
+      </div>
+
+      <!-- Aviso amigable de recomendación de escritorio -->
+      <div class="mobile-desktop-notice" style="background: var(--bg-surface-secondary); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 18px 16px; text-align: center; margin-top: 20px; margin-bottom: 20px;">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">💻</div>
+        <div style="font-weight: 700; font-size: 13px; color: var(--text-primary); margin-bottom: 4px;">Gráficos Anuales y Auditoría Contable</div>
+        <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.45;">
+          Para consultar la evolución gráfica mensual del año completo, conciliar facturas y ver la planilla contable extendida, te recomendamos abrir tu plataforma en un computador o tablet.
+        </p>
+        <button class="btn btn-secondary btn-sm" id="btn-toggle-desktop-sales-table" style="font-size: 11px;">
+          Ver planilla completa en celular
+        </button>
+      </div>
+    </div>
+
+    <!-- MODO COMPLETO DE ESCRITORIO (OCULTO EN MÓVIL POR DEFECTO) -->
+    <div class="sales-desktop-full-view">
+      <!-- TARJETAS DE INDICADORES Y COBRANZA -->
+      <div class="metrics-grid" style="margin-bottom: 24px;">
+        <!-- Métrica 1: Ventas Mes Actual -->
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <span class="metric-card-title">Ventas ${formatMonthName(currentMonth)}</span>
+            <div class="metric-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="12" y1="1" x2="12" y2="23"></line>
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -451,6 +568,7 @@ export function renderSalesView(container) {
         }).join('') : ''}
       </div>
     </div>
+    </div> <!-- Cierre de sales-desktop-full-view -->
   `;
 
   // Renderizar gráfico de ventas
@@ -461,7 +579,7 @@ export function renderSalesView(container) {
   }
 
   // Event Listeners
-  container.querySelector('#btn-open-modal-sale')?.addEventListener('click', () => {
+  const openSaleModal = () => {
     if (window.MiHummApp) {
       const form = document.getElementById('form-modal-sale');
       if (form) {
@@ -472,6 +590,18 @@ export function renderSalesView(container) {
         document.getElementById('modal-sale-header-title').textContent = 'Registrar Venta';
       }
       window.MiHummApp.openModal('modal-sale');
+    }
+  };
+
+  container.querySelector('#btn-open-modal-sale')?.addEventListener('click', openSaleModal);
+  container.querySelector('#btn-mobile-open-modal-sale')?.addEventListener('click', openSaleModal);
+
+  // Alternar vista de tabla completa en móviles
+  container.querySelector('#btn-toggle-desktop-sales-table')?.addEventListener('click', (e) => {
+    const desktopView = container.querySelector('.sales-desktop-full-view');
+    if (desktopView) {
+      const isForced = desktopView.classList.toggle('force-show-mobile');
+      e.target.textContent = isForced ? 'Ocultar tabla extendida' : 'Ver planilla completa en celular';
     }
   });
 

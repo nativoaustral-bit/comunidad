@@ -1198,5 +1198,176 @@
   color: #CBD5E1;
 }
 
+/* ==========================================================================
+   12. MEJORAS DE VISUALIZACIÓN Y USABILIDAD MÓVIL
+   ========================================================================== */
+
+/* Carrusel táctil para filtros de categorías */
+.filter-chips-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+}
+
+.filter-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Pestañas de etapas Kanban en móviles */
+.mobile-kanban-tabs-bar {
+  display: none;
+  gap: 6px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 14px;
+  scrollbar-width: none;
+}
+
+.mobile-kanban-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.kanban-tab-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.kanban-tab-btn.active {
+  background: var(--humm-red-primary);
+  color: #FFFFFF;
+  border-color: var(--humm-red-primary);
+  box-shadow: 0 2px 8px var(--humm-red-glow);
+}
+
+/* Tablero responsivo de tareas */
+@media (max-width: 768px) {
+  .mobile-kanban-tabs-bar {
+    display: flex;
+  }
+
+  .kanban-responsive-board {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  .kanban-column.mobile-col-hidden {
+    display: none !important;
+  }
+
+  .kanban-column {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
+/* Vistas de Ventas: Móvil vs Escritorio */
+.sales-mobile-agile-view {
+  display: none;
+}
+
+.sales-desktop-full-view {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .sales-mobile-agile-view {
+    display: block;
+  }
+
+  .sales-desktop-full-view {
+    display: none;
+  }
+
+  .sales-desktop-full-view.force-show-mobile {
+    display: block !important;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px dashed var(--border-strong);
+  }
+}
+
+/* Cuadrícula de tarjetas de notas y beneficios en celular */
+@media (max-width: 600px) {
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .discounts-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .discount-portrait-card {
+    min-height: auto;
+  }
+}
+
+/* Modales estilo Bottom Sheet en celulares */
+@media (max-width: 600px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-dialog {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+    margin: 0;
+    animation: modalSlideFromBottom 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+  }
+
+  .modal-body {
+    padding: 18px 20px;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Prevenir zoom involuntario en inputs en iOS y Android */
+  .form-control,
+  .form-input,
+  .form-select {
+    font-size: 16px !important;
+  }
+}
+
+@keyframes modalSlideFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 
 

@@ -597,6 +597,7 @@
 @media (max-width: 900px) {
   :root {
     --sidebar-width: 280px;
+    --bottom-nav-height: 64px;
   }
 
   .sidebar {
@@ -622,25 +623,54 @@
 
   .mobile-bottom-nav {
     display: block;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0));
   }
 
   .content-body {
-    padding: 18px 16px calc(var(--bottom-nav-height) + 24px) 16px;
+    padding: 16px 14px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0) + 24px) 14px;
   }
 
   .topbar {
-    padding: 0 16px;
+    padding: 0 14px;
+  }
+
+  /* Ocultar botones extensos de la cabecera en móvil */
+  #btn-topbar-request-support,
+  #btn-topbar-logout {
+    display: none !important;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .topbar-right .workspace-badge {
+    display: none;
+  }
+
+  .greeting-text span {
+    display: none;
   }
 }
 
 @media (max-width: 500px) {
-  .topbar-right .workspace-badge {
-    display: none;
+  .topbar-left {
+    gap: 10px;
+  }
+
+  .greeting-text {
+    font-size: var(--font-size-sm);
+  }
+
+  .greeting-subtext {
+    font-size: 11px;
   }
 
   .view-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 
   .view-actions {

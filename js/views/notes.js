@@ -105,24 +105,24 @@ export function renderNotesView(container) {
         <input type="text" id="input-search-notes" class="form-input" placeholder="🔍 Buscar en tus notas..." value="${escapeHtml(noteSearchQuery)}" style="padding-left: 12px; font-size: 13px;" />
       </div>
 
-      <!-- Filtros por Categoría -->
-      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-        <button class="btn ${currentNoteCategory === 'all' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="all" style="font-size: 11px; padding: 4px 10px;">
+      <!-- Filtros por Categoría (Desplazable en móvil) -->
+      <div class="filter-chips-scroll" style="display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; max-width: 100%;">
+        <button class="btn ${currentNoteCategory === 'all' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="all" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           Todas (${notes.length})
         </button>
-        <button class="btn ${currentNoteCategory === 'ideas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="ideas" style="font-size: 11px; padding: 4px 10px;">
+        <button class="btn ${currentNoteCategory === 'ideas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="ideas" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           💡 Ideas (${countIdeas})
         </button>
-        <button class="btn ${currentNoteCategory === 'tareas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="tareas" style="font-size: 11px; padding: 4px 10px;">
+        <button class="btn ${currentNoteCategory === 'tareas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="tareas" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           📋 Listas (${countTasks})
         </button>
-        <button class="btn ${currentNoteCategory === 'clientes' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="clientes" style="font-size: 11px; padding: 4px 10px;">
+        <button class="btn ${currentNoteCategory === 'clientes' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="clientes" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           👥 Clientes (${countClients})
         </button>
-        <button class="btn ${currentNoteCategory === 'proveedores' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="proveedores" style="font-size: 11px; padding: 4px 10px;">
+        <button class="btn ${currentNoteCategory === 'proveedores' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="proveedores" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           🌲 Proveedores (${countProviders})
         </button>
-        <button class="btn ${currentNoteCategory === 'finanzas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="finanzas" style="font-size: 11px; padding: 4px 10px;">
+        <button class="btn ${currentNoteCategory === 'finanzas' ? 'btn-primary' : 'btn-ghost'} btn-sm note-filter-cat" data-category="finanzas" style="font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
           💰 Finanzas (${countFinances})
         </button>
       </div>

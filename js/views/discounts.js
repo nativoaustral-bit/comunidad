@@ -48,23 +48,22 @@ export function renderDiscountsView(container) {
     </div>
 
     <!-- BARRA DE BÚSQUEDA Y FILTROS POR CATEGORÍA -->
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px;">
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 260px;">
-          <input type="text" id="discount-search-input" class="form-control" placeholder="🔍 Buscar por empresa, servicio o tipo de beneficio..." value="${searchQuery}" />
+        <div style="flex: 1; min-width: 240px;">
+          <input type="text" id="discount-search-input" class="form-control" placeholder="🔍 Buscar por empresa o tipo de beneficio..." value="${searchQuery}" />
         </div>
       </div>
 
-      <!-- Filtros de categoría -->
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <span class="text-xs text-muted" style="font-weight: 600;">Categoría:</span>
-        <button class="btn ${currentCategoryFilter === 'all' ? 'btn-primary' : 'btn-ghost'} btn-sm filter-cat-btn" data-category="all">
+      <!-- Filtros de categoría (Desplazable horizontalmente en móvil) -->
+      <div class="filter-chips-scroll" style="display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; max-width: 100%;">
+        <button class="btn ${currentCategoryFilter === 'all' ? 'btn-primary' : 'btn-ghost'} btn-sm filter-cat-btn" data-category="all" style="white-space: nowrap; flex-shrink: 0; padding: 6px 12px; font-size: 11.5px;">
           Todos (${discounts.length})
         </button>
         ${categories.filter(c => c !== 'all').map(cat => {
           const count = discounts.filter(d => d.category === cat).length;
           return `
-            <button class="btn ${currentCategoryFilter === cat ? 'btn-primary' : 'btn-ghost'} btn-sm filter-cat-btn" data-category="${cat}">
+            <button class="btn ${currentCategoryFilter === cat ? 'btn-primary' : 'btn-ghost'} btn-sm filter-cat-btn" data-category="${cat}" style="white-space: nowrap; flex-shrink: 0; padding: 6px 12px; font-size: 11.5px;">
               ${cat} (${count})
             </button>
           `;
@@ -72,8 +71,8 @@ export function renderDiscountsView(container) {
       </div>
     </div>
 
-    <!-- GRID DE TARJETAS DE BENEFICIOS (FORMATO VERTICAL / RETRATO) -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 40px;">
+    <!-- GRID DE TARJETAS DE BENEFICIOS (RESPONSIVO PARA MÓVIL) -->
+    <div class="discounts-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 40px;">
       ${filtered.length > 0 ? filtered.map(item => {
         const existingReq = myRequests.find(r => r.discountId === item.id);
         const hasWa = !!(item.whatsapp && item.whatsapp.trim());
@@ -102,7 +101,7 @@ export function renderDiscountsView(container) {
         }
 
         return `
-          <div class="discount-portrait-card" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); ${item.featured ? 'border-top: 3.5px solid var(--humm-red-primary);' : ''} border-radius: var(--radius-lg); padding: 18px 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-card); position: relative; transition: transform var(--transition-fast), box-shadow var(--transition-fast); min-height: 410px;">
+          <div class="discount-portrait-card" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); ${item.featured ? 'border-top: 3.5px solid var(--humm-red-primary);' : ''} border-radius: var(--radius-lg); padding: 18px 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-card); position: relative; transition: transform var(--transition-fast), box-shadow var(--transition-fast);">
             
             <!-- Parte Superior: Insignias y Cabecera -->
             <div>

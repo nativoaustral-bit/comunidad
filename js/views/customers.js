@@ -205,35 +205,41 @@ export function renderCustomersView(container) {
         <div class="responsive-cards-grid">
           ${filtered.length > 0 ? filtered.map(c => {
             const cleanPhone = sanitizeWhatsAppPhone(c.phone);
+            const rawPhone = (c.phone || '').replace(/[^0-9+]/g, '');
             const locationText = [c.city, c.comuna, c.region].filter(Boolean).join(', ');
 
             return `
               <div class="adaptive-item-card">
                 <div class="adaptive-card-header">
                   <div>
-                    <div style="font-weight: 700; font-size: var(--font-size-base);">${c.firstName} ${c.lastName || ''}</div>
-                    ${c.company ? `<div class="text-xs text-secondary font-medium">${c.company}</div>` : ''}
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">${c.firstName} ${c.lastName || ''}</div>
+                    ${c.company ? `<div class="text-xs text-secondary font-medium" style="margin-top: 2px;">🏢 ${c.company}</div>` : ''}
                   </div>
                   <span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-neutral'}">
                     ${c.status === 'active' ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
                 <div class="adaptive-card-body">
-                  ${c.rut ? `<div><strong>RUT:</strong> ${c.rut}</div>` : ''}
-                  ${c.phone ? `<div><strong>Teléfono:</strong> ${c.phone}</div>` : ''}
-                  ${c.email ? `<div><strong>Correo:</strong> ${c.email}</div>` : ''}
-                  ${locationText ? `<div><strong>Ubicación:</strong> ${locationText}</div>` : ''}
-                  ${c.address ? `<div><strong>Dirección:</strong> ${c.address}</div>` : ''}
-                  <div><strong>Origen:</strong> ${c.sourceChannel}</div>
-                  ${c.notes ? `<div style="margin-top: 4px; padding: 6px; background: var(--bg-surface-secondary); border-radius: 4px;">${c.notes}</div>` : ''}
+                  ${c.phone ? `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600;"><span>📱</span> <span>${c.phone}</span></div>` : ''}
+                  ${c.email ? `<div style="display: flex; align-items: center; gap: 6px;"><span>✉️</span> <span class="text-muted">${c.email}</span></div>` : ''}
+                  ${locationText ? `<div style="display: flex; align-items: center; gap: 6px;"><span>📍</span> <span>${locationText}</span></div>` : ''}
+                  ${c.address ? `<div style="display: flex; align-items: center; gap: 6px;"><span>🏠</span> <span>${c.address}</span></div>` : ''}
+                  ${c.rut ? `<div class="text-xs text-muted"><strong>RUT:</strong> ${c.rut}</div>` : ''}
+                  <div class="text-xs text-muted"><strong>Origen:</strong> ${c.sourceChannel}</div>
+                  ${c.notes ? `<div style="margin-top: 4px; padding: 8px 10px; background: var(--bg-surface-secondary); border-radius: 6px; font-size: 12px; font-style: italic;">"${c.notes}"</div>` : ''}
                 </div>
-                <div class="adaptive-card-footer">
-                  ${c.phone ? `
-                    <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-sm">
-                      WhatsApp
-                    </a>
-                  ` : '<div></div>'}
-                  <div style="display: flex; gap: 6px;">
+                <div class="adaptive-card-footer" style="flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    ${c.phone ? `
+                      <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-sm" style="padding: 6px 12px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>💬</span> WhatsApp
+                      </a>
+                      <a href="tel:${rawPhone}" class="btn btn-secondary btn-sm" style="padding: 6px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Llamar directamente">
+                        <span>📞</span> Llamar
+                      </a>
+                    ` : ''}
+                  </div>
+                  <div style="display: flex; gap: 6px; margin-left: auto;">
                     <button class="btn btn-secondary btn-sm btn-edit-customer" data-customer-id="${c.id}">
                       Editar
                     </button>
@@ -244,7 +250,13 @@ export function renderCustomersView(container) {
                 </div>
               </div>
             `;
-          }).join('') : ''}
+          }).join('') : `
+            <div style="text-align: center; padding: 40px 16px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-subtle); color: var(--text-muted);">
+              <div style="font-size: 2rem; margin-bottom: 8px;">👥</div>
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Sin resultados</div>
+              <div style="font-size: var(--font-size-xs);">No se encontraron clientes con los filtros aplicados.</div>
+            </div>
+          `}
         </div>
       </div>
     `;

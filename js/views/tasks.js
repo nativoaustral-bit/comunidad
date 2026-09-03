@@ -6,6 +6,8 @@
 import { store, formatDateCL, isDateOverdue } from '../store.js';
 import { auth } from '../auth.js';
 
+let mobileKanbanTab = 'all';
+
 export function renderTasksView(container) {
   const ws = auth.getCurrentWorkspace();
   if (!ws) return;
@@ -19,7 +21,7 @@ export function renderTasksView(container) {
     <div class="view-header">
       <div class="view-title-group">
         <h2>Tablero de Tareas</h2>
-        <p>Organiza tus actividades diarias, proyectos y compromisos por etapas configurables.</p>
+        <p>Organiza tus actividades diarias, compromisos y avances paso a paso.</p>
       </div>
       <div class="view-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="btn btn-secondary" id="btn-add-kanban-col-top" title="Agregar otra etapa al proceso">
@@ -41,7 +43,7 @@ export function renderTasksView(container) {
     </div>
 
     <!-- Barra de Búsqueda y Filtros -->
-    <div class="table-toolbar" style="background-color: var(--bg-surface); border-radius: var(--radius-lg); margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+    <div class="table-toolbar" style="background-color: var(--bg-surface); border-radius: var(--radius-lg); margin-bottom: 16px; border: 1px solid var(--border-subtle);">
       <div class="table-search-box input-with-icon" style="max-width: 320px;">
         <span class="input-icon">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -74,8 +76,11 @@ export function renderTasksView(container) {
       </div>
     </div>
 
-    <!-- TABLERO KANBAN MULTI-COLUMNA -->
-    <div id="full-kanban-board" class="kanban-board ${columns.length > 3 ? 'kanban-scrollable' : ''}" style="${columns.length > 3 ? 'display: flex; overflow-x: auto; padding-bottom: 14px; gap: 16px;' : 'display: grid; grid-template-columns: repeat(' + columns.length + ', 1fr); gap: 16px;'}"></div>
+    <!-- PESTAÑAS MÓVILES DE ETAPAS (TABS TÁCTILES) -->
+    <div class="mobile-kanban-tabs-bar" id="mobile-kanban-tabs-bar"></div>
+
+    <!-- TABLERO KANBAN MULTI-COLUMNA RESPONSIVO -->
+    <div id="full-kanban-board" class="kanban-board kanban-responsive-board"></div>
   `;
 
   // Renderizar las columnas aplicando filtros actuales
@@ -138,11 +143,37 @@ export function renderTasksView(container) {
 
     const currentCols = store.getKanbanColumns(ws.id);
 
+    // Renderizar pestañas de etapas para dispositivos móviles
+    const mobileTabsContainer = container.querySelector('#mobile-kanban-tabs-bar');
+    if (mobileTabsContainer) {
+      mobileTabsContainer.innerHTML = `
+        <button class="kanban-tab-btn ${mobileKanbanTab === 'all' ? 'active' : ''}" data-col-tab="all">
+          Todas (${filtered.length})
+        </button>
+        ${currentCols.map(c => {
+          const count = filtered.filter(t => t.status === c.id).length;
+          return `
+            <button class="kanban-tab-btn ${mobileKanbanTab === c.id ? 'active' : ''}" data-col-tab="${c.id}">
+              ${c.name} (${count})
+            </button>
+          `;
+        }).join('')}
+      `;
+      mobileTabsContainer.querySelectorAll('.kanban-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          mobileKanbanTab = btn.getAttribute('data-col-tab') || 'all';
+          filterAndRenderColumns();
+        });
+      });
+    }
+
     // Generar HTML de cada columna
     const colsHtml = currentCols.map(col => {
       const colTasks = filtered.filter(t => t.status === col.id);
+      const isMobileHidden = mobileKanbanTab !== 'all' && mobileKanbanTab !== col.id;
+
       return `
-        <div class="kanban-column" data-status="${col.id}" style="${currentCols.length > 3 ? 'min-width: 290px; width: 290px; flex-shrink: 0;' : ''}">
+        <div class="kanban-column ${isMobileHidden ? 'mobile-col-hidden' : ''}" data-status="${col.id}">
           <div class="kanban-column-header">
             <div class="column-title-wrap" style="flex: 1; min-width: 0;">
               <div class="column-indicator-dot ${col.dotClass || 'dot-todo'}"></div>
@@ -167,6 +198,11 @@ export function renderTasksView(container) {
           </div>
 
           <div class="kanban-cards-list kanban-dropzone" data-status="${col.id}">
+            ${colTasks.length === 0 ? `
+              <div class="empty-col-state" style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+                Sin tareas en esta etapa
+              </div>
+            ` : ''}
             ${colTasks.map(task => {
               const overdue = task.dueDate && isDateOverdue(task.dueDate) && task.status !== 'done';
               const relatedCustomer = task.customerId ? customers.find(c => c.id === task.customerId) : null;
@@ -211,6 +247,13 @@ export function renderTasksView(container) {
                     </div>
 
                     <div class="card-quick-actions">
+                      ${task.status !== 'done' ? `
+                        <button class="card-btn-action btn-mark-done" title="Marcar como terminada" data-task-id="${task.id}" style="color: var(--success);" aria-label="Marcar terminada">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </button>
+                      ` : ''}
                       <button class="card-btn-action btn-edit-task" title="Editar tarea" data-task-id="${task.id}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M12 20h9"></path>
@@ -265,6 +308,19 @@ export function renderTasksView(container) {
   }
 
   function attachCardActions() {
+    // Marcar terminada con 1 toque
+    boardElement().querySelectorAll('.btn-mark-done').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const taskId = btn.getAttribute('data-task-id');
+        store.updateTask(taskId, { status: 'done', completedAt: new Date().toISOString() });
+        if (window.MiHummApp) {
+          window.MiHummApp.showToast('✓ Tarea completada', 'success');
+          filterAndRenderColumns();
+        }
+      });
+    });
+
     // Editar tarea
     boardElement().querySelectorAll('.btn-edit-task').forEach(btn => {
       btn.addEventListener('click', (e) => {

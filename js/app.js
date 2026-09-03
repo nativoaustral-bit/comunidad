@@ -976,8 +976,17 @@ class App {
 
           this.showToast(`Usuario "${name}" creado con éxito`, 'success');
 
-          // Despacho de correo de bienvenida real vía PHP mail
+          // Despacho de correo de bienvenida real vía PHP mail / SMTP
+          const statusBox = document.getElementById('created-user-email-status');
+          const descEl = document.getElementById('created-user-email-desc');
+
           if (sendWelcome) {
+            if (statusBox) {
+              statusBox.style.background = 'rgba(59, 130, 246, 0.08)';
+              statusBox.style.borderLeftColor = '#3B82F6';
+            }
+            if (descEl) descEl.innerHTML = `Despachando correo de bienvenida a <strong>${email}</strong>...`;
+
             fetch('api/mail.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -988,7 +997,47 @@ class App {
                 password: initialPass,
                 loginUrl: window.location.origin
               })
-            }).catch(err => console.warn('Welcome email dispatch notice:', err));
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.success && data.data && data.data.sent) {
+                if (statusBox) {
+                  statusBox.style.background = 'rgba(34, 197, 94, 0.08)';
+                  statusBox.style.borderLeftColor = 'var(--success)';
+                }
+                if (descEl) {
+                  const methodText = data.data.method === 'smtp' ? 'vía SMTP' : 'vía servidor';
+                  descEl.innerHTML = `✅ Correo enviado exitosamente a <strong>${email}</strong> (${methodText}).`;
+                }
+              } else {
+                if (statusBox) {
+                  statusBox.style.background = 'rgba(239, 68, 68, 0.08)';
+                  statusBox.style.borderLeftColor = 'var(--danger)';
+                }
+                const errorNote = (data && data.data && data.data.error) ? `<br><small style="color:var(--text-muted);">${data.data.error}</small>` : '';
+                if (descEl) {
+                  descEl.innerHTML = `⚠️ <strong>No se pudo enviar el correo automático a ${email}.</strong>${errorNote}<br><span style="font-size:11.5px; color:var(--text-secondary);">Puedes compartir los accesos directamente por WhatsApp o copiar las credenciales abajo.</span>`;
+                }
+              }
+            })
+            .catch(err => {
+              console.warn('Welcome email dispatch notice:', err);
+              if (statusBox) {
+                statusBox.style.background = 'rgba(245, 158, 11, 0.08)';
+                statusBox.style.borderLeftColor = '#D97706';
+              }
+              if (descEl) {
+                descEl.innerHTML = `⚠️ No se pudo contactar el servicio de correo. Comparte las credenciales usando los botones de abajo.`;
+              }
+            });
+          } else {
+            if (statusBox) {
+              statusBox.style.background = 'rgba(100, 116, 139, 0.08)';
+              statusBox.style.borderLeftColor = 'var(--text-muted)';
+            }
+            if (descEl) {
+              descEl.innerHTML = `ℹ️ El envío de correo automático fue desactivado al crear el usuario. Comparte las credenciales con los botones de abajo.`;
+            }
           }
 
           // Poblado del modal de confirmación y bienvenida
@@ -1360,7 +1409,8 @@ class App {
                 to: email,
                 name: name,
                 tempPassword: password || 'humm2026',
-                mustChangePassword: !!mustChangePass
+                mustChangePassword: !!mustChangePass,
+                loginUrl: window.location.origin
               })
             }).catch(() => {});
           }
@@ -2699,6 +2749,7 @@ class App {
         if (view) {
           window.location.hash = `#${view}`;
         }
+        this.closeMobileDrawer();
       });
     });
   }

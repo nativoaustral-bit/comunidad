@@ -2734,21 +2734,31 @@ export function renderAdminSubscriptionsView(container) {
   const plans = store.getSubscriptionPlans();
   const subscriptions = store.getClientSubscriptions();
 
-  // Métricas
-  const totalMRR = subscriptions
-    .filter(s => s.status === 'active' || s.paymentStatus === 'paid')
-    .reduce((acc, s) => acc + (s.monthlyPrice || 0), 0);
+  // Helper para identificar si un cliente está en condición de prueba
+  const isClientInTrial = (s) => {
+    if (s.isTrial === true || s.is_trial === true || s.isTrial === 1 || s.is_trial === 1) return true;
+    if (s.status === 'trial') return true;
+    const daysLeft = parseInt(s.trialDaysLeft ?? s.trial_days_left ?? 0);
+    if (daysLeft > 0 && s.status !== 'canceled') return true;
+    return false;
+  };
 
-  const activePayingCount = subscriptions.filter(s => s.status === 'active' && !s.isTrial).length;
-  const trialCount = subscriptions.filter(s => s.isTrial || s.status === 'trial').length;
-  const overdueCount = subscriptions.filter(s => s.paymentStatus === 'overdue' || s.status === 'overdue').length;
-  const paidCount = subscriptions.filter(s => s.paymentStatus === 'paid').length;
+  // Métricas: Los clientes en condición de prueba NO suman al Ingreso Mensual Recurrente (MRR)
+  const totalMRR = subscriptions
+    .filter(s => (s.status === 'active' || s.paymentStatus === 'paid') && !isClientInTrial(s))
+    .reduce((acc, s) => acc + (parseInt(s.monthlyPrice ?? s.monthly_price ?? 0) || 0), 0);
+
+  const activePayingCount = subscriptions.filter(s => s.status === 'active' && !isClientInTrial(s)).length;
+  const trialCount = subscriptions.filter(s => isClientInTrial(s)).length;
+  const overdueCount = subscriptions.filter(s => (s.paymentStatus === 'overdue' || s.status === 'overdue') && !isClientInTrial(s)).length;
+  const paidCount = subscriptions.filter(s => s.paymentStatus === 'paid' && !isClientInTrial(s)).length;
 
   // Filtrado de suscripciones
   const filteredSubs = subscriptions.filter(s => {
+    const inTrial = isClientInTrial(s);
     if (adminSubPlanFilter !== 'all' && s.planId !== adminSubPlanFilter) return false;
-    if (adminSubStatusFilter === 'active' && (s.status !== 'active' || s.isTrial)) return false;
-    if (adminSubStatusFilter === 'trial' && !s.isTrial && s.status !== 'trial') return false;
+    if (adminSubStatusFilter === 'active' && (s.status !== 'active' || inTrial)) return false;
+    if (adminSubStatusFilter === 'trial' && !inTrial) return false;
     if (adminSubStatusFilter === 'overdue' && s.status !== 'overdue' && s.paymentStatus !== 'overdue') return false;
 
     if (adminSubPaymentFilter === 'paid' && s.paymentStatus !== 'paid') return false;
@@ -2888,7 +2898,7 @@ export function renderAdminSubscriptionsView(container) {
           </div>
         </div>
         <div class="metric-value" style="color: var(--success); font-size: 1.5rem;">${formatCLP(totalMRR)}</div>
-        <div class="metric-comparison"><span class="comparison-positive">Ingreso mensual recurrente</span></div>
+        <div class="metric-comparison"><span class="comparison-positive">Ingreso mensual recurrente (${activePayingCount} clientes pagando &bull; excluye pruebas)</span></div>
       </div>
 
       <div class="metric-card">
@@ -3045,7 +3055,7 @@ export function renderAdminSubscriptionsView(container) {
             const joinedDate = sub.joinedDate || sub.joined_date;
             const nextBillingDate = sub.nextBillingDate || sub.next_billing_date;
             const trialDaysLeft = sub.trialDaysLeft ?? sub.trial_days_left ?? 0;
-            const isTrial = sub.isTrial ?? sub.is_trial ?? (sub.status === 'trial');
+            const isTrial = isClientInTrial(sub);
             const status = sub.status || 'trial';
             const paymentStatus = sub.paymentStatus || sub.payment_status || 'pending';
             const initials = clientName.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2) || 'CL';
