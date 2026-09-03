@@ -1,6 +1,6 @@
-import { store, formatDateCL } from '../store.js?v=5.0';
-import { auth } from '../auth.js?v=5.0';
-import { CHILE_REGIONES_COMUNAS, populateComunasSelect } from '../chile-data.js?v=5.0';
+import { store, formatDateCL } from '../store.js';
+import { auth } from '../auth.js';
+import { CHILE_REGIONES_COMUNAS, populateComunasSelect } from '../chile-data.js';
 
 export function renderAccountView(container) {
   const user = auth.getCurrentUser();

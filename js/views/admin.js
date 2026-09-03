@@ -4,8 +4,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, formatCLP } from '../store.js?v=5.0';
-import { auth } from '../auth.js?v=5.0';
+import { store, formatDateCL, formatCLP } from '../store.js';
+import { auth } from '../auth.js';
 
 let currentAlertFilter = 'all';  // 'all', 'critical', 'warning', 'info'
 let currentRequestFilter = 'all'; // 'all', 'pendiente', 'en_proceso', 'respondido'

@@ -3,8 +3,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store } from '../store.js?v=5.0';
-import { auth } from '../auth.js?v=5.0';
+import { store } from '../store.js';
+import { auth } from '../auth.js';
 
 export function renderToolsView(container) {
   const ws = auth.getCurrentWorkspace();

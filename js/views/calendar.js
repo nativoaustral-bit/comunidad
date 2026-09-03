@@ -3,8 +3,8 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, formatMonthName, isDateOverdue } from '../store.js?v=5.0';
-import { auth } from '../auth.js?v=5.0';
+import { store, formatDateCL, formatMonthName, isDateOverdue } from '../store.js';
+import { auth } from '../auth.js';
 
 let currentCalDate = new Date();
 let currentCalView = 'month'; // 'month', 'week', 'agenda'

@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL } from '../store.js?v=5.0';
+import { store, formatDateCL } from '../store.js';
 
 let currentCategoryFilter = 'all';
 let searchQuery = '';

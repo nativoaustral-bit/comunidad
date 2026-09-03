@@ -3,9 +3,9 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, formatMonthName, isDateOverdue } from '../store.js?v=5.0';
-import { auth } from '../auth.js?v=5.0';
-import { SalesChart } from '../chart.js?v=5.0';
+import { store, formatCLP, formatDateCL, formatMonthName, isDateOverdue } from '../store.js';
+import { auth } from '../auth.js';
+import { SalesChart } from '../chart.js';
 
 let currentPaymentFilter = 'all';
 let currentMonthFilter = 'all';
