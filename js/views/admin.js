@@ -1388,6 +1388,33 @@ export function renderAdminBroadcastsView(container) {
 // =========================================================================
 // 9. ALIANZAS Y DESCUENTOS DE EMPRESAS PARA LA COMUNIDAD
 // =========================================================================
+let showAllianceTemplate = false;
+
+export const ALLIANCE_WHATSAPP_TEMPLATE = `¡Hola! 👋 Te damos la más cordial bienvenida a la Comunidad Humm Co-Creation 🐝✨
+
+Muchas gracias por tu interés y generosa disposición de poner a disposición de nuestra red de emprendedores un beneficio o descuento exclusivo de tu empresa.
+
+Para poder diseñar y publicar la tarjeta oficial de tu alianza en nuestra plataforma web (y presentarla a toda la comunidad), necesitamos que por favor nos respondas completando los siguientes datos:
+
+📋 *DATOS PARA CREAR LA ALIANZA EN MI HUMM:*
+
+🏢 *Nombre de la Empresa:* 
+🛍️ *Nombre del producto o servicio:* 
+🎁 *Descuento o Beneficio:* (Ej: 20% dcto, 2x1, 3ro gratis, matrícula $0, etc.): 
+📝 *Descripción del Beneficio y condiciones:* (Vigencia, requisitos o restricciones): 
+
+🛒 *CANALES DE VENTA Y ATENCIÓN:*
+👤 *Nombre persona de contacto:* 
+💬 *WhatsApp:* +56 
+📸 *Instagram:* @
+✉️ *Mail:* 
+🌐 *Web ecommerce:* www.
+🖼️ *Logo de la Empresa:* (Por favor envíanos adjunto tu logo en formato PNG o JPG con buena calidad).
+
+Con esta información activaremos de inmediato tu tarjeta en la plataforma para que los miembros comiencen a contactarte de inmediato.
+
+¡Un gran abrazo y bienvenidos a la Comunidad Humm! 🙌🚀`;
+
 export function renderAdminDiscountsView(container) {
   const discounts = store.getCompanyDiscounts();
   const allReqs = store.getAllBenefitRequests();
@@ -1401,7 +1428,10 @@ export function renderAdminDiscountsView(container) {
         </div>
         <p>Crea y administra las tarjetas de convenios, canales de contacto y condiciones comerciales que visualizan los miembros.</p>
       </div>
-      <div class="view-actions" style="display: flex; gap: 8px;">
+      <div class="view-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" id="btn-toggle-alliance-template" style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #166534; background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3);">
+          <span>💬</span> ${showAllianceTemplate ? 'Ocultar Mensaje WhatsApp' : 'Mensaje WhatsApp para Alianzas'}
+        </button>
         <button class="btn btn-secondary btn-sm" id="btn-admin-goto-benefit-requests">
           📞 Ver Contactos Generados (${allReqs.length})
         </button>
@@ -1409,6 +1439,39 @@ export function renderAdminDiscountsView(container) {
           🎁 + Nueva Alianza / Descuento
         </button>
       </div>
+    </div>
+
+    <!-- PANEL PLANTILLA WHATSAPP PARA NUEVAS ALIANZAS -->
+    <div id="alliance-template-card" class="data-table-container" style="margin-bottom: 24px; padding: 20px 22px; background: linear-gradient(135deg, rgba(37, 211, 102, 0.05) 0%, var(--bg-surface) 100%); border: 1.5px solid rgba(37, 211, 102, 0.35); border-radius: var(--radius-lg); ${showAllianceTemplate ? 'display: block;' : 'display: none;'}">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">💬</span>
+            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin: 0;">
+              Mensaje Estándar para Nuevas Alianzas (WhatsApp)
+            </h3>
+            <span class="badge badge-success text-xs" style="background: rgba(34, 197, 94, 0.18); color: #166534; font-weight: 700;">
+              ⚡ Copiar Rápido
+            </span>
+          </div>
+          <p class="text-xs text-muted" style="margin: 4px 0 0 0;">
+            Mensaje amable de bienvenida para solicitar a la empresa aliada los datos necesarios para publicar su beneficio.
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-sm" id="btn-copy-alliance-msg" style="background: #25D366; color: #FFFFFF; font-weight: 700; border: none; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-md); box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3); cursor: pointer;">
+            <span>📋</span> Copiar para WhatsApp
+          </button>
+          <a href="https://wa.me/?text=${encodeURIComponent(ALLIANCE_WHATSAPP_TEMPLATE)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none;">
+            <span>🚀</span> Abrir en WhatsApp
+          </a>
+          <button class="btn btn-ghost btn-sm" id="btn-close-alliance-template" title="Ocultar panel" style="font-size: 14px; padding: 4px 8px;">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px; line-height: 1.65; color: var(--text-primary); white-space: pre-line; max-height: 280px; overflow-y: auto; border-left: 4px solid #25D366; user-select: all;" id="alliance-template-text-box">${ALLIANCE_WHATSAPP_TEMPLATE}</div>
     </div>
 
     <div class="data-table-container">
@@ -1504,6 +1567,61 @@ export function renderAdminDiscountsView(container) {
   `;
 
   // Attach Events
+  container.querySelector('#btn-toggle-alliance-template')?.addEventListener('click', () => {
+    showAllianceTemplate = !showAllianceTemplate;
+    const card = container.querySelector('#alliance-template-card');
+    const toggleBtn = container.querySelector('#btn-toggle-alliance-template');
+    if (card) card.style.display = showAllianceTemplate ? 'block' : 'none';
+    if (toggleBtn) toggleBtn.innerHTML = `<span>💬</span> ${showAllianceTemplate ? 'Ocultar Mensaje WhatsApp' : 'Mensaje WhatsApp para Alianzas'}`;
+  });
+
+  container.querySelector('#btn-close-alliance-template')?.addEventListener('click', () => {
+    showAllianceTemplate = false;
+    const card = container.querySelector('#alliance-template-card');
+    const toggleBtn = container.querySelector('#btn-toggle-alliance-template');
+    if (card) card.style.display = 'none';
+    if (toggleBtn) toggleBtn.innerHTML = `<span>💬</span> Mensaje WhatsApp para Alianzas`;
+  });
+
+  container.querySelector('#btn-copy-alliance-msg')?.addEventListener('click', () => {
+    const btn = container.querySelector('#btn-copy-alliance-msg');
+    const textToCopy = ALLIANCE_WHATSAPP_TEMPLATE;
+
+    const onSuccess = () => {
+      if (btn) btn.innerHTML = '<span>✅</span> ¡Copiado!';
+      if (window.MiHummApp) {
+        window.MiHummApp.showToast('Mensaje de solicitud de alianza copiado al portapapeles. ¡Listo para pegar en WhatsApp!', 'success');
+      }
+      setTimeout(() => {
+        if (btn) btn.innerHTML = '<span>📋</span> Copiar para WhatsApp';
+      }, 2500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(onSuccess).catch(() => {
+        fallbackCopy(textToCopy, onSuccess);
+      });
+    } else {
+      fallbackCopy(textToCopy, onSuccess);
+    }
+  });
+
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (cb) cb();
+    } catch (err) {
+      if (window.MiHummApp) window.MiHummApp.showToast('No se pudo copiar automáticamente. Por favor selecciona el texto del recuadro.', 'warning');
+    }
+    document.body.removeChild(ta);
+  }
+
   container.querySelector('#btn-admin-new-discount')?.addEventListener('click', () => {
     if (window.MiHummApp) window.MiHummApp.openCompanyDiscountModal();
   });

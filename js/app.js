@@ -16,7 +16,7 @@ import { renderOpportunitiesView } from './views/opportunities.js';
 import { renderToolsView } from './views/tools.js';
 import { renderAccountView } from './views/account.js';
 import { renderDiscountsView } from './views/discounts.js';
-import { renderAdminView } from './views/admin.js';
+import { renderAdminView, ALLIANCE_WHATSAPP_TEMPLATE } from './views/admin.js';
 
 class App {
   constructor() {
@@ -1244,6 +1244,33 @@ class App {
         emojiLogoInput.addEventListener('input', () => {
           if (!hiddenLogoData || !hiddenLogoData.value) {
             if (previewLogoBox) previewLogoBox.textContent = emojiLogoInput.value.trim() || '🎁';
+          }
+        });
+      }
+
+      const btnModalCopyAlliance = document.getElementById('btn-modal-copy-alliance-template');
+      if (btnModalCopyAlliance) {
+        btnModalCopyAlliance.addEventListener('click', () => {
+          const onSuccess = () => {
+            btnModalCopyAlliance.innerHTML = '<span>✅</span> ¡Copiado!';
+            this.showToast('Mensaje de solicitud de alianza copiado al portapapeles. ¡Listo para enviar por WhatsApp!', 'success');
+            setTimeout(() => {
+              btnModalCopyAlliance.innerHTML = '📋 Copiar para WhatsApp';
+            }, 2500);
+          };
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ALLIANCE_WHATSAPP_TEMPLATE).then(onSuccess).catch(() => {
+              const ta = document.createElement('textarea');
+              ta.value = ALLIANCE_WHATSAPP_TEMPLATE;
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              onSuccess();
+            });
           }
         });
       }
