@@ -1560,7 +1560,15 @@ class Store {
 
     const amount = Math.max(0, parseInt(saleData.amount, 10) || 0);
     const notes = saleData.notes ? saleData.notes.trim() : '';
-    const customerId = saleData.customerId || null;
+    const customerId = saleData.customerId && saleData.customerId !== 'null' && saleData.customerId !== '' ? saleData.customerId : null;
+    let customerName = saleData.customerName || null;
+    if (!customerName && customerId) {
+      const cust = this.getCustomer(customerId);
+      if (cust) {
+        customerName = `${cust.firstName} ${cust.lastName || ''}`.trim();
+        if (cust.company) customerName += ` (${cust.company})`;
+      }
+    }
     const paymentStatus = saleData.paymentStatus || 'pagado';
     const dueDate = saleData.dueDate || null;
     const editId = saleData.id || null;
@@ -1576,6 +1584,7 @@ class Store {
           amount,
           notes,
           customerId,
+          customerName: customerName || this.data.sales[idx].customerName || 'Venta General',
           paymentStatus,
           dueDate,
           updatedAt: new Date().toISOString()
@@ -1595,6 +1604,7 @@ class Store {
       amount,
       notes,
       customerId,
+      customerName: customerName || 'Venta General',
       paymentStatus,
       dueDate,
       createdAt: new Date().toISOString()

@@ -35,6 +35,23 @@ try {
                 DB::jsonResponse(true, ['id' => $id, 'deleted' => true]);
             } else {
                 $item = $input['item'] ?? $input;
+                $customerId = $item['customerId'] ?? ($item['customer_id'] ?? null);
+                if (empty($customerId) || $customerId === 'null') {
+                    $customerId = null;
+                }
+                $customerName = $item['customerName'] ?? ($item['customer_name'] ?? null);
+                if (empty($customerName) && !empty($customerId)) {
+                    $stmtC = $pdo->prepare('SELECT name, last_name, company FROM customers WHERE id = :cid LIMIT 1');
+                    $stmtC->execute([':cid' => $customerId]);
+                    $crow = $stmtC->fetch();
+                    if ($crow) {
+                        $customerName = trim(($crow['name'] ?? '') . ' ' . ($crow['last_name'] ?? ''));
+                    }
+                }
+                if (empty($customerName)) {
+                    $customerName = !empty($customerId) ? 'Cliente Asociado' : 'Venta General';
+                }
+
                 $sql = 'INSERT INTO sales (id, workspace_id, customer_id, customer_name, total_amount, payment_status, payment_method, sale_date, due_date, notes)
                         VALUES (:id, :workspace_id, :customer_id, :customer_name, :total_amount, :payment_status, :payment_method, :sale_date, :due_date, :notes)
                         ON DUPLICATE KEY UPDATE
@@ -50,8 +67,8 @@ try {
                 $stmt->execute([
                     ':id' => $item['id'],
                     ':workspace_id' => $item['workspaceId'] ?? ($item['workspace_id'] ?? null),
-                    ':customer_id' => $item['customerId'] ?? ($item['customer_id'] ?? null),
-                    ':customer_name' => $item['customerName'] ?? ($item['customer_name'] ?? 'Venta General'),
+                    ':customer_id' => $customerId,
+                    ':customer_name' => $customerName,
                     ':total_amount' => (int)($item['amount'] ?? ($item['totalAmount'] ?? ($item['total_amount'] ?? 0))),
                     ':payment_status' => $item['paymentStatus'] ?? ($item['payment_status'] ?? 'pagado'),
                     ':payment_method' => $item['paymentMethod'] ?? ($item['payment_method'] ?? 'Transferencia'),

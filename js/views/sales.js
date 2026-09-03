@@ -319,9 +319,13 @@ export function renderSalesView(container) {
                       👤 ${customer.firstName} ${customer.lastName || ''}
                     </div>
                     ${customer.company ? `<div class="text-xs text-muted">${customer.company}</div>` : ''}
+                  ` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `
+                    <div style="font-weight: 600; color: var(--text-primary);">
+                      👤 ${sale.customerName}
+                    </div>
                   ` : `
                     <span class="text-xs text-muted">🏪 Público general</span>
-                  `}
+                  `)}
                 </td>
 
                 <td style="font-weight: 800; color: var(--text-primary); font-size: var(--font-size-md);">
@@ -409,7 +413,7 @@ export function renderSalesView(container) {
                 <div>
                   <strong>${saleDate}</strong>
                   <div style="font-size: var(--font-size-xs); color: var(--text-muted);">
-                    ${customer ? `👤 ${customer.firstName} ${customer.lastName || ''}` : '🏪 Público general'}
+                    ${customer ? `👤 ${customer.firstName} ${customer.lastName || ''}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${sale.customerName}` : '🏪 Público general')}
                   </div>
                 </div>
                 <div style="font-weight: 800; color: var(--humm-red-primary); font-size: 1.15rem;">
