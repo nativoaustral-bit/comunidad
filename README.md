@@ -80,8 +80,8 @@ COMUNIDAD/
 │   └── views/               # Controladores de vista individuales
 │       ├── dashboard.js     # Vista Inicio: KPIs, barra rápida para terreno y tutor asignado
 │       ├── tasks.js         # Vista Tareas: Kanban con selector de columnas táctil en móviles
-│       ├── calendar.js      # Vista Calendario Comercial y Reuniones
-│       ├── notes.js         # Vista Bloc de Notas Rápidas con carrusel de categorías deslizables
+│       ├── calendar.js      # Vista Calendario: vistas mes/semana/agenda, agendamiento interactivo y feed iCal
+│       ├── notes.js         # Vista Bloc de Notas: compositor moderno, checklists interactivas y paleta visual
 │       ├── sales.js         # Vista Ventas: modo ágil móvil con botón destacado y tablas colapsables
 │       ├── customers.js     # Vista Clientes: tarjetas táctiles con llamada directa y WhatsApp
 │       ├── opportunities.js # Vista Oportunidades y Pipeline Comercial
@@ -112,9 +112,21 @@ COMUNIDAD/
 * **Oportunidades (`#oportunidades`)**: Embudo comercial por etapas (Prospección, Contacto, Propuesta, Ganada, Perdida).
 
 ### 3. Organización y Productividad
-* **Tareas (`#tareas`)**: Tablero Kanban interactivo. En dispositivos móviles presenta un selector horizontal de etapas a pantalla completa (*Por hacer*, *En proceso*, *Terminadas*) y botón de 1 toque para completar tareas.
-* **Calendario (`#calendario`)**: Hitos comerciales, reuniones virtuales, mentorías y entregas con exportación iCal y sincronización Google/Outlook.
-* **Notas Rápidas (`#notas`)**: Tarjetas de notas con colores personalizables, fijado prioritario y selector de categorías táctil deslizable con el pulgar.
+* **Tablero de Tareas (`#tareas`)**: 
+  * Tablero Kanban interactivo con estados *Por hacer*, *En proceso* y *Terminadas*.
+  * Selector táctil de columnas a pantalla completa en dispositivos móviles, prioridades por color, fechas de entrega sincronizables y botón de 1 toque para marcar completada.
+* **Calendario Comercial & Agenda (`#calendario`)**:
+  * **Agendamiento Rápido y Multicanal**: Apertura instantánea mediante el botón principal `+ Agendar Compromiso` o pinchando directamente en cualquier celda de día (en vistas Mensual o Semanal), precargando automáticamente la fecha elegida.
+  * **Tipología de Eventos**: Clasificación visual para reuniones de clientes, visitas a terreno/proveedores, mentorías Humm, entregas/despachos y cobros comerciales.
+  * **Enlaces Virtuales Flexibles**: Integración con Google Meet, Zoom o Microsoft Teams con apertura directa en 1 clic.
+  * **Conmutador Compromiso vs Tarea**: Posibilidad de transformar un agendamiento en tarea para el Kanban en el mismo modal sin perder los datos ingresados.
+  * **Sincronización Externa e iCal Feed**: Generación y descarga de archivos universales `.ICS`, suscripción en vivo (iCalendar Feed) para iPhone/Mac/Thunderbird y enlace con Google Calendar y Outlook.
+* **Bloc de Notas del Emprendedor (`#notas`)**:
+  * **Compositor Dinámico Superior**: Campo de título con etiqueta destacada (`🏷️ Título de la nota *`) y halo de foco de marca; área de texto amplia con redimensionamiento dinámico y atajo de teclado `Ctrl + Enter`.
+  * **Herramientas de Formato Rápido**: Botones dedicados para insertar casillas de verificación interactivas (`☑️ + Casilla`) y viñetas ordenadas (`• + Viñeta`).
+  * **Paleta Visual de Colores y Categorías**: Selector de 6 muestras de color pastel (Amarillo, Verde Menta, Azul Cielo, Lavanda, Coral Rosa y Gris Neutro) y chips de categorización con iconos temáticos.
+  * **Checklists Interactivas en Tarjetas**: Las tarjetas del muro interpretan automáticamente sintaxis `- [ ]` y `- [x]`, permitiendo marcar y tachar pendientes directamente en la tarjeta con sincronización en tiempo real.
+  * **Gestión y Persistencia**: Fijado de notas prioritarias al inicio del muro (`pinned`), copiado rápido al portapapeles, edición y eliminación con confirmación y sincronización en MySQL (`quick_notes`).
 
 ### 4. Catálogo de Soluciones y Red de Convenios Comerciales
 * **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento.
@@ -208,7 +220,7 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 3. **Flujos de Cambio y Recuperación**:
    * **Desde "Mi Cuenta" (`#cuenta`)**: Cambio de contraseña en tiempo real validando la clave actual y grabando el nuevo hash Bcrypt en MySQL.
    * **Recuperación "¿Olvidaste tu contraseña?"**: Envío de correo desde `comunidad@humm.cl` con enlace directo para restablecer la contraseña.
-4. **Control de Caché en Producción**: Configuración en `.htaccess` y parámetros de versión dinámicos en `index.html` para asegurar la carga inmediata de los cambios.
+4. **Control de Caché en Producción**: Configuración en `.htaccess` y parámetros de versión de assets dinámicos en `index.html` (`app.js?v=9.3`, `components.css?v=4.1`) para garantizar la carga instantánea de los cambios sin caché residual en los navegadores de los usuarios.
 
 ---
 
