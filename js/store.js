@@ -2004,13 +2004,15 @@ class Store {
     if (editId) {
       const idx = this.data.notes.findIndex(n => n.id === editId);
       if (idx !== -1) {
+        const isPinned = noteData.pinned !== undefined ? !!noteData.pinned : !!this.data.notes[idx].pinned;
         this.data.notes[idx] = {
           ...this.data.notes[idx],
           title: (noteData.title || '').trim() || 'Sin título',
           content: (noteData.content || '').trim(),
           category: noteData.category || 'general',
           color: noteData.color || 'yellow',
-          pinned: noteData.pinned !== undefined ? !!noteData.pinned : this.data.notes[idx].pinned,
+          pinned: isPinned,
+          isPinned: isPinned,
           updatedAt: new Date().toISOString()
         };
         this.saveState();
@@ -2019,6 +2021,7 @@ class Store {
       }
     }
 
+    const isPinned = !!noteData.pinned;
     const newNote = {
       id: 'not-' + Date.now(),
       workspaceId,
@@ -2026,7 +2029,8 @@ class Store {
       content: (noteData.content || '').trim(),
       category: noteData.category || 'general',
       color: noteData.color || 'yellow',
-      pinned: !!noteData.pinned,
+      pinned: isPinned,
+      isPinned: isPinned,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -2036,11 +2040,38 @@ class Store {
     return newNote;
   }
 
+  updateNoteContent(noteId, content) {
+    if (!this.data.notes) this.data.notes = [];
+    const note = this.data.notes.find(n => n.id === noteId);
+    if (note) {
+      note.content = content;
+      note.updatedAt = new Date().toISOString();
+      this.saveState();
+      this.apiSave('quick_notes', note, 'save');
+      return note;
+    }
+    return null;
+  }
+
+  deleteNote(noteId) {
+    if (!this.data.notes) this.data.notes = [];
+    const idx = this.data.notes.findIndex(n => n.id === noteId);
+    if (idx !== -1) {
+      this.data.notes.splice(idx, 1);
+      this.saveState();
+      this.apiSave('quick_notes', { id: noteId }, 'delete');
+      return true;
+    }
+    return false;
+  }
+
   togglePinNote(noteId) {
     if (!this.data.notes) this.data.notes = [];
     const note = this.data.notes.find(n => n.id === noteId);
     if (note) {
-      note.pinned = !note.pinned;
+      const nextPin = !note.pinned;
+      note.pinned = nextPin;
+      note.isPinned = nextPin;
       note.updatedAt = new Date().toISOString();
       this.saveState();
       this.apiSave('quick_notes', note, 'save');

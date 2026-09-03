@@ -298,7 +298,7 @@ function renderMonthView(year, month, events, tasks, customers) {
           const dayItems = getDayItems(cell.dateKey, events, tasks);
 
           return `
-            <div class="calendar-day-box is-current-month ${cell.isToday ? 'is-today' : ''}" data-date="${cell.dateKey}" title="Clic para agendar en el ${formatDateCL(cell.dateKey)}">
+            <div class="calendar-day-box is-current-month cal-day-clickable ${cell.isToday ? 'is-today' : ''}" data-date="${cell.dateKey}" title="Clic para agendar en el ${formatDateCL(cell.dateKey)}">
               <div class="calendar-day-top">
                 <span class="calendar-date-number">
                   ${cell.dayNumber}
@@ -354,7 +354,7 @@ function renderWeekView(year, month, events, tasks, customers) {
           const dayItems = getDayItems(dateKey, events, tasks);
 
           return `
-            <div class="calendar-day-box" style="min-height: 420px; background: var(--bg-card);">
+            <div class="calendar-day-box is-current-month cal-day-clickable" data-date="${dateKey}" style="min-height: 420px; background: var(--bg-card); cursor: pointer;" title="Clic para agendar en el ${formatDateCL(dateKey)}">
               <div style="padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--border-color); background: ${isToday ? 'rgba(227, 6, 19, 0.05)' : 'var(--bg-body)'}; margin: -8px -8px 8px -8px;">
                 <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
                   ${dayNames[idx]}
@@ -723,18 +723,22 @@ function attachCalendarEventListeners(container, ws, events, tasks, customers) {
   });
 
   // Botón abrir modal agendar
-  container.querySelector('#btn-open-modal-event, #btn-empty-add-event')?.addEventListener('click', () => {
-    if (window.MiHummApp) {
-      const form = document.getElementById('form-modal-event');
-      if (form) {
-        form.removeAttribute('data-edit-id');
-        form.reset();
-        const dInput = document.getElementById('modal-event-date');
-        if (dInput) dInput.value = new Date().toISOString().split('T')[0];
-        document.getElementById('modal-event-header-title').textContent = 'Agendar Reunión o Evento';
+  container.querySelectorAll('#btn-open-modal-event, #btn-empty-add-event').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.MiHummApp) {
+        const form = document.getElementById('form-modal-event');
+        if (form) {
+          form.removeAttribute('data-edit-id');
+          form.reset();
+          const dInput = document.getElementById('modal-event-date');
+          if (dInput) dInput.value = new Date().toISOString().split('T')[0];
+          const headerTitle = document.getElementById('modal-event-header-title');
+          if (headerTitle) headerTitle.textContent = 'Agendar Reunión o Evento';
+        }
+        window.MiHummApp.openModal('modal-event');
       }
-      window.MiHummApp.openModal('modal-event');
-    }
+    });
   });
 
   // Botón abrir modal nueva tarea desde el calendario
@@ -758,10 +762,11 @@ function attachCalendarEventListeners(container, ws, events, tasks, customers) {
   });
 
   // Clic en celda de día para agendar en esa fecha
-  container.querySelectorAll('.calendar-day-box.is-current-month, .btn-quick-add-day, .calendar-day-add-btn').forEach(elem => {
+  container.querySelectorAll('.cal-day-clickable, .calendar-day-box.is-current-month, .btn-quick-add-day, .calendar-day-add-btn').forEach(elem => {
     elem.addEventListener('click', (e) => {
-      if (e.target.closest('.calendar-chip')) return;
-      const targetDate = elem.getAttribute('data-date');
+      if (e.target.closest('.calendar-chip') || e.target.closest('.btn-view-item-detail')) return;
+      e.stopPropagation();
+      const targetDate = elem.getAttribute('data-date') || elem.closest('[data-date]')?.getAttribute('data-date');
       if (targetDate && window.MiHummApp) {
         const form = document.getElementById('form-modal-event');
         if (form) {
@@ -769,7 +774,8 @@ function attachCalendarEventListeners(container, ws, events, tasks, customers) {
           form.reset();
           const dInput = document.getElementById('modal-event-date');
           if (dInput) dInput.value = targetDate;
-          document.getElementById('modal-event-header-title').textContent = `Agendar para el ${formatDateCL(targetDate)}`;
+          const headerTitle = document.getElementById('modal-event-header-title');
+          if (headerTitle) headerTitle.textContent = `Agendar para el ${formatDateCL(targetDate)}`;
         }
         window.MiHummApp.openModal('modal-event');
       }

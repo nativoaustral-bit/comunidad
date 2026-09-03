@@ -13,7 +13,7 @@
   <!-- Stylesheets con cache-busting -->
   <link rel="stylesheet" href="styles/main.css?v=4.0" />
   <link rel="stylesheet" href="styles/layout.css?v=4.0" />
-  <link rel="stylesheet" href="styles/components.css?v=4.0" />
+  <link rel="stylesheet" href="styles/components.css?v=4.1" />
 
   <script>
     window.togglePasswordVisibility = function(e) {
@@ -2351,6 +2351,8 @@
         </div>
       </form>
     </div>
+  </div>
+
   <!-- Modal 14: Crear / Editar Evento & Reunión -->
   <div id="modal-event" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
@@ -2427,7 +2429,7 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="modal-event-meet-url">Enlace Virtual (Google Meet / Zoom)</label>
-              <input type="url" id="modal-event-meet-url" class="form-control" placeholder="https://meet.google.com/..." />
+              <input type="text" id="modal-event-meet-url" class="form-control" placeholder="https://meet.google.com/... o enlace de reunión" />
             </div>
           </div>
 
@@ -2591,13 +2593,23 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="modal-note-content">Contenido / Apuntes *</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" for="modal-note-content" style="margin-bottom: 0;">Contenido / Apuntes *</label>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-ghost btn-xs" id="btn-modal-insert-checklist" style="font-size: 11px; padding: 2px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  ☑️ + Casilla
+                </button>
+                <button type="button" class="btn btn-ghost btn-xs" id="btn-modal-insert-bullet" style="font-size: 11px; padding: 2px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  • + Viñeta
+                </button>
+              </div>
+            </div>
             <textarea id="modal-note-content" class="form-input" rows="8" placeholder="Escribe tus notas, números de contacto, listas de verificación o ideas de negocio..." style="line-height: 1.6; font-size: 14px;" required></textarea>
           </div>
 
           <div class="form-group">
             <label style="display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); cursor: pointer;">
-              <input type="checkbox" id="modal-note-pinned" />
+              <input type="checkbox" id="modal-note-pinned" style="accent-color: var(--humm-red-primary);" />
               <span>📌 Fijar esta nota en la parte superior</span>
             </label>
           </div>
@@ -2613,7 +2625,7 @@
   <!-- Contenedor Global de Toasts -->
   <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Script Principal de la App (ES6 Module con cache-busting v=9.1) -->
-  <script type="module" src="js/app.js?v=9.1"></script>
+  <!-- Script Principal de la App (ES6 Module con cache-busting v=9.3) -->
+  <script type="module" src="js/app.js?v=9.3"></script>
 </body>
 </html>

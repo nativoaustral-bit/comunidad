@@ -445,7 +445,16 @@ export function renderDashboard(container) {
   });
 
   container.querySelector('#btn-dash-quick-note')?.addEventListener('click', () => {
-    window.location.hash = '#notas';
+    if (window.location.hash === '#notas') {
+      const input = document.getElementById('quick-note-title');
+      if (input) input.focus();
+    } else {
+      window.location.hash = '#notas';
+      setTimeout(() => {
+        const input = document.getElementById('quick-note-title');
+        if (input) input.focus();
+      }, 250);
+    }
   });
 
   container.querySelector('#btn-dash-quick-cust')?.addEventListener('click', () => {

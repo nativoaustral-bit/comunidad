@@ -9,38 +9,42 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 2. [Arquitectura y Stack Tecnológico](#-arquitectura-y-stack-tecnológico)
 3. [Estructura del Proyecto](#-estructura-del-proyecto)
 4. [Módulos y Funcionalidades](#-módulos-y-funcionalidades)
-5. [Modelo de Datos y Base de Datos (MySQL)](#-modelo-de-datos-y-base-de-datos-mysql)
-6. [Seguridad, Autenticación y Cambio de Clave](#-seguridad-autenticación-y-cambio-de-clave)
-7. [Despliegue y Mantenimiento en Servidor Producción](#-despliegue-y-mantenimiento-en-servidor-producción)
-8. [Credenciales y Accesos](#-credenciales-y-accesos)
+5. [Experiencia y Optimización Móvil](#-experiencia-y-optimización-móvil)
+6. [Infraestructura de Correo Institucional](#-infraestructura-de-correo-institucional)
+7. [Blindaje y Auto-Reparación de Cuentas (5 Capas)](#-blindaje-y-auto-reparación-de-cuentas-5-capas)
+8. [Modelo de Datos y Base de Datos (MySQL)](#-modelo-de-datos-y-base-de-datos-mysql)
+9. [Seguridad, Autenticación y Cambio de Clave](#-seguridad-autenticación-y-cambio-de-clave)
+10. [Despliegue y Mantenimiento en Servidor Producción](#-despliegue-y-mantenimiento-en-servidor-producción)
+11. [Credenciales y Accesos](#-credenciales-y-accesos)
 
 ---
 
 ## 🌟 Visión General del Proyecto
 
 **Comunidad Humm** es una plataforma web híbrida (Single Page Application moderna, ultraliviana y reactiva sin dependencias de frameworks pesados) que provee:
-* **Entorno de Gestión para Emprendedores**: Panel de control comercial (KPIs), registro de ventas, gestión de clientes (CRM), embudo de oportunidades comerciales, tareas y compromisos estilo Kanban, calendario comercial de eventos con exportación iCal / sincronización, bloc de notas rápidas, catálogo de herramientas Humm y red de convenios/beneficios.
-* **Panel de Administración Central (Admin Humm)**: Monitoreo de métricas globales del ecosistema, creación y gestión de espacios de emprendimiento (*workspaces* aislados), administración de usuarios y tutores/ejecutivos, control de planes y suscripciones mensuales (+IVA), catálogo global de herramientas y convenios comerciales.
+* **Entorno de Gestión para Emprendedores**: Panel de control comercial (KPIs), registro ágil de ventas, gestión de clientes (CRM), embudo de oportunidades comerciales, tareas y compromisos estilo Kanban, calendario comercial de eventos con exportación iCal / sincronización, bloc de notas rápidas, catálogo de herramientas Humm y red de convenios/beneficios.
+* **Panel de Administración Central (Admin Humm)**: Monitoreo de métricas globales del ecosistema, cálculo de MRR real (excluyendo períodos de prueba), creación y gestión de espacios de emprendimiento (*workspaces* aislados), administración de usuarios y tutores/ejecutivos, control de planes y suscripciones mensuales (+IVA), catálogo global de herramientas, y gestión de alianzas con plantillas WhatsApp de copia rápida.
 
 ---
 
 ## 🛠️ Arquitectura y Stack Tecnológico
 
 ### 1. Frontend
-* **Core**: HTML5 Semántico y JavaScript ES6+ Modular nativo (sin frameworks pesados, garantizando tiempos de carga inferiores a 200 ms).
+* **Core**: HTML5 Semántico y JavaScript ES6+ Modular nativo (sin dependencias pesadas, garantizando tiempos de carga inferiores a 200 ms).
 * **Módulos ES6 Unificados**: Arquitectura singleton limpia donde todos los submódulos y vistas importan instancias compartidas de estado (`store.js`) y autenticación (`auth.js`).
-* **Estilos (CSS)**: Vanilla CSS estructurado con variables de diseño (Design Tokens), soporte para **Modo Claro / Modo Oscuro**, layout responsivo y componentes accesibles.
+* **Estilos (CSS)**: Vanilla CSS estructurado con variables de diseño (Design Tokens), soporte para **Modo Claro / Modo Oscuro**, layout responsivo completo y componentes adaptados para escritorio y dispositivos móviles.
 * **Gestión de Estado**: Patrón de Store reactivo (`js/store.js`) con arquitectura *Offline-First / Cache-First* (LocalStorage + Sincronización bidireccional en tiempo real con MySQL vía API REST).
 * **Visualización de Datos**: Gráficos analíticos mediante SVG / Canvas nativo (`js/chart.js`).
 
 ### 2. Backend (API REST)
 * **Lenguaje**: PHP 8.x nativo orientado a microservicios livianos con salida JSON estricta (`setApiHeaders()`).
 * **Capa de Persistencia**: PDO con sentencias preparadas y parametrizadas contra inyecciones SQL (`api/db.php`).
+* **Infraestructura de Correo Saliente**: Cliente socket SMTP nativo con cifrado SSL (puerto 465) y fallback mediante `mail()` con Envelope Sender (`-fcomunidad@humm.cl`).
 * **Endpoints Principales**:
-  * `api/auth.php`: Autenticación segura asíncrona mediante Bcrypt (`password_verify`), cambio de contraseña desde perfil y recuperación por correo.
-  * `api/data.php`: Endpoint consolidado de lectura y mapeo de datos por rol y workspace.
-  * `api/save.php`: Endpoint transaccional de guardado y eliminación con `INSERT ... ON DUPLICATE KEY UPDATE` y `DELETE`.
-  * `api/mail.php`: Despacho de correos HTML institucionales (alertas de acceso, bienvenida con credenciales y recuperación de contraseñas).
+  * `api/auth.php`: Autenticación segura asíncrona mediante Bcrypt (`password_verify`), cambio de contraseña desde perfil, recuperación por correo y auto-reparación de workspaces.
+  * `api/data.php`: Endpoint consolidado de lectura y mapeo de datos por rol y workspace, con rutina automática de consistencia de enlaces.
+  * `api/save.php`: Endpoint transaccional de guardado y eliminación con blindaje contra sobreescritura de `workspace_id` con `NULL` y enlace bidireccional por email.
+  * `api/mail.php`: Servicio de despacho de correos HTML institucionales autenticado desde `comunidad@humm.cl` con diagnóstico y logs.
 
 ### 3. Base de Datos
 * **Motor**: MySQL / MariaDB (InnoDB, Charset `utf8mb4`, Collation `utf8mb4_unicode_ci`).
@@ -52,7 +56,7 @@ Bienvenido al repositorio central de **Comunidad Humm Co-Creation** (`Mi Humm`),
 
 ```text
 COMUNIDAD/
-├── index.html               # SPA principal: estructura, login limpio, modales y contenedor de vistas
+├── index.html               # SPA principal: estructura, login limpio, modales, bottom nav y contenedor de vistas
 ├── schema.sql               # Esquema DDL de las 15 tablas relacionales para MySQL en producción
 ├── deploy.sh                # Script Bash automatizado para despliegue (Git + Rsync a HostGator)
 ├── .htaccess                # Configuración Apache con políticas anti-caché para scripts y vistas
@@ -60,36 +64,36 @@ COMUNIDAD/
 ├── README.md                # Esta documentación técnica y operativa
 │
 ├── api/                     # Microservicios backend PHP
-│   ├── config.php           # Configuración de credenciales de base de datos MySQL
+│   ├── config.php           # Configuración de credenciales de base de datos MySQL y SMTP (comunidad@humm.cl)
 │   ├── db.php               # Clase singleton DB para conexión PDO y respuestas JSON normalizadas
-│   ├── data.php             # Endpoint GET: carga y mapeo de datos consolidados según rol
-│   ├── save.php             # Endpoint POST: persistencia y mutaciones transaccionales en MySQL
-│   ├── auth.php             # Endpoint de autenticación, verificación y actualización Bcrypt
-│   └── mail.php             # Servicio de despacho de correos HTML (Alertas, Bienvenida, Recuperación)
+│   ├── data.php             # Endpoint GET: carga y mapeo de datos consolidados según rol + auto-enlace SQL
+│   ├── save.php             # Endpoint POST: persistencia blindada y mutaciones transaccionales en MySQL
+│   ├── auth.php             # Endpoint de autenticación, verificación Bcrypt y auto-reparación de sesión
+│   └── mail.php             # Servicio de correo SMTP/PHP nativo autenticado (Alertas, Bienvenida, Recuperación)
 │
 ├── js/                      # Lógica JavaScript Modular (ES6)
 │   ├── app.js               # Controlador central: enrutador hash, eventos globales, modales y temas
-│   ├── auth.js              # Manejador de sesiones asíncronas, roles, permisos y cambio de clave
-│   ├── store.js             # Estado reactivo global, persistencia local y sincronización con API REST
+│   ├── auth.js              # Manejador de sesiones asíncronas, roles, permisos y auto-enlace de workspace
+│   ├── store.js             # Estado reactivo global, persistencia local y sincronización bidireccional
 │   ├── chart.js             # Generador de gráficos analíticos de ventas y rendimiento
 │   ├── chile-data.js        # Dataset completo de las 16 regiones y 346 comunas de Chile
 │   └── views/               # Controladores de vista individuales
-│       ├── dashboard.js     # Vista Inicio: KPIs, accesos directos y tutor asignado
-│       ├── tasks.js         # Vista Tareas y Compromisos (Kanban)
+│       ├── dashboard.js     # Vista Inicio: KPIs, barra rápida para terreno y tutor asignado
+│       ├── tasks.js         # Vista Tareas: Kanban con selector de columnas táctil en móviles
 │       ├── calendar.js      # Vista Calendario Comercial y Reuniones
-│       ├── notes.js         # Vista Bloc de Notas Rápidas
-│       ├── sales.js         # Vista Gestión de Ventas y Cobros
-│       ├── customers.js     # Vista Directorio de Clientes (CRM)
+│       ├── notes.js         # Vista Bloc de Notas Rápidas con carrusel de categorías deslizables
+│       ├── sales.js         # Vista Ventas: modo ágil móvil con botón destacado y tablas colapsables
+│       ├── customers.js     # Vista Clientes: tarjetas táctiles con llamada directa y WhatsApp
 │       ├── opportunities.js # Vista Oportunidades y Pipeline Comercial
 │       ├── tools.js         # Vista Catálogo de Soluciones Humm
-│       ├── discounts.js     # Vista Red de Convenios y Descuentos
+│       ├── discounts.js     # Vista Convenios y Beneficios con carrusel táctil de categorías
 │       ├── account.js       # Vista Mi Cuenta y Configuración de Perfil (con cambio de clave)
-│       └── admin.js         # Vista Panel de Administración Central (Métricas, Planes, Usuarios...)
+│       └── admin.js         # Vista Administración: MRR real, plantilla WhatsApp alianzas y gestión
 │
 └── styles/                  # Hojas de Estilo CSS
     ├── main.css             # Reset, tipografía, temas claro/oscuro y variables globales
-    ├── layout.css           # Grid principal, sidebar, topbar, vistas responsivas
-    └── components.css       # Botones, tarjetas, formularios, tablas, badges y modales
+    ├── layout.css           # Grid principal, sidebar, topbar, bottom nav móvil y safe area insets
+    └── components.css       # Botones, tarjetas touch, bottom sheet modales, chips deslizables y tabs
 ```
 
 ---
@@ -98,32 +102,78 @@ COMUNIDAD/
 
 ### 1. Panel de Emprendedores (`#inicio`)
 * **Métricas Principales**: Total de ventas del mes, comparación vs mes anterior, tareas pendientes, clientes activos y oportunidades abiertas.
+* **Barra de Acciones Rápidas Móvil**: Accesos de un toque para registrar venta, nueva tarea, cliente o nota rápida en terreno.
 * **Tutor Humm Asignado**: Tarjeta con nombre, correo y botón de contacto directo con el asesor.
 * **Accesos Rápidos a Soluciones**: Tarjetas con accesos directos a las herramientas contratadas.
 
 ### 2. Gestión Comercial
-* **Ventas (`#ventas`)**: Registro de ingresos, método de pago, cliente asociado, fechas y estado (pagado, pendiente, abono, vencido).
-* **Clientes (`#clientes`)**: Directorio CRM con RUT, teléfono, correo, comuna, empresa e historial de compras.
+* **Ventas (`#ventas`)**: Modo ágil para teléfonos móviles con botón destacado `+ Registrar Venta`, resumen financiero compacto (Total Facturado, Al Día y Pendiente) y tabla colapsable para auditoría.
+* **Clientes (`#clientes`)**: Directorio CRM con tarjetas adaptadas para smartphones que incorporan botones directos de WhatsApp y llamada telefónica inmediata (`tel:`).
 * **Oportunidades (`#oportunidades`)**: Embudo comercial por etapas (Prospección, Contacto, Propuesta, Ganada, Perdida).
 
 ### 3. Organización y Productividad
-* **Tareas (`#tareas`)**: Tablero Kanban interactivo con columnas personalizables, prioridades y fechas límite.
+* **Tareas (`#tareas`)**: Tablero Kanban interactivo. En dispositivos móviles presenta un selector horizontal de etapas a pantalla completa (*Por hacer*, *En proceso*, *Terminadas*) y botón de 1 toque para completar tareas.
 * **Calendario (`#calendario`)**: Hitos comerciales, reuniones virtuales, mentorías y entregas con exportación iCal y sincronización Google/Outlook.
-* **Notas Rápidas (`#notas`)**: Tarjetas de notas estilo Post-it con colores personalizables, fijado prioritario y categorías.
+* **Notas Rápidas (`#notas`)**: Tarjetas de notas con colores personalizables, fijado prioritario y selector de categorías táctil deslizable con el pulgar.
 
 ### 4. Catálogo de Soluciones y Red de Convenios Comerciales
 * **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento.
 * **Alianzas y Beneficios (`#beneficios`)**: Convenios comerciales exclusivos con empresas colaboradoras.
+  * **Filtros Táctiles Deslizables**: Carrusel horizontal suave para filtrar beneficios por rubro en pantallas táctiles.
   * **Contacto Comercial Directo**: Conexión inmediata vía WhatsApp (principal), Instagram Direct, Correo Electrónico o Sitio Web.
   * **Generador de Códigos Personales**: Asignación de código único y trazable `HUMM-[ALIAS]-[XXXX]` al solicitar el convenio.
-  * **Mis Beneficios Solicitados**: Historial de convenios solicitados con opción de retomar conversación o reportar uso.
 
 ### 5. Panel de Administración Central (`#admin-dashboard` / `#admin`)
-* **Métricas Globales**: Ventas totales del ecosistema, número de emprendimientos activos, solicitudes de soporte.
+* **Métricas Globales y MRR Real**:
+  * **MRR Estimado**: Cálculo estricto que **excluye automáticamente a clientes en período de prueba** (`isClientInTrial`).
+  * **Suscripciones Activas vs En Prueba**: Indicadores claros que diferencian clientes que pagan al día de aquellos en días de prueba gratuitos.
+* **Plantilla WhatsApp para Nuevas Alianzas**:
+  * Panel desplegable con mensaje oficial formateado para invitar cordialmente a nuevas empresas a la comunidad.
+  * Botón de **Copia Rápida en 1 clic** al portapapeles y botón directo para abrir WhatsApp Web con el mensaje pre-cargado.
+  * Banner de asistencia integrado dentro del modal de creación de convenios.
 * **Trazabilidad de Beneficios (`#admin-benefit-requests`)**: Dashboard de solicitudes comerciales con auditoría y exportación CSV.
-* **Crear Espacio de Emprendimiento**: Formulario con comunas de Chile y selector dinámico de tutor/asesor.
-* **Ventas y Suscripciones**: Gestión de planes de venta mensual con formato `/mes +IVA` y control de pruebas gratuitas.
-* **Gestión de Tutores y Usuarios**: Creación, activación/desactivación y asignación de tutores y emprendedores.
+* **Gestión de Tutores y Usuarios**: Creación, activación/desactivación y asignación de tutores y emprendedores con auto-vinculación a sus emprendimientos.
+
+---
+
+## 📱 Experiencia y Optimización Móvil
+
+La plataforma cuenta con un diseño responsivo pensado para su uso en terreno desde teléfonos celulares:
+
+1. **Barra de Navegación Inferior (`bottom-nav`)**: Muestra los 5 módulos esenciales para la operación diaria: **Inicio**, **Tareas**, **Notas**, **Clientes** y **Beneficios**.
+2. **Cierre Automático de Navegación**: El menú lateral se repliega de forma automática al presionar cualquier enlace en pantallas móviles.
+3. **Modales Adaptativos (Bottom Sheets)**: Los formularios y modales se anclan a la parte inferior de la pantalla en dispositivos móviles para facilitar la interacción con una sola mano.
+4. **Carrusel Táctil de Filtros**: Chips horizontales deslizables para seleccionar categorías en notas y beneficios sin ocupar espacio vertical.
+5. **Acciones Telefónicas Nativas**: Enlaces directos `tel:+56...` y accesos directos a WhatsApp para comunicarse con clientes o aliados en un solo toque.
+
+---
+
+## ✉️ Infraestructura de Correo Institucional
+
+El despacho de correos se encuentra centralizado y autenticado mediante una cuenta exclusiva de la plataforma:
+
+* **Casilla Saliente**: `comunidad@humm.cl`
+* **Nombre de Remitente**: `Comunidad Humm Co-Creation`
+* **Protocolo**: Conexión socket SMTP nativa con cifrado SSL en puerto `465` (o TLS en puerto `587`).
+* **Garantía de Entregabilidad**: Incorpora el parámetro Envelope Sender (`-fcomunidad@humm.cl`) para superar validaciones SPF, DKIM y DMARC en Gmail, Outlook y servidores corporativos.
+* **Feedback en Tiempo Real en la UI**: Al crear un usuario en el panel de administración, el modal consulta el resultado real del envío y muestra un badge verde de confirmación o resalta los botones de WhatsApp/Copiar si el correo no pudo ser entregado.
+* **Flujos Integrados**:
+  1. Bienvenida con credenciales y link de acceso para nuevos emprendedores y tutores.
+  2. Notificaciones de recuperación y cambio de contraseñas.
+  3. Alertas automáticas de soporte y solicitudes de asistencia para inicio de sesión.
+  4. Avisos de nuevos convenios y beneficios solicitados.
+
+---
+
+## 🛡️ Blindaje y Auto-Reparación de Cuentas (5 Capas)
+
+Para evitar la desvinculación accidental de los emprendimientos (*workspaces*) respecto a los usuarios, la plataforma cuenta con un sistema de auto-reparación y protección en 5 niveles:
+
+1. **Blindaje en MySQL (`api/save.php`)**: La sentencia `ON DUPLICATE KEY UPDATE` utiliza `IF(VALUES(workspace_id) IS NOT NULL AND VALUES(workspace_id) != '', VALUES(workspace_id), workspace_id)`. Una actualización parcial de clave o estado nunca borrará el negocio asociado.
+2. **Auto-enlace Bidireccional al Crear Negocios (`api/save.php` y `store.js`)**: Al registrar un nuevo emprendimiento, el sistema busca de inmediato al usuario que tenga el mismo correo y lo vincula automáticamente.
+3. **Auto-reparación en Inicio de Sesión (`api/auth.php`)**: Al hacer login o verificar sesión, si el emprendedor no tuviera `workspace_id`, el backend busca el negocio por email, lo vincula permanentemente en MySQL y entrega el entorno completo.
+4. **Auto-reparación en Carga de Datos (`api/data.php`)**: Cada consulta a la base de datos ejecuta una rutina SQL de consistencia que re-vincula a cualquier usuario huérfano.
+5. **Auto-reparación en el Navegador (`js/auth.js` y `js/app.js`)**: El método `getCurrentWorkspace()` detecta ausencias de ID en caliente, busca coincidencia por email y actualiza la sesión para que el usuario nunca vea su panel en blanco.
 
 ---
 
@@ -140,9 +190,9 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 | 5 | `sales` | Transacciones y ventas registradas por los emprendimientos. |
 | 6 | `customers` | Base de datos de clientes de cada negocio (CRM). |
 | 7 | `opportunities` | Oportunidades del embudo comercial de ventas. |
-| 8 | `tasks` | Tareas y compromisos de productividad. |
+| 8 | `tasks` | Tareas y compromisos de productividad estilo Kanban. |
 | 9 | `calendar_events` | Eventos, reuniones y compromisos agendados en el calendario. |
-| 10 | `quick_notes` | Notas rápidas y recordatorios categorizados. |
+| 10 | `quick_notes` | Bloc de notas del emprendedor con compositor dinámico, checklists interactivas y categorización. |
 | 11 | `support_requests` | Requerimientos de soporte enviados a tutores o administración. |
 | 12 | `company_discounts` | Convenios y beneficios de empresas aliadas con canales de contacto directo y condiciones comerciales. |
 | 13 | `benefit_requests` | Trazabilidad de convenios por emprendedor con código personal `HUMM-[ALIAS]-[XXXX]`. |
@@ -153,21 +203,12 @@ El archivo [`schema.sql`](file:///Users/rmerinog/PLATAFORMAS/COMUNIDAD/schema.sq
 
 ## 🔐 Seguridad, Autenticación y Cambio de Clave
 
-1. **Autenticación Asíncrona con Bcrypt**:
-   * Las contraseñas en MySQL se procesan y validan exclusivamente mediante hash **Bcrypt** (`$2y$10$...`) en `api/auth.php`.
-   * Formulario de login limpio por defecto: los campos parten vacíos por seguridad (`autocomplete="off"`).
-   * Botón para mostrar / ocultar contraseña interactivo en el formulario de login.
-   * Mensaje de error visual en tiempo real en caso de credenciales inválidas.
-2. **Asistencia y Soporte de Acceso**:
-   * Enlace directo *"¿Necesitas ayuda para ingresar? Habla con Humm"* que dispara una alerta automática por correo hacia `contacto@humm.cl` indicando la cuenta afectada.
-3. **Flujos de Cambio y Recuperación de Contraseña**:
-   * **Desde "Mi Cuenta" (`#cuenta`)**: Permite al usuario autenticado ingresar su contraseña actual y actualizar a una nueva contraseña en tiempo real, validando la clave actual y grabando el nuevo hash Bcrypt en MySQL.
-   * **Recuperación "¿Olvidaste tu contraseña?"**: Envío de correo con enlace directo (`#cambiar-clave?email=...`) que abre el modal seguro para restablecer la contraseña sin recordar la clave anterior.
-4. **Persistencia y Sincronización Integral**:
-   * Cualquier mutación en el frontend actualiza inmediatamente el estado local e invoca `this.apiSave(...)` hacia `api/save.php`.
-   * Al iniciar sesión, `store.syncWithBackend()` descarga el estado consolidado desde MySQL garantizando consistencia absoluta entre sesiones.
-5. **Control de Caché en Producción**:
-   * Configuración en `.htaccess` y control de versión dinámico (`?v=9.1`) en `index.html` para asegurar la carga inmediata de los scripts actualizados en el navegador.
+1. **Autenticación Asíncrona con Bcrypt**: Contraseñas procesadas mediante hash **Bcrypt** (`$2y$10$...`) en `api/auth.php`.
+2. **Formulario de Login Seguro**: Campos vacíos por defecto (`autocomplete="off"`), visualizador interactivo de contraseña y mensajes de error específicos.
+3. **Flujos de Cambio y Recuperación**:
+   * **Desde "Mi Cuenta" (`#cuenta`)**: Cambio de contraseña en tiempo real validando la clave actual y grabando el nuevo hash Bcrypt en MySQL.
+   * **Recuperación "¿Olvidaste tu contraseña?"**: Envío de correo desde `comunidad@humm.cl` con enlace directo para restablecer la contraseña.
+4. **Control de Caché en Producción**: Configuración en `.htaccess` y parámetros de versión dinámicos en `index.html` para asegurar la carga inmediata de los cambios.
 
 ---
 
@@ -200,6 +241,9 @@ El script `./deploy.sh` ejecuta automáticamente:
 * **Acceso Emprendedor / Cuenta Principal**:
   * **Email**: `rmerino@hummcocreation.com`
   * **Rol**: Emprendedor con espacio de trabajo asignado.
+* **Cuenta de Correo de la Plataforma**:
+  * **Casilla**: `comunidad@humm.cl`
+  * **Uso**: Envío de correos de bienvenida, recuperación de contraseñas y notificaciones institucionales.
 
 ---
 

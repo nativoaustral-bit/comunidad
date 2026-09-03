@@ -709,6 +709,32 @@ class App {
         this.closeAllModals();
         this.refreshCurrentView();
       });
+
+      document.getElementById('btn-modal-insert-checklist')?.addEventListener('click', () => {
+        const textarea = document.getElementById('modal-note-content');
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        const prefix = (start === 0 || value[start - 1] === '\n') ? '- [ ] ' : '\n- [ ] ';
+        textarea.value = value.substring(0, start) + prefix + value.substring(end);
+        textarea.focus();
+        const newPos = start + prefix.length;
+        textarea.setSelectionRange(newPos, newPos);
+      });
+
+      document.getElementById('btn-modal-insert-bullet')?.addEventListener('click', () => {
+        const textarea = document.getElementById('modal-note-content');
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        const prefix = (start === 0 || value[start - 1] === '\n') ? '• ' : '\n• ';
+        textarea.value = value.substring(0, start) + prefix + value.substring(end);
+        textarea.focus();
+        const newPos = start + prefix.length;
+        textarea.setSelectionRange(newPos, newPos);
+      });
     }
 
     // Submit de Oportunidad

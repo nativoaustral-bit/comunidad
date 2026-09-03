@@ -1004,48 +1004,268 @@
 }
 
 /* ==========================================================================
-   11. MÓDULO BLOC DE NOTAS RÁPIDAS (DISEÑO POST-IT MODERNO)
+   11. MÓDULO BLOC DE NOTAS RÁPIDAS (DISEÑO ELEGANTE Y DINÁMICO)
    ========================================================================== */
-.notes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+
+/* Compositor Superior de Notas (Smart Canvas / Notepad) */
+.note-composer-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+  position: relative;
+  overflow: hidden;
 }
 
+.note-composer-card:focus-within {
+  border-color: var(--humm-red-primary);
+  box-shadow: 0 10px 30px rgba(229, 56, 59, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.note-composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.note-composer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--humm-red-primary);
+  background: var(--humm-red-subtle);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.note-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.note-composer-title-input {
+  width: 100%;
+  background: var(--bg-surface-secondary);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.note-composer-title-input:focus {
+  border-color: var(--humm-red-primary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(229, 56, 59, 0.12);
+}
+
+.note-composer-textarea {
+  width: 100%;
+  min-height: 140px;
+  max-height: 420px;
+  resize: vertical;
+  background: var(--bg-surface-secondary);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.note-composer-textarea:focus {
+  border-color: var(--humm-red-primary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(229, 56, 59, 0.12);
+}
+
+/* Barra de herramientas rápida para listas y viñetas */
+.note-composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.note-tool-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.note-tool-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+/* Selector Visual de Muestras de Color (Color Swatches) */
+.note-swatches-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.note-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  outline: none;
+}
+
+.note-color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.note-color-swatch.active {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 2.5px var(--bg-card), 0 0 0 4.5px currentColor;
+}
+
+.note-color-swatch svg {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.note-color-swatch.active svg {
+  opacity: 1;
+}
+
+.swatch-yellow { background-color: #FEF08A; color: #854D0E; }
+.swatch-green  { background-color: #BBF7D0; color: #166534; }
+.swatch-blue   { background-color: #BFDBFE; color: #1E40AF; }
+.swatch-purple { background-color: #E9D5FF; color: #6B21A8; }
+.swatch-rose   { background-color: #FECDD3; color: #9F1239; }
+.swatch-slate  { background-color: #E2E8F0; color: #334155; }
+
+[data-theme="dark"] .swatch-yellow { background-color: #713F12; color: #FEF08A; }
+[data-theme="dark"] .swatch-green  { background-color: #14532D; color: #86EFAC; }
+[data-theme="dark"] .swatch-blue   { background-color: #1E3A8A; color: #93C5FD; }
+[data-theme="dark"] .swatch-purple { background-color: #581C87; color: #D8B4FE; }
+[data-theme="dark"] .swatch-rose   { background-color: #881337; color: #FDA4AF; }
+[data-theme="dark"] .swatch-slate  { background-color: #334155; color: #E2E8F0; }
+
+/* Selector de Categorías en Chips */
+.note-category-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.note-cat-chip {
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.note-cat-chip:hover {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.note-cat-chip.active {
+  background: var(--humm-red-subtle);
+  border-color: var(--humm-red-primary);
+  color: var(--humm-red-primary);
+  font-weight: 700;
+}
+
+/* Cuadrícula de Tarjetas de Notas */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 18px;
+}
+
+/* Tarjeta de Nota Estilo Canvas / Post-It Elegante */
 .note-card {
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  min-height: 180px;
+  min-height: 190px;
   position: relative;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   cursor: pointer;
+  border-top-width: 4px;
 }
 
 .note-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
 }
 
 .note-card.is-pinned {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
 .note-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  gap: 8px;
 }
 
 .note-card-title {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 700;
   margin: 0;
   line-height: 1.35;
   color: inherit;
+  word-break: break-word;
 }
 
 .btn-note-pin {
@@ -1055,7 +1275,12 @@
   font-size: 16px;
   opacity: 0.35;
   transition: opacity 0.15s ease, transform 0.15s ease;
-  padding: 2px 4px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .note-card:hover .btn-note-pin,
@@ -1064,22 +1289,55 @@
 }
 
 .btn-note-pin.active {
-  transform: scale(1.15);
+  transform: scale(1.15) rotate(15deg);
 }
 
 .note-card-body {
   flex: 1;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .note-card-content {
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 13.5px;
+  line-height: 1.6;
   white-space: pre-line;
   margin: 0;
   color: inherit;
-  opacity: 0.92;
+  opacity: 0.94;
   word-break: break-word;
+}
+
+/* Checklists Interactivas en Tarjeta */
+.note-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.note-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.note-checklist-item.is-done {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.note-checklist-checkbox {
+  margin-top: 3px;
+  cursor: pointer;
+  accent-color: var(--humm-red-primary);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .note-card-footer {
@@ -1089,6 +1347,7 @@
   padding-top: 10px;
   border-top: 1px dashed rgba(0, 0, 0, 0.12);
   margin-top: auto;
+  gap: 8px;
 }
 
 [data-theme="dark"] .note-card-footer {
@@ -1098,7 +1357,7 @@
 .note-card-actions {
   display: flex;
   gap: 4px;
-  opacity: 0.6;
+  opacity: 0.65;
   transition: opacity 0.15s ease;
 }
 
@@ -1107,95 +1366,116 @@
 }
 
 .note-action-btn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   cursor: pointer;
   font-size: 13px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: background-color 0.12s ease;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="dark"] .note-action-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .note-action-btn:hover {
   background: rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 [data-theme="dark"] .note-action-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* Paleta de Colores de Notas - Tema Claro */
 .note-color-yellow {
-  background: #FEF9C3;
-  border: 1px solid #FDE047;
-  color: #713F12;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-top: 4px solid #F59E0B;
+  color: #78350F;
 }
 
 .note-color-green {
-  background: #DCFCE7;
-  border: 1px solid #86EFAC;
-  color: #14532D;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-top: 4px solid #10B981;
+  color: #065F46;
 }
 
 .note-color-blue {
-  background: #DBEAFE;
-  border: 1px solid #93C5FD;
-  color: #1E3A8A;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-top: 4px solid #3B82F6;
+  color: #1E40AF;
 }
 
 .note-color-purple {
-  background: #F3E8FF;
-  border: 1px solid #D8B4FE;
-  color: #581C87;
+  background: #FAF5FF;
+  border: 1px solid #E9D5FF;
+  border-top: 4px solid #8B5CF6;
+  color: #5B21B6;
 }
 
 .note-color-rose {
-  background: #FFE4E6;
-  border: 1px solid #FDA4AF;
-  color: #881337;
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  border-top: 4px solid #F43F5E;
+  color: #9F1239;
 }
 
 .note-color-slate {
-  background: #F1F5F9;
+  background: #F8FAFC;
   border: 1px solid #CBD5E1;
+  border-top: 4px solid #64748B;
   color: #1E293B;
 }
 
 /* Paleta de Colores de Notas - Tema Oscuro */
 [data-theme="dark"] .note-color-yellow {
-  background: rgba(254, 240, 138, 0.08);
-  border: 1px solid rgba(254, 240, 138, 0.28);
+  background: rgba(254, 240, 138, 0.06);
+  border: 1px solid rgba(254, 240, 138, 0.22);
+  border-top: 4px solid #F59E0B;
   color: #FEF08A;
 }
 
 [data-theme="dark"] .note-color-green {
-  background: rgba(134, 239, 172, 0.08);
-  border: 1px solid rgba(134, 239, 172, 0.28);
+  background: rgba(134, 239, 172, 0.06);
+  border: 1px solid rgba(134, 239, 172, 0.22);
+  border-top: 4px solid #10B981;
   color: #86EFAC;
 }
 
 [data-theme="dark"] .note-color-blue {
-  background: rgba(147, 197, 253, 0.08);
-  border: 1px solid rgba(147, 197, 253, 0.28);
+  background: rgba(147, 197, 253, 0.06);
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  border-top: 4px solid #3B82F6;
   color: #93C5FD;
 }
 
 [data-theme="dark"] .note-color-purple {
-  background: rgba(216, 180, 254, 0.08);
-  border: 1px solid rgba(216, 180, 254, 0.28);
+  background: rgba(216, 180, 254, 0.06);
+  border: 1px solid rgba(216, 180, 254, 0.22);
+  border-top: 4px solid #8B5CF6;
   color: #D8B4FE;
 }
 
 [data-theme="dark"] .note-color-rose {
-  background: rgba(253, 164, 175, 0.08);
-  border: 1px solid rgba(253, 164, 175, 0.28);
+  background: rgba(253, 164, 175, 0.06);
+  border: 1px solid rgba(253, 164, 175, 0.22);
+  border-top: 4px solid #F43F5E;
   color: #FDA4AF;
 }
 
 [data-theme="dark"] .note-color-slate {
-  background: rgba(203, 213, 225, 0.08);
-  border: 1px solid rgba(203, 213, 225, 0.28);
-  color: #CBD5E1;
+  background: rgba(203, 213, 225, 0.06);
+  border: 1px solid rgba(203, 213, 225, 0.22);
+  border-top: 4px solid #94A3B8;
+  color: #E2E8F0;
 }
 
 /* ==========================================================================

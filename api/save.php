@@ -255,7 +255,7 @@ try {
                     ':content' => $item['content'] ?? '',
                     ':category' => $item['category'] ?? 'general',
                     ':color' => $item['color'] ?? 'yellow',
-                    ':is_pinned' => !empty($item['isPinned'] ?? $item['is_pinned']) ? 1 : 0
+                    ':is_pinned' => !empty($item['pinned'] ?? $item['isPinned'] ?? $item['is_pinned']) ? 1 : 0
                 ]);
                 DB::jsonResponse(true, ['item' => $item]);
             }
