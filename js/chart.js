@@ -25,21 +25,19 @@ export class SalesChart {
     }
   }
 
-  render(salesData = []) {
+  render(salesData = [], forcedYear = null) {
     if (!this.container) return;
 
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1; // 1-12
+    const targetYear = forcedYear || (this.options && this.options.year) || currentYear;
 
-    // Construir los últimos 12 meses consecutivos terminando en el mes actual
+    // Construir los 12 meses fijos del año en curso (Enero = 1 a Diciembre = 12)
     const monthlyBuckets = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(currentYear, (currentMonth - 1) - i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
+    for (let m = 1; m <= 12; m++) {
       monthlyBuckets.push({
-        year: y,
+        year: targetYear,
         month: m,
         amount: 0,
         count: 0,
@@ -47,7 +45,7 @@ export class SalesChart {
       });
     }
 
-    // Extraer año y mes de cada venta registrada y agregar a su respectivo mes
+    // Extraer año y mes de cada venta registrada y agregar al respectivo mes del año seleccionado
     (salesData || []).forEach(s => {
       let y = s.year ? parseInt(s.year, 10) : null;
       let m = s.month ? parseInt(s.month, 10) : null;
@@ -59,15 +57,17 @@ export class SalesChart {
           m = parseInt(parts[1], 10);
         }
       }
-      y = y || currentYear;
+      y = y || targetYear;
       m = m || currentMonth;
 
       const amt = Math.max(0, parseInt(s.amount, 10) || parseInt(s.totalAmount, 10) || 0);
-      const bucket = monthlyBuckets.find(b => b.year === y && b.month === m);
-      if (bucket) {
-        bucket.amount += amt;
-        bucket.count += 1;
-        bucket.sales.push(s);
+      if (y === targetYear) {
+        const bucket = monthlyBuckets.find(b => b.month === m);
+        if (bucket) {
+          bucket.amount += amt;
+          bucket.count += 1;
+          bucket.sales.push(s);
+        }
       }
     });
 
@@ -97,13 +97,13 @@ export class SalesChart {
       `;
     }
 
-    // Renderizado de barras interactivas
+    // Renderizado de las 12 barras fijas de Enero a Diciembre
     monthlyBuckets.forEach((item, index) => {
       const hasSales = item.amount > 0;
       const barHeight = hasSales ? Math.max(8, (item.amount / yMax) * chartHeight) : 3;
       const x = padding.left + index * step + (step - barWidth) / 2;
       const y = padding.top + chartHeight - barHeight;
-      const isCurrentMonth = index === monthlyBuckets.length - 1;
+      const isCurrentMonth = item.month === currentMonth && targetYear === currentYear;
 
       const shortMonth = formatMonthName(item.month).substring(0, 3);
       const isHighlighted = isCurrentMonth 
@@ -127,7 +127,7 @@ export class SalesChart {
                 class="chart-bar-rect"
                 style="transition: all 0.2s ease;" />
                 
-          <!-- Etiqueta del mes en Eje X -->
+          <!-- Etiqueta del mes en Eje X: Ene a Dic -->
           <text x="${x + barWidth / 2}" y="${height - 12}" 
                 text-anchor="middle" 
                 fill="${isCurrentMonth ? 'var(--humm-red-primary)' : 'var(--text-secondary)'}" 

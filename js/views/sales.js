@@ -45,8 +45,9 @@ export function renderSalesView(container) {
   const totalPending = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').reduce((sum, s) => sum + (Number(s.amount) || Number(s.totalAmount) || 0), 0);
   const pendingCount = sales.filter(s => s.paymentStatus === 'pendiente' || s.paymentStatus === 'vencido' || s.paymentStatus === 'abono' || s.paymentStatus === 'por_facturar').length;
 
-  // Total acumulado general de ventas
-  const total12Months = sales.reduce((acc, curr) => acc + (Number(curr.amount) || Number(curr.totalAmount) || 0), 0);
+  // Ventas del año en curso (Enero a Diciembre)
+  const currentYearSales = sales.filter(s => getSaleYear(s) === currentYear);
+  const currentYearTotal = currentYearSales.reduce((acc, curr) => acc + (Number(curr.amount) || Number(curr.totalAmount) || 0), 0);
 
   let diffText = '';
   let diffClass = 'comparison-neutral';
@@ -182,10 +183,10 @@ export function renderSalesView(container) {
         </div>
       </div>
 
-      <!-- Métrica 4: Total 12 Meses -->
+      <!-- Métrica 4: Total Anual -->
       <div class="metric-card">
         <div class="metric-card-header">
-          <span class="metric-card-title">Total Últimos 12 Meses</span>
+          <span class="metric-card-title">Ventas Anuales ${currentYear}</span>
           <div class="metric-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 3v18h18"></path>
@@ -193,17 +194,17 @@ export function renderSalesView(container) {
             </svg>
           </div>
         </div>
-        <div class="metric-value">${formatCLP(total12Months)}</div>
-        <div class="metric-comparison"><span class="comparison-neutral">${sales.length} transacciones registradas</span></div>
+        <div class="metric-value">${formatCLP(currentYearTotal)}</div>
+        <div class="metric-comparison"><span class="comparison-neutral">${currentYearSales.length} transacciones en ${currentYear}</span></div>
       </div>
     </div>
 
-    <!-- GRÁFICO MENSUAL DE VENTAS -->
+    <!-- GRÁFICO MENSUAL DE VENTAS (ENERO A DICIEMBRE DEL AÑO EN CURSO) -->
     <div class="chart-container-card" style="margin-bottom: 24px;">
       <div class="chart-header">
         <div class="chart-title-area">
-          <h3>Evolución de ventas mensuales</h3>
-          <p>Muestra el comportamiento de tus ingresos en pesos chilenos ($ CLP).</p>
+          <h3>Evolución de ventas ${currentYear} (Enero - Diciembre)</h3>
+          <p>Ingresos mes a mes en pesos chilenos ($ CLP) de Enero a Diciembre del año en curso.</p>
         </div>
       </div>
       <div id="sales-view-chart-wrapper"></div>

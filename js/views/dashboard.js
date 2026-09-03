@@ -314,8 +314,8 @@ export function renderDashboard(container) {
     <div class="chart-container-card" style="margin-bottom: 24px;">
       <div class="chart-header">
         <div class="chart-title-area">
-          <h3>Evolución de ventas mensuales</h3>
-          <p>Visualiza tus ingresos registrados en pesos chilenos durante los últimos doce meses.</p>
+          <h3>Evolución de ventas ${currentYear} (Enero - Diciembre)</h3>
+          <p>Visualiza tus ingresos registrados en pesos chilenos ($ CLP) de Enero a Diciembre.</p>
         </div>
         <button class="btn btn-secondary btn-sm" id="btn-chart-register-sale">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
