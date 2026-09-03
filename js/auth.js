@@ -350,8 +350,10 @@ class AuthService {
             cachedWorkspace: (typeof wsObj !== 'undefined' ? wsObj : null)
           });
 
-          // Sincronizar catálogo completo
-          await store.syncWithBackend(userObj.role, userObj.workspaceId);
+          // Sincronizar catálogo completo en background
+          store.syncWithBackend(userObj.role, userObj.workspaceId).catch(err => {
+            console.warn('Sync en background tras login:', err);
+          });
 
           return { success: true, user: userObj };
         } else {
