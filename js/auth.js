@@ -4,7 +4,7 @@
  * Protección con expiración por inactividad y límites máximos de tiempo
  */
 
-import { store } from './store.js?v=5.0';
+import { store } from './store.js?v=6.0';
 
 export const AUTH_CONFIG = {
   SESSION_KEY: 'mi_humm_active_session_v1',
@@ -55,7 +55,10 @@ class AuthService {
           }
         }
 
-        if (user && user.isActive) {
+        const isUserActive = user ? (user.isActive !== false && user.isActive !== 0 && user.is_active !== 0 && user.is_active !== false) : true;
+        if (user && isUserActive) {
+          user.isActive = true;
+          user.is_active = 1;
           const expirationCheck = this.isSessionExpired(parsed, user);
           if (expirationCheck.expired) {
             console.warn('Sesión caducada al cargar:', expirationCheck.reason);
@@ -188,9 +191,12 @@ class AuthService {
       }
     }
 
-    if (user && (user.isActive === false || user.isActive === 0)) {
-      this.logout(notifyExpired, 'Tu cuenta ya no está disponible o ha sido desactivada.');
-      return false;
+    if (user) {
+      const isUserActive = (user.isActive !== false && user.isActive !== 0 && user.is_active !== 0 && user.is_active !== false);
+      if (!isUserActive) {
+        this.logout(notifyExpired, 'Tu cuenta ya no está disponible o ha sido desactivada.');
+        return false;
+      }
     }
 
     const check = this.isSessionExpired(this.session, user || this.session.cachedUser);
@@ -234,8 +240,18 @@ class AuthService {
         store.data.users.push(user);
       }
     }
-    if (!user) return null;
-    if (user.isActive === false || user.isActive === 0) {
+    if (!user) {
+      user = {
+        id: this.session.userId,
+        role: this.session.role,
+        name: this.session.role === 'admin' ? 'Administrador' : 'Emprendedor',
+        email: '',
+        isActive: true,
+        is_active: 1
+      };
+    }
+    const isUserActive = (user.isActive !== false && user.isActive !== 0 && user.is_active !== 0 && user.is_active !== false);
+    if (!isUserActive) {
       this.logout();
       return null;
     }

@@ -249,7 +249,10 @@ class Store {
           if (Array.isArray(json.data.support_requests)) this.data.supportRequests = json.data.support_requests;
           if (Array.isArray(json.data.users)) {
             const seenEmails = new Set();
-            this.data.users = json.data.users.filter(u => {
+            this.data.users = json.data.users.map(u => ({
+              ...u,
+              isActive: u.isActive !== undefined ? !!u.isActive : (u.is_active !== undefined ? !!u.is_active : true)
+            })).filter(u => {
               const email = (u.email || '').toLowerCase().trim();
               if (!email || seenEmails.has(email)) return false;
               seenEmails.add(email);

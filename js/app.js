@@ -3,20 +3,20 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, formatCLP } from './store.js?v=5.0';
-import { auth } from './auth.js?v=5.0';
-import { populateComunasSelect } from './chile-data.js?v=5.0';
-import { renderDashboard } from './views/dashboard.js?v=5.0';
-import { renderTasksView } from './views/tasks.js?v=5.0';
-import { renderCalendarView } from './views/calendar.js?v=5.0';
-import { renderNotesView } from './views/notes.js?v=5.0';
-import { renderSalesView } from './views/sales.js?v=5.0';
-import { renderCustomersView } from './views/customers.js?v=5.0';
-import { renderOpportunitiesView } from './views/opportunities.js?v=5.0';
-import { renderToolsView } from './views/tools.js?v=5.0';
-import { renderAccountView } from './views/account.js?v=5.0';
-import { renderDiscountsView } from './views/discounts.js?v=5.0';
-import { renderAdminView } from './views/admin.js?v=5.0';
+import { store, formatDateCL, formatCLP } from './store.js?v=6.0';
+import { auth } from './auth.js?v=6.0';
+import { populateComunasSelect } from './chile-data.js?v=6.0';
+import { renderDashboard } from './views/dashboard.js?v=6.0';
+import { renderTasksView } from './views/tasks.js?v=6.0';
+import { renderCalendarView } from './views/calendar.js?v=6.0';
+import { renderNotesView } from './views/notes.js?v=6.0';
+import { renderSalesView } from './views/sales.js?v=6.0';
+import { renderCustomersView } from './views/customers.js?v=6.0';
+import { renderOpportunitiesView } from './views/opportunities.js?v=6.0';
+import { renderToolsView } from './views/tools.js?v=6.0';
+import { renderAccountView } from './views/account.js?v=6.0';
+import { renderDiscountsView } from './views/discounts.js?v=6.0';
+import { renderAdminView } from './views/admin.js?v=6.0';
 
 class App {
   constructor() {
