@@ -45,7 +45,15 @@ class AuthService {
 
       if (stored) {
         const parsed = JSON.parse(stored);
-        const user = store.getUser(parsed.userId);
+        let user = store.getUser(parsed.userId);
+
+        if (!user && parsed.cachedUser) {
+          user = parsed.cachedUser;
+          if (!store.data.users) store.data.users = [];
+          if (!store.data.users.some(u => u.id === user.id)) {
+            store.data.users.push(user);
+          }
+        }
 
         if (user && user.isActive) {
           const expirationCheck = this.isSessionExpired(parsed, user);
@@ -62,7 +70,8 @@ class AuthService {
             loginTime: parsed.loginTime || Date.now(),
             lastActivityTime: parsed.lastActivityTime || Date.now(),
             expiresAt: parsed.expiresAt || (Date.now() + (user.role === 'admin' ? AUTH_CONFIG.ADMIN_MAX_LIFETIME : AUTH_CONFIG.USER_MAX_LIFETIME)),
-            impersonatedWorkspaceId: parsed.impersonatedWorkspaceId || null
+            impersonatedWorkspaceId: parsed.impersonatedWorkspaceId || null,
+            cachedUser: user
           };
         }
       }
@@ -208,7 +217,14 @@ class AuthService {
 
   getCurrentUser() {
     if (!this.session) return null;
-    const user = store.getUser(this.session.userId);
+    let user = store.getUser(this.session.userId);
+    if (!user && this.session.cachedUser) {
+      user = this.session.cachedUser;
+      if (!store.data.users) store.data.users = [];
+      if (!store.data.users.some(u => u.id === user.id)) {
+        store.data.users.push(user);
+      }
+    }
     if (!user || !user.isActive) {
       this.logout();
       return null;
@@ -311,7 +327,8 @@ class AuthService {
             loginTime: now,
             lastActivityTime: now,
             expiresAt: now + maxLifetime,
-            impersonatedWorkspaceId: null
+            impersonatedWorkspaceId: null,
+            cachedUser: userObj
           });
 
           // Sincronizar catálogo completo
