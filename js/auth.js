@@ -71,7 +71,8 @@ class AuthService {
             lastActivityTime: parsed.lastActivityTime || Date.now(),
             expiresAt: parsed.expiresAt || (Date.now() + (user.role === 'admin' ? AUTH_CONFIG.ADMIN_MAX_LIFETIME : AUTH_CONFIG.USER_MAX_LIFETIME)),
             impersonatedWorkspaceId: parsed.impersonatedWorkspaceId || null,
-            cachedUser: user
+            cachedUser: user,
+            cachedWorkspace: parsed.cachedWorkspace || null
           };
         }
       }
@@ -178,13 +179,21 @@ class AuthService {
   checkSessionValidity(notifyExpired = true) {
     if (!this.session) return false;
 
-    const user = store.getUser(this.session.userId);
-    if (!user || !user.isActive) {
+    let user = store.getUser(this.session.userId);
+    if (!user && this.session.cachedUser) {
+      user = this.session.cachedUser;
+      if (!store.data.users) store.data.users = [];
+      if (!store.data.users.some(u => u.id === user.id)) {
+        store.data.users.push(user);
+      }
+    }
+
+    if (user && (user.isActive === false || user.isActive === 0)) {
       this.logout(notifyExpired, 'Tu cuenta ya no está disponible o ha sido desactivada.');
       return false;
     }
 
-    const check = this.isSessionExpired(this.session, user);
+    const check = this.isSessionExpired(this.session, user || this.session.cachedUser);
     if (check.expired) {
       const msg = check.reason === 'inactivity'
         ? '🔒 Tu sesión ha caducado automáticamente por inactividad por motivos de seguridad. Por favor, ingresa de nuevo.'
@@ -225,7 +234,8 @@ class AuthService {
         store.data.users.push(user);
       }
     }
-    if (!user || !user.isActive) {
+    if (!user) return null;
+    if (user.isActive === false || user.isActive === 0) {
       this.logout();
       return null;
     }
@@ -242,7 +252,15 @@ class AuthService {
     }
 
     if (user.workspaceId) {
-      return store.getWorkspace(user.workspaceId);
+      let ws = store.getWorkspace(user.workspaceId);
+      if (!ws && this.session.cachedWorkspace) {
+        ws = this.session.cachedWorkspace;
+        if (!store.data.workspaces) store.data.workspaces = [];
+        if (!store.data.workspaces.some(w => w.id === ws.id)) {
+          store.data.workspaces.push(ws);
+        }
+      }
+      return ws;
     }
 
     // Para admin sin espacio asignado
@@ -328,7 +346,8 @@ class AuthService {
             lastActivityTime: now,
             expiresAt: now + maxLifetime,
             impersonatedWorkspaceId: null,
-            cachedUser: userObj
+            cachedUser: userObj,
+            cachedWorkspace: (typeof wsObj !== 'undefined' ? wsObj : null)
           });
 
           // Sincronizar catálogo completo

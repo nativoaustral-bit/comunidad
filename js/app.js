@@ -115,10 +115,6 @@ class App {
     if (!auth.isAuthenticated()) {
       if (authScreen) authScreen.style.display = 'flex';
       if (mainApp) mainApp.style.display = 'none';
-      const emailInput = document.getElementById('login-email');
-      const passInput = document.getElementById('login-password');
-      if (emailInput) emailInput.value = '';
-      if (passInput) passInput.value = '';
     } else {
       if (authScreen) authScreen.style.display = 'none';
       if (mainApp) mainApp.style.display = 'flex';
@@ -2457,13 +2453,15 @@ class App {
           const res = await auth.login(email, pass, remember);
           if (res.success) {
             this.showToast(`¡Bienvenido a Mi Humm, ${res.user.name.split(' ')[0]}!`, 'success');
-            window.location.hash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+            const targetHash = res.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
+            window.location.hash = targetHash;
             this.checkAuthenticationState();
             this.handleHashChange();
           } else {
-            this.showToast(res.message || 'Error al verificar credenciales', 'danger');
+            this.showToast(res.message || 'Error al verificar credenciales. Verifica tu correo y contraseña.', 'danger');
           }
         } catch (err) {
+          console.error('Error al iniciar sesión:', err);
           this.showToast('Ocurrió un error al procesar el ingreso. Intenta nuevamente.', 'danger');
         } finally {
           if (btnSubmit) {
