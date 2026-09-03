@@ -4,7 +4,7 @@
  * Protección con expiración por inactividad y límites máximos de tiempo
  */
 
-import { store } from './store.js?v=6.0';
+import { store } from './store.js?v=7.0';
 
 export const AUTH_CONFIG = {
   SESSION_KEY: 'mi_humm_active_session_v1',
@@ -227,10 +227,17 @@ class AuthService {
   }
 
   isAuthenticated() {
+    if (!this.session) {
+      this.session = this.loadSession();
+    }
+    if (!this.session) return false;
     return this.checkSessionValidity(false) && !!this.getCurrentUser();
   }
 
   getCurrentUser() {
+    if (!this.session) {
+      this.session = this.loadSession();
+    }
     if (!this.session) return null;
     let user = store.getUser(this.session.userId);
     if (!user && this.session.cachedUser) {
@@ -263,13 +270,15 @@ class AuthService {
     if (!user) return null;
 
     // Si es administrador y está auditando un espacio específico
-    if (user.role === 'admin' && this.session.impersonatedWorkspaceId) {
+    if (user.role === 'admin' && this.session && this.session.impersonatedWorkspaceId) {
       return store.getWorkspace(this.session.impersonatedWorkspaceId);
     }
 
-    if (user.workspaceId) {
-      let ws = store.getWorkspace(user.workspaceId);
-      if (!ws && this.session.cachedWorkspace) {
+    const wsId = user.workspaceId || user.workspace_id || (this.session && this.session.cachedWorkspace ? this.session.cachedWorkspace.id : null);
+
+    if (wsId) {
+      let ws = store.getWorkspace(wsId);
+      if (!ws && this.session && this.session.cachedWorkspace) {
         ws = this.session.cachedWorkspace;
         if (!store.data.workspaces) store.data.workspaces = [];
         if (!store.data.workspaces.some(w => w.id === ws.id)) {
@@ -279,7 +288,10 @@ class AuthService {
       return ws;
     }
 
-    // Para admin sin espacio asignado
+    if (this.session && this.session.cachedWorkspace) {
+      return this.session.cachedWorkspace;
+    }
+
     return null;
   }
 
@@ -465,3 +477,6 @@ class AuthService {
 }
 
 export const auth = new AuthService();
+if (typeof window !== 'undefined') {
+  window.MiHummAuth = auth;
+}

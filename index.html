@@ -113,11 +113,15 @@
             cachedWorkspace: ws
           };
 
-          var sessionStr = JSON.stringify(sessionObj);
-          try {
-            localStorage.setItem('mi_humm_active_session_v1', sessionStr);
-            sessionStorage.setItem('mi_humm_active_session_v1', sessionStr);
-          } catch(err) {}
+          if (window.MiHummAuth) {
+            window.MiHummAuth.saveSession(sessionObj);
+          } else {
+            var sessionStr = JSON.stringify(sessionObj);
+            try {
+              localStorage.setItem('mi_humm_active_session_v1', sessionStr);
+              sessionStorage.setItem('mi_humm_active_session_v1', sessionStr);
+            } catch(err) {}
+          }
 
           var authScreen = document.getElementById('auth-screen');
           var mainApp = document.getElementById('main-app');
@@ -132,12 +136,8 @@
               if (window.MiHummApp.checkAuthenticationState) window.MiHummApp.checkAuthenticationState();
               if (window.MiHummApp.handleHashChange) window.MiHummApp.handleHashChange();
             } catch(ex) {
-              window.location.reload();
+              console.error('Error al actualizar interfaz:', ex);
             }
-          } else {
-            setTimeout(function() {
-              window.location.reload();
-            }, 250);
           }
         } else {
           if (errAlert) {
@@ -2598,7 +2598,7 @@
   <!-- Contenedor Global de Toasts -->
   <div id="toast-container" aria-live="polite"></div>
 
-  <!-- Script Principal de la App (ES6 Module con cache-busting v=6.0) -->
-  <script type="module" src="js/app.js?v=6.0"></script>
+  <!-- Script Principal de la App (ES6 Module con cache-busting v=7.0) -->
+  <script type="module" src="js/app.js?v=7.0"></script>
 </body>
 </html>
