@@ -129,7 +129,7 @@ COMUNIDAD/
   * **Gestión y Persistencia**: Fijado de notas prioritarias al inicio del muro (`pinned`), copiado rápido al portapapeles, edición y eliminación con confirmación y sincronización en MySQL (`quick_notes`).
 
 ### 4. Catálogo de Soluciones y Red de Convenios Comerciales
-* **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento.
+* **Herramientas Humm (`#herramientas`)**: Soluciones como ReLoop, Hummailing, Kinetic Control, Humm Radar, Humm Link y Orientador de Financiamiento (enlace directo a `https://www.fondos.humm.cl` para asesoría y postulación a fondos concursables).
 * **Alianzas y Beneficios (`#beneficios`)**: Convenios comerciales exclusivos con empresas colaboradoras.
   * **Filtros Táctiles Deslizables**: Carrusel horizontal suave para filtrar beneficios por rubro en pantallas táctiles.
   * **Contacto Comercial Directo**: Conexión inmediata vía WhatsApp (principal), Instagram Direct, Correo Electrónico o Sitio Web.

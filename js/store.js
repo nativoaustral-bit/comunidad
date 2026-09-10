@@ -72,12 +72,12 @@ const INITIAL_TOOLS = [
     name: 'Orientador de Financiamiento',
     description: 'Descubre fondos concursables, subsidios y opciones de financiamiento para tu etapa.',
     category: 'Financiamiento',
-    status: 'proximamente',
-    url: 'https://fondos.humm.cl',
+    status: 'disponible',
+    url: 'https://www.fondos.humm.cl',
     icon: 'dollar-sign',
     order: 6,
     isVisible: true,
-    isIncluded: false
+    isIncluded: true
   }
 ];
 
@@ -210,7 +210,12 @@ class Store {
           users: loadedUsers,
           subscriptionPlans: parsed.subscriptionPlans || INITIAL_STATE.subscriptionPlans,
           subscriptions: (parsed.subscriptions || []).filter(s => !['sub-carolina', 'sub-juan', 'sub-ignacia', 'sub-diego', 'sub-patricia'].includes(s.id)),
-          tools: parsed.tools || INITIAL_TOOLS,
+          tools: (parsed.tools || INITIAL_TOOLS).map(t => {
+            if (t.id === 'tool-orientador') {
+              return { ...t, status: 'disponible', url: 'https://www.fondos.humm.cl', isVisible: true, isIncluded: true };
+            }
+            return t;
+          }),
           tasks: (parsed.tasks || []).filter(t => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(t.workspaceId)),
           sales: (parsed.sales || []).filter(s => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(s.workspaceId)),
           customers: (parsed.customers || []).filter(c => !['ws-taller-austral', 'ws-cafe-valle', 'ws-bio-patagonia', 'ws-nativa-gourmet'].includes(c.workspaceId)),

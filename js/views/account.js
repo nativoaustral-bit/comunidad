@@ -26,7 +26,7 @@ export function renderAccountView(container) {
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 40px;">
       
       <!-- FORMULARIO 1: DATOS DEL EMPRENDIMIENTO -->
       <div class="data-table-container" style="padding: 24px;">

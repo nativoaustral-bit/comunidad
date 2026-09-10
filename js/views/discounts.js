@@ -198,7 +198,7 @@ export function renderDiscountsView(container) {
     </div>
 
     <!-- SECCIÓN: MIS BENEFICIOS SOLICITADOS (HISTORIAL DEL MIEMBRO) -->
-    <div id="mis-beneficios-solicitados" style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle);">
+    <div id="mis-beneficios-solicitados" style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle); margin-bottom: 40px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <div>
           <h3 style="font-size: var(--font-size-lg); font-weight: 800; color: var(--text-primary); margin: 0 0 4px;">

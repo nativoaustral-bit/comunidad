@@ -159,7 +159,7 @@ class App {
       // Vista de Emprendedor (o Admin en modo auditoría)
       if (entrepreneurSection) entrepreneurSection.style.display = 'block';
       if (adminSection) adminSection.style.display = 'none';
-      if (mobileBottomNav) mobileBottomNav.style.display = 'block';
+      if (mobileBottomNav) mobileBottomNav.style.display = '';
       if (btnQuickAction) btnQuickAction.style.display = 'inline-flex';
       if (btnRequestSupport) btnRequestSupport.style.display = 'inline-flex';
 

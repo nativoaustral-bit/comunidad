@@ -354,7 +354,7 @@ export function renderDashboard(container) {
     </div>
 
     <!-- FILA INFERIOR: OPORTUNIDADES Y HERRAMIENTAS -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px;">
       <!-- RESUMEN DE OPORTUNIDADES QUE REQUIEREN ATENCIÓN -->
       <div class="adaptive-item-card" style="padding: 20px; height: 100%;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
