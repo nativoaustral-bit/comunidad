@@ -402,7 +402,7 @@ CREATE TABLE IF NOT EXISTS `broadcasts` (
 -- DATOS SEMILLA INICIALES (PRODUCCIÓN - PARTIDA DE CERO)
 -- =========================================================================
 
--- Usuario Administrador Central Inicial (contacto@humm.cl / humm2026)
+-- Usuario Administrador Central Inicial (contacto@humm.cl)
 INSERT INTO `users` (`id`, `workspace_id`, `name`, `email`, `password_hash`, `role`, `avatar`, `is_active`, `assigned_tool_ids`, `advisor_name`, `advisor_email`, `created_at`) VALUES
 ('usr-admin', NULL, 'Administrador Humm', 'contacto@humm.cl', '$2y$10$tZ2E7f2i7rY7r0qXgR6E6e.rR8i.XjP8LqjP2n8nE.1N2k3l4m5O6', 'admin', 'AH', 1, '[]', NULL, NULL, '2026-01-01 08:00:00')
 ON DUPLICATE KEY UPDATE role = 'admin', is_active = 1;

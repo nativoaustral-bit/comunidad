@@ -22,7 +22,7 @@ $testsPassed = 0;
 $testsFailed = 0;
 $cookieJar = tempnam(sys_get_temp_dir(), 'humm_cookie_');
 
-function httpRequest($method, $url, $data = null, $headers = [], $useCookie = false) {
+function httpRequest($method, $url, $data = null, $headers = [], $useCookie = false, $extraCookie = 'humans_21909=1') {
     global $cookieJar;
     $ch = curl_init();
     
@@ -32,10 +32,15 @@ function httpRequest($method, $url, $data = null, $headers = [], $useCookie = fa
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36');
     
     if ($useCookie) {
         curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieJar);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieJar);
+    }
+    
+    if (!empty($extraCookie)) {
+        curl_setopt($ch, CURLOPT_COOKIE, $extraCookie);
     }
     
     $reqHeaders = [];
@@ -99,15 +104,15 @@ echo "------------------------------------------------------------\n";
 
 // Test 1.1: data.php sin sesión
 $res = httpRequest('GET', "$baseUrl/api/data.php", null, [], false);
-assertTest("GET api/data.php anónimo retorna HTTP 401", $res['code'] === 401, "Código recibido: {$res['code']}");
+assertTest("GET api/data.php anónimo retorna HTTP 401 (Datos protegidos)", $res['code'] === 401, "Código: {$res['code']}");
 
 // Test 1.2: save.php sin sesión
 $res = httpRequest('POST', "$baseUrl/api/save.php", ['type' => 'customer', 'data' => ['name' => 'Hacker']], [], false);
-assertTest("POST api/save.php anónimo retorna HTTP 401", $res['code'] === 401, "Código recibido: {$res['code']}");
+assertTest("POST api/save.php anónimo retorna HTTP 401 (Escritura no autorizada bloqueada)", $res['code'] === 401, "Código: {$res['code']}");
 
 // Test 1.3: mail.php anónimo
 $res = httpRequest('POST', "$baseUrl/api/mail.php", ['type' => 'welcome', 'to' => 'victim@test.com'], [], false);
-assertTest("POST api/mail.php anónimo retorna HTTP 401 (Previene Open Relay)", $res['code'] === 401, "Código recibido: {$res['code']}");
+assertTest("POST api/mail.php anónimo retorna HTTP 401 (Open Relay neutralizado)", $res['code'] === 401, "Código: {$res['code']}");
 
 echo "\n";
 
@@ -123,7 +128,7 @@ $res = httpRequest('POST', "$baseUrl/api/auth.php", [
     'email' => $adminEmail,
     'password' => 'humm2026'
 ], [], false);
-assertTest("Backdoor maestro 'humm2026' RECHAZADO (401)", $res['code'] === 401 && ($res['json']['authenticated'] ?? true) === false, "Código: {$res['code']}");
+assertTest("Backdoor maestro 'humm2026' RECHAZADO (401)", $res['code'] === 401 && ($res['json']['success'] ?? true) === false, "Código: {$res['code']}");
 
 // Test 2.2: Intento de login con contraseña por defecto 'admin'
 $res = httpRequest('POST', "$baseUrl/api/auth.php", [
@@ -131,7 +136,7 @@ $res = httpRequest('POST', "$baseUrl/api/auth.php", [
     'email' => $adminEmail,
     'password' => 'admin'
 ], [], false);
-assertTest("Contraseña por defecto 'admin' RECHAZADA (401)", $res['code'] === 401 && ($res['json']['authenticated'] ?? true) === false, "Código: {$res['code']}");
+assertTest("Contraseña por defecto 'admin' RECHAZADA (401)", $res['code'] === 401 && ($res['json']['success'] ?? true) === false, "Código: {$res['code']}");
 
 // Test 2.3: Invocación de reset_password_direct
 $res = httpRequest('POST', "$baseUrl/api/auth.php", [
@@ -176,13 +181,15 @@ $loginRes = httpRequest('POST', "$baseUrl/api/auth.php", [
     'password' => $adminPass
 ], [], true);
 
-if ($loginRes['code'] === 200 && ($loginRes['json']['authenticated'] ?? false) === true) {
-    assertTest("Autenticación legítima exitosa (200 OK)", true);
+$isAuthOk = ($loginRes['code'] === 200 && ($loginRes['json']['success'] ?? false) === true);
+
+if ($isAuthOk) {
+    assertTest("Autenticación legítima exitosa con nueva contraseña rotada (200 OK)", true);
     
     // Validar cookie HttpOnly y SameSite en cabeceras Set-Cookie
     $hasHttpOnly = stripos($loginRes['headers'], 'HttpOnly') !== false;
     $hasSameSite = stripos($loginRes['headers'], 'SameSite=Lax') !== false || stripos($loginRes['headers'], 'SameSite=Strict') !== false;
-    $csrfToken = $loginRes['json']['csrf_token'] ?? null;
+    $csrfToken = $loginRes['json']['data']['csrf_token'] ?? $loginRes['json']['csrf_token'] ?? null;
     
     assertTest("Cookie de sesión configurada con HttpOnly", $hasHttpOnly, "Cabeceras: " . substr($loginRes['headers'], 0, 200));
     assertTest("Cookie de sesión configurada con SameSite", $hasSameSite, "Cabeceras: " . substr($loginRes['headers'], 0, 200));
@@ -192,7 +199,7 @@ if ($loginRes['code'] === 200 && ($loginRes['json']['authenticated'] ?? false) =
     $resNoCsrf = httpRequest('POST', "$baseUrl/api/save.php", [
         'type' => 'broadcast',
         'data' => ['title' => 'CSRF Attack', 'message' => 'Forged Message']
-    ], [], true); // Envia cookie pero no cabecera X-CSRF-Token
+    ], [], true);
     assertTest("Petición con sesión válida SIN CSRF es RECHAZADA (403)", $resNoCsrf['code'] === 403, "Código: {$resNoCsrf['code']}");
     
     // Test 4.3: Petición con sesión y con token CSRF inválido
@@ -206,8 +213,97 @@ if ($loginRes['code'] === 200 && ($loginRes['json']['authenticated'] ?? false) =
     $resGoodCsrf = httpRequest('GET', "$baseUrl/api/data.php", null, [], true);
     assertTest("GET api/data.php con sesión legítima retorna 200 OK", $resGoodCsrf['code'] === 200, "Código: {$resGoodCsrf['code']}");
 
+    // Test 4.5: Mutación legítima con sesión Y token CSRF válido
+    $resSaveValid = httpRequest('POST', "$baseUrl/api/save.php", [
+        'entity' => 'broadcast',
+        'item' => [
+            'id' => 'bc-gate-test',
+            'title' => 'Prueba Gate',
+            'content' => 'Verificación exitosa.',
+            'category' => 'General',
+            'targetAudience' => 'Todos'
+        ]
+    ], ['X-CSRF-Token' => $csrfToken], true);
+    assertTest("Mutación legítima (POST save.php) con sesión y CSRF válido retorna 200 OK", $resSaveValid['code'] === 200 && ($resSaveValid['json']['success'] ?? false) === true, "Código: {$resSaveValid['code']} - Body: " . substr($resSaveValid['body'], 0, 100));
+
+    // Limpieza de registro de prueba
+    httpRequest('POST', "$baseUrl/api/save.php", [
+        'entity' => 'broadcast',
+        'action' => 'delete',
+        'id' => 'bc-gate-test'
+    ], ['X-CSRF-Token' => $csrfToken], true);
+
 } else {
-    echo "  ⚠️ [SKIP] No se pudo autenticar con admin@humm.cl (credenciales de prueba pendientes o modificadas). Saltando pruebas dependientes de sesión activa.\n";
+    echo "  ❌ [FAIL] No se pudo autenticar con $adminEmail (Código: {$loginRes['code']})\n";
+    $testsFailed++;
+}
+
+echo "\n";
+
+// -----------------------------------------------------------------------------
+// BLOQUE 5: Aislamiento Multi-Tenant y Prevención de Escalación de Privilegios
+// -----------------------------------------------------------------------------
+echo "5. AISLAMIENTO MULTI-TENANT Y PREVENCIÓN DE ESCALACIÓN DE PRIVILEGIOS\n";
+echo "--------------------------------------------------------------------\n";
+
+$entrepreneurCookieJar = tempnam(sys_get_temp_dir(), 'humm_ent_cookie_');
+$entEmail = 'rmerino@hummcocreation.com';
+$entPass = 'humm2026';
+
+// 5.1 Login como Emprendedor
+$entLoginRes = httpRequest('POST', "$baseUrl/api/auth.php", [
+    'action' => 'login',
+    'email' => $entEmail,
+    'password' => $entPass
+], [], false);
+
+// Usar cookie del emprendedor
+$hasEntCookie = false;
+$entCsrf = null;
+if (preg_match('/set-cookie:\s*(HUMM_SESSID=[^;]+)/i', $entLoginRes['headers'], $m)) {
+    $hasEntCookie = true;
+    $entCookie = $m[1] . '; humans_21909=1';
+    $entCsrf = $entLoginRes['json']['data']['csrf_token'] ?? null;
+}
+
+if ($entLoginRes['code'] === 200 && $hasEntCookie && !empty($entCsrf)) {
+    assertTest("Autenticación legítima de Emprendedor exitosa", true);
+
+    // 5.2 Emprendedor intentando leer datos de otros workspaces
+    $entDataRes = httpRequest('GET', "$baseUrl/api/data.php", null, [], false, $entCookie);
+    $wsList = $entDataRes['json']['data']['workspaces'] ?? [];
+    $onlyOwnWs = (count($wsList) === 1 && ($wsList[0]['id'] ?? '') === 'ws-1788377084897');
+    assertTest("Emprendedor SOLO recibe su propio workspace (Aislamiento de lectura estricto)", $onlyOwnWs, "Workspaces retornados: " . count($wsList));
+
+    // 5.3 Emprendedor intentando escalación de privilegios (modificar usuarios o planes)
+    $escalationRes = httpRequest('POST', "$baseUrl/api/save.php", [
+        'entity' => 'subscription_plans',
+        'item' => [
+            'id' => 'plan-hacker',
+            'name' => 'Plan Ilegítimo',
+            'price' => 0
+        ]
+    ], ['X-CSRF-Token' => $entCsrf], false, $entCookie);
+    assertTest("Emprendedor intentando modificar entidades de administración RECHAZADO (403)", $escalationRes['code'] === 403, "Código: {$escalationRes['code']}");
+
+    // 5.4 Emprendedor intentando administrar usuarios del sistema
+    $userEscalationRes = httpRequest('POST', "$baseUrl/api/save.php", [
+        'entity' => 'users',
+        'item' => [
+            'id' => 'usr-hacked',
+            'name' => 'Usuario Falso',
+            'email' => 'fake@hacker.com',
+            'role' => 'admin'
+        ]
+    ], ['X-CSRF-Token' => $entCsrf], false, $entCookie);
+    assertTest("Emprendedor intentando crear/modificar usuario con rol admin RECHAZADO (403)", $userEscalationRes['code'] === 403, "Código: {$userEscalationRes['code']}");
+
+} else {
+    echo "  ⚠️ [SKIP] No se pudo autenticar usuario emprendedor de prueba.\n";
+}
+
+if (file_exists($entrepreneurCookieJar)) {
+    unlink($entrepreneurCookieJar);
 }
 
 // -----------------------------------------------------------------------------
