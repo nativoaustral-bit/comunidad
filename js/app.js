@@ -1009,7 +1009,7 @@ class App {
         } else {
           const sendWelcome = document.getElementById('admin-user-send-welcome') ? document.getElementById('admin-user-send-welcome').checked : true;
           const mustChangePass = document.getElementById('admin-user-must-change-pass') ? document.getElementById('admin-user-must-change-pass').checked : true;
-          const initialPass = password || 'humm2026';
+          const initialPass = (password && password.trim().length >= 8) ? password.trim() : '';
 
           store.createUser({
             name,
@@ -1473,10 +1473,10 @@ class App {
         } else {
           store.createAdvisor({
             name, phone, email, specialty,
-            password: password || 'humm2026',
+            password: (password && password.trim().length >= 8) ? password.trim() : '',
             isActive,
             assignedWorkspaceIds: selectedWsIds,
-            mustChangePassword: !!mustChangePass
+            mustChangePassword: true
           });
 
           // Enviar correo de bienvenida si está marcado
@@ -2075,8 +2075,8 @@ class App {
       form.removeAttribute('data-edit-id');
       form.reset();
       document.getElementById('modal-user-header-title').textContent = 'Crear Usuario de la Comunidad';
-      document.getElementById('admin-user-password').value = 'humm2026';
-      document.getElementById('admin-user-password-hint').textContent = 'Contraseña inicial: humm2026';
+      document.getElementById('admin-user-password').value = '';
+      document.getElementById('admin-user-password-hint').textContent = 'Dejar vacío para generar contraseña temporal segura';
       document.getElementById('admin-user-role').value = 'entrepreneur';
       if (document.getElementById('admin-user-is-active')) {
         document.getElementById('admin-user-is-active').checked = true;

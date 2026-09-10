@@ -2099,10 +2099,12 @@ function attachCommonAdminEvents(container) {
     btn.addEventListener('click', () => {
       const userId = btn.getAttribute('data-user-id');
       const email = btn.getAttribute('data-email');
-      const newPass = prompt(`Ingresa la nueva contraseña para ${email}:`, 'humm2026');
-      if (newPass && newPass.trim().length >= 4) {
-        store.updateUser(userId, { password: newPass.trim() });
-        if (window.MiHummApp) window.MiHummApp.showToast(`Contraseña restablecida exitosamente`, 'success');
+      const newPass = prompt(`Ingresa la nueva contraseña temporal para ${email} (mínimo 8 caracteres):`, '');
+      if (newPass && newPass.trim().length >= 8) {
+        store.updateUser(userId, { password: newPass.trim(), mustChangePassword: true });
+        if (window.MiHummApp) window.MiHummApp.showToast(`Contraseña actualizada exitosamente`, 'success');
+      } else if (newPass !== null) {
+        if (window.MiHummApp) window.MiHummApp.showToast(`La contraseña debe contener al menos 8 caracteres`, 'warning');
       }
     });
   });

@@ -481,6 +481,9 @@ try {
             } else {
                 $userId = !empty($item['id']) ? (string)$item['id'] : ('usr-' . round(microtime(true) * 1000));
                 $passHash = '';
+                $mustChangePass = !empty($item['mustChangePassword']) ? 1 : 0;
+                $generatedTempPass = null;
+
                 if (!empty($item['password'])) {
                     $passHash = password_hash((string)$item['password'], PASSWORD_BCRYPT);
                 } else {
@@ -488,9 +491,10 @@ try {
                     $checkUser->execute([':id' => $userId]);
                     $existing = $checkUser->fetch();
                     if (!$existing) {
-                        // Generar contraseña temporal segura en lugar de contraseñas maestras inseguras
-                        $tempPass = bin2hex(random_bytes(6));
-                        $passHash = password_hash($tempPass, PASSWORD_BCRYPT);
+                        // Generar contraseña temporal segura de alta entropía por usuario
+                        $generatedTempPass = bin2hex(random_bytes(8));
+                        $passHash = password_hash($generatedTempPass, PASSWORD_BCRYPT);
+                        $mustChangePass = 1;
                     }
                 }
 
@@ -525,9 +529,13 @@ try {
                     ':assigned_tool_ids' => json_encode($item['assignedToolIds'] ?? ($item['assigned_tool_ids'] ?? []), JSON_UNESCAPED_UNICODE),
                     ':advisor_name' => $item['advisorName'] ?? ($item['advisor_name'] ?? null),
                     ':advisor_email' => $item['advisorEmail'] ?? ($item['advisor_email'] ?? null),
-                    ':must_change_password' => !empty($item['mustChangePassword']) ? 1 : 0
+                    ':must_change_password' => $mustChangePass
                 ]);
                 $item['id'] = $userId;
+                unset($item['password']);
+                if ($generatedTempPass !== null) {
+                    $item['temp_password'] = $generatedTempPass;
+                }
                 Security::jsonResponse(true, ['item' => $item]);
             }
             break;

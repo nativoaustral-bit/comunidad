@@ -1305,7 +1305,7 @@ class Store {
       id,
       name: userData.name || '',
       email: cleanEmail,
-      password: userData.password || 'humm2026',
+      password: userData.password ? userData.password.trim() : '',
       role: userData.role || 'entrepreneur',
       workspaceId: targetWsId,
       avatar: (userData.name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),

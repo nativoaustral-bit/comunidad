@@ -20,7 +20,7 @@ Esta guía te explica paso a paso cómo montar **Mi Humm** en tu servidor **Host
 3. **Nombre de la base de datos**: Escribe un nombre, por ejemplo: `humm` (el nombre completo quedará como `tuusuario_humm`). Haz clic en *Siguiente paso*.
 4. **Crear usuario de base de datos**:
    - Nombre de usuario: `user_humm` (quedará como `tuusuario_user_humm`).
-   - Contraseña: Crea una contraseña segura (ej. `Humm2026!Segura`) y **guárdala**.
+   - Contraseña: Crea una contraseña fuerte de alta entropía (generada aleatoriamente) y **guárdala de forma segura fuera del DocumentRoot**.
 5. **Añadir usuario a la base de datos**:
    - Marca la casilla **"TODOS LOS PRIVILEGIOS"** (*ALL PRIVILEGES*).
    - Haz clic en *Hacer cambios*.
@@ -70,19 +70,11 @@ Tienes 2 opciones muy rápidas:
 
 ---
 
-## 🔑 Accesos Iniciales para Probar
-
-Una vez subido, puedes ingresar a tu dominio y probar con estos usuarios:
-
-* **Administrador Central**:
-  - Correo: `admin@humm.cl`
-  - Contraseña: `admin` (o `humm`)
-* **Emprendedor 1 (Taller Austral)**:
-  - Correo: `carolina@humm.cl`
-  - Contraseña: `humm`
-* **Emprendedor 2 (Café del Valle)**:
-  - Correo: `juan@humm.cl`
-  - Contraseña: `humm`
+## 🔑 Accesos y Autenticación
+ 
+Las cuentas de usuario y administrador en producción operan bajo contraseñas individuales seguras con hash bcrypt.
+* Al crear nuevos usuarios o tutores desde el panel administrativo, el sistema genera automáticamente una contraseña temporal criptográfica de alta entropía y marca la cuenta para cambio obligatorio en el primer ingreso.
+* La autenticación opera exclusivamente mediante sesiones server-side seguras (cookies HttpOnly, Secure y SameSite) con protección CSRF obligatoria.
 
 ---
 
