@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, isDateOverdue } from '../store.js';
+import { store, formatDateCL, isDateOverdue, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 
 let mobileKanbanTab = 'all';
@@ -153,8 +153,8 @@ export function renderTasksView(container) {
         ${currentCols.map(c => {
           const count = filtered.filter(t => t.status === c.id).length;
           return `
-            <button class="kanban-tab-btn ${mobileKanbanTab === c.id ? 'active' : ''}" data-col-tab="${c.id}">
-              ${c.name} (${count})
+            <button class="kanban-tab-btn ${mobileKanbanTab === c.id ? 'active' : ''}" data-col-tab="${escapeHtml(c.id)}">
+              ${escapeHtml(c.name)} (${count})
             </button>
           `;
         }).join('')}
@@ -173,31 +173,31 @@ export function renderTasksView(container) {
       const isMobileHidden = mobileKanbanTab !== 'all' && mobileKanbanTab !== col.id;
 
       return `
-        <div class="kanban-column ${isMobileHidden ? 'mobile-col-hidden' : ''}" data-status="${col.id}">
+        <div class="kanban-column ${isMobileHidden ? 'mobile-col-hidden' : ''}" data-status="${escapeHtml(col.id)}">
           <div class="kanban-column-header">
             <div class="column-title-wrap" style="flex: 1; min-width: 0;">
               <div class="column-indicator-dot ${col.dotClass || 'dot-todo'}"></div>
-              <span class="kanban-column-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${col.name}">${col.name}</span>
+              <span class="kanban-column-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(col.name)}">${escapeHtml(col.name)}</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
               <span class="kanban-counter-pill">${colTasks.length}</span>
               
               <!-- Botón Editar Nombre de Columna -->
-              <button class="btn-icon-sm btn-rename-col" data-col-id="${col.id}" data-col-name="${col.name}" title="Cambiar nombre de esta etapa/columna" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--text-muted); font-size: 13px;">
+              <button class="btn-icon-sm btn-rename-col" data-col-id="${escapeHtml(col.id)}" data-col-name="${escapeHtml(col.name)}" title="Cambiar nombre de esta etapa/columna" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--text-muted); font-size: 13px;">
                 ✏️
               </button>
 
               <!-- Botón Eliminar Columna (solo si es columna personalizada) -->
               ${!col.isDefault ? `
-                <button class="btn-icon-sm btn-delete-col" data-col-id="${col.id}" data-col-name="${col.name}" title="Eliminar esta columna personalizada" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--danger); font-size: 13px;">
+                <button class="btn-icon-sm btn-delete-col" data-col-id="${escapeHtml(col.id)}" data-col-name="${escapeHtml(col.name)}" title="Eliminar esta columna personalizada" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--danger); font-size: 13px;">
                   🗑️
                 </button>
               ` : ''}
             </div>
           </div>
 
-          <div class="kanban-cards-list kanban-dropzone" data-status="${col.id}">
+          <div class="kanban-cards-list kanban-dropzone" data-status="${escapeHtml(col.id)}">
             ${colTasks.length === 0 ? `
               <div class="empty-col-state" style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
                 Sin tareas en esta etapa
@@ -211,27 +211,27 @@ export function renderTasksView(container) {
               return `
                 <div class="kanban-card ${overdue ? 'card-overdue' : ''}" 
                      draggable="true" 
-                     data-task-id="${task.id}">
+                     data-task-id="${escapeHtml(task.id)}">
                   <div class="kanban-card-top">
-                    <span class="badge priority-${task.priority}">
+                    <span class="badge priority-${escapeHtml(task.priority)}">
                       <span class="badge-dot"></span>
-                      ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                      ${escapeHtml(task.priority.charAt(0).toUpperCase() + task.priority.slice(1))}
                     </span>
-                    ${task.tag ? `<span class="badge badge-neutral">${task.tag}</span>` : ''}
+                    ${task.tag ? `<span class="badge badge-neutral">${escapeHtml(task.tag)}</span>` : ''}
                   </div>
 
-                  <div class="kanban-card-title">${task.title}</div>
+                  <div class="kanban-card-title">${escapeHtml(task.title)}</div>
                   
                   ${task.description ? `
                     <div style="font-size: var(--font-size-xs); color: var(--text-secondary); margin-bottom: 8px; line-height: 1.35;">
-                      ${task.description}
+                      ${escapeHtml(task.description)}
                     </div>
                   ` : ''}
 
                   ${relatedCustomer || relatedOpp ? `
                     <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
-                      ${relatedCustomer ? `<span class="badge badge-info text-xs">👤 ${relatedCustomer.firstName} ${relatedCustomer.lastName || ''}</span>` : ''}
-                      ${relatedOpp ? `<span class="badge badge-warning text-xs">💼 ${relatedOpp.title}</span>` : ''}
+                      ${relatedCustomer ? `<span class="badge badge-info text-xs">👤 ${escapeHtml(relatedCustomer.firstName)} ${escapeHtml(relatedCustomer.lastName || '')}</span>` : ''}
+                      ${relatedOpp ? `<span class="badge badge-warning text-xs">💼 ${escapeHtml(relatedOpp.title)}</span>` : ''}
                     </div>
                   ` : ''}
 
@@ -248,20 +248,20 @@ export function renderTasksView(container) {
 
                     <div class="card-quick-actions">
                       ${task.status !== 'done' ? `
-                        <button class="card-btn-action btn-mark-done" title="Marcar como terminada" data-task-id="${task.id}" style="color: var(--success);" aria-label="Marcar terminada">
+                        <button class="card-btn-action btn-mark-done" title="Marcar como terminada" data-task-id="${escapeHtml(task.id)}" style="color: var(--success);" aria-label="Marcar terminada">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>
                         </button>
                       ` : ''}
-                      <button class="card-btn-action btn-edit-task" title="Editar tarea" data-task-id="${task.id}">
+                      <button class="card-btn-action btn-edit-task" title="Editar tarea" data-task-id="${escapeHtml(task.id)}">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M12 20h9"></path>
                           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                         </svg>
                       </button>
-                      <button class="card-btn-action btn-delete-task" title="Eliminar tarea" data-task-id="${task.id}">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+                      <button class="card-btn-action btn-delete-task" title="Eliminar tarea" data-task-id="${escapeHtml(task.id)}" style="color: var(--danger);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <polyline points="3 6 5 6 21 6"></polyline>
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
@@ -270,9 +270,9 @@ export function renderTasksView(container) {
                   </div>
 
                   <!-- Selector móvil rápido dinámico con todas las etapas -->
-                  <select class="mobile-status-select" data-task-id="${task.id}">
+                  <select class="mobile-status-select" data-task-id="${escapeHtml(task.id)}">
                     ${currentCols.map(c => `
-                      <option value="${c.id}" ${task.status === c.id ? 'selected' : ''}>${c.name}</option>
+                      <option value="${escapeHtml(c.id)}" ${task.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>
                     `).join('')}
                   </select>
                 </div>

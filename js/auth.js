@@ -25,8 +25,84 @@ export const AUTH_CONFIG = {
 class AuthService {
   constructor() {
     this.listeners = [];
+    this.csrfToken = null;
     this.lastRecordedActivity = Date.now();
     this.session = this.loadSession();
+  }
+
+  setCsrfToken(token) {
+    this.csrfToken = token;
+    if (store && typeof store.setCsrfToken === 'function') {
+      store.setCsrfToken(token);
+    }
+  }
+
+  getCsrfToken() {
+    return this.csrfToken || '';
+  }
+
+  /**
+   * Valida la sesión viva contra el backend mediante cookies de servidor
+   */
+  async checkServerSession() {
+    if (typeof window === 'undefined' || !window.fetch) return null;
+    try {
+      const res = await fetch('api/auth.php?action=session', { credentials: 'same-origin' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data && json.data.user) {
+          if (json.data.csrf_token) {
+            this.setCsrfToken(json.data.csrf_token);
+          }
+          const user = json.data.user;
+          const ws = json.data.workspace || null;
+          const userObj = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || '',
+            role: user.role,
+            specialty: user.specialty || '',
+            avatar: user.avatar || (user.name ? user.name.substring(0, 2).toUpperCase() : 'U'),
+            isActive: user.is_active !== undefined ? !!user.is_active : true,
+            workspaceId: user.workspace_id || null,
+            assignedToolIds: user.assigned_tool_ids || [],
+            mustChangePassword: user.must_change_password ? 1 : 0
+          };
+          if (!store.getUser(userObj.id)) {
+            if (!store.data.users) store.data.users = [];
+            store.data.users.push(userObj);
+          } else {
+            store.updateUser(userObj.id, userObj);
+          }
+          const now = Date.now();
+          const maxLifetime = userObj.role === 'admin' ? AUTH_CONFIG.ADMIN_MAX_LIFETIME : AUTH_CONFIG.USER_MAX_LIFETIME;
+          this.saveSession({
+            userId: userObj.id,
+            role: userObj.role,
+            rememberMe: true,
+            loginTime: now,
+            lastActivityTime: now,
+            expiresAt: now + maxLifetime,
+            impersonatedWorkspaceId: null,
+            cachedUser: userObj,
+            cachedWorkspace: ws
+          });
+          return userObj;
+        }
+      } else if (res.status === 401) {
+        this.clearAllStorage();
+        this.session = null;
+        this.setCsrfToken(null);
+        if (store && typeof store.clearAllUserData === 'function') {
+          store.clearAllUserData();
+        }
+        this.notify();
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+    return null;
   }
 
   /**
@@ -318,11 +394,12 @@ class AuthService {
       return { success: false, message: 'Por favor ingresa tu correo y contraseña.' };
     }
 
-    // 1. Autenticación estricta con Backend MySQL
+    // Autenticación estricta con Backend MySQL mediante cookies de servidor
     if (typeof window !== 'undefined' && window.fetch) {
       try {
         const res = await fetch('api/auth.php', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'login',
@@ -333,6 +410,10 @@ class AuthService {
 
         const json = await res.json();
         if (json.success && json.data && json.data.user) {
+          if (json.data.csrf_token) {
+            this.setCsrfToken(json.data.csrf_token);
+          }
+
           const apiUser = json.data.user;
           const userObj = {
             id: apiUser.id,
@@ -345,8 +426,7 @@ class AuthService {
             isActive: apiUser.is_active !== undefined ? !!apiUser.is_active : true,
             workspaceId: apiUser.workspace_id || null,
             assignedToolIds: apiUser.assigned_tool_ids || [],
-            mustChangePassword: apiUser.must_change_password ? 1 : 0,
-            token: json.data.token
+            mustChangePassword: apiUser.must_change_password ? 1 : 0
           };
 
           // Guardar usuario en store local para vistas
@@ -400,7 +480,6 @@ class AuthService {
 
           return { success: true, user: userObj };
         } else {
-          // El servidor rechazó la autenticación con error explícito
           return { success: false, message: json.error || json.message || 'Usuario o clave incorrecta.' };
         }
       } catch (err) {
@@ -412,8 +491,26 @@ class AuthService {
     return { success: false, message: 'Servicio de autenticación no disponible.' };
   }
 
-  logout(notifyMessage = false, messageText = null) {
+  async logout(notifyMessage = false, messageText = null) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const csrf = this.getCsrfToken();
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+      await fetch('api/auth.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: JSON.stringify({ action: 'logout' })
+      });
+    } catch (e) {
+      console.warn('Error al invalidar sesión en servidor:', e);
+    }
+
+    this.setCsrfToken(null);
     this.saveSession(null);
+    if (store && typeof store.clearAllUserData === 'function') {
+      store.clearAllUserData();
+    }
     if (notifyMessage && window.MiHummApp && window.MiHummApp.showToast) {
       window.MiHummApp.showToast(messageText || 'Has cerrado sesión correctamente.', 'info');
     }
@@ -448,6 +545,7 @@ class AuthService {
     try {
       const res = await fetch('api/auth.php', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'request_reset',
@@ -474,6 +572,49 @@ class AuthService {
     }
   }
 
+  async verifyResetToken(token) {
+    if (!token) return { success: false, error: 'Token no proporcionado.' };
+    try {
+      const res = await fetch(`api/auth.php?action=verify_reset_token&token=${encodeURIComponent(token)}`, {
+        credentials: 'same-origin'
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, error: 'Error al conectar con el servidor para validar enlace.' };
+    }
+  }
+
+  async applyResetPassword(token, newPassword) {
+    const cleanToken = (token || '').trim();
+    const newP = (newPassword || '').trim();
+
+    if (!cleanToken) return { success: false, message: 'Token no válido.' };
+    if (newP.length < 8) {
+      return { success: false, message: 'La nueva contraseña debe tener al menos 8 caracteres.' };
+    }
+
+    try {
+      const res = await fetch('api/auth.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'apply_reset_password',
+          token: cleanToken,
+          new_password: newP
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        return { success: true, message: json.data?.message || 'Tu contraseña ha sido restablecida con éxito.' };
+      } else {
+        return { success: false, message: json.error || 'No se pudo restablecer la contraseña.' };
+      }
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor. Intenta de nuevo.' };
+    }
+  }
+
   async changePassword(currentPassword, newPassword) {
     const user = this.getCurrentUser();
     if (!user) return { success: false, message: 'Sesión no válida o expirada.' };
@@ -485,14 +626,19 @@ class AuthService {
       return { success: false, message: 'Debes ingresar tu contraseña actual.' };
     }
 
-    if (newP.length < 4) {
-      return { success: false, message: 'La nueva contraseña debe tener al menos 4 caracteres.' };
+    if (newP.length < 8) {
+      return { success: false, message: 'La nueva contraseña debe tener al menos 8 caracteres.' };
     }
 
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const csrf = this.getCsrfToken();
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+
       const res = await fetch('api/auth.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers,
         body: JSON.stringify({
           action: 'change_password',
           user_id: user.id,

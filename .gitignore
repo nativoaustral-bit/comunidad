@@ -28,6 +28,15 @@ temp/
 # Dependencias (si aplica)
 node_modules/
 
-# Entorno local
+# Entorno local y secretos
 .env
 .env.local
+.env.*
+api/config.local.php
+comunidad_secrets.php
+private/
+
+# Backups y volcados de Base de Datos
+*.sql.gz
+backups/
+scratch/

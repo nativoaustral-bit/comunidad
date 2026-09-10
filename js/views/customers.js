@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, sanitizeWhatsAppPhone } from '../store.js';
+import { store, formatDateCL, sanitizeWhatsAppPhone, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 
 export function renderCustomersView(container) {
@@ -136,35 +136,35 @@ export function renderCustomersView(container) {
                 <tr>
                   <td>
                     <div style="font-weight: 700; color: var(--text-primary);">
-                      ${c.firstName} ${c.lastName || ''}
+                      ${escapeHtml(c.firstName)} ${escapeHtml(c.lastName || '')}
                     </div>
-                    ${c.rut ? `<div class="text-xs text-muted" style="font-weight: 600;">RUT: ${c.rut}</div>` : ''}
+                    ${c.rut ? `<div class="text-xs text-muted" style="font-weight: 600;">RUT: ${escapeHtml(c.rut)}</div>` : ''}
                     ${locationText ? `
                       <div class="text-xs text-muted" style="display: flex; align-items: center; gap: 4px; margin-top: 2px;">
                         <span>📍</span>
-                        <span>${locationText}</span>
+                        <span>${escapeHtml(locationText)}</span>
                       </div>
                     ` : ''}
-                    ${c.address ? `<div class="text-xs text-muted" style="margin-top: 1px;">🏠 ${c.address}</div>` : ''}
+                    ${c.address ? `<div class="text-xs text-muted" style="margin-top: 1px;">🏠 ${escapeHtml(c.address)}</div>` : ''}
                   </td>
                   <td>
-                    ${c.company ? `<strong>${c.company}</strong>` : '<span class="text-muted">—</span>'}
+                    ${c.company ? `<strong>${escapeHtml(c.company)}</strong>` : '<span class="text-muted">—</span>'}
                   </td>
                   <td>
                     <div style="display: flex; flex-direction: column; gap: 3px;">
                       ${c.phone ? `
                         <div style="display: flex; align-items: center; gap: 6px;">
-                          <span>${c.phone}</span>
+                          <span>${escapeHtml(c.phone)}</span>
                           <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-sm" style="padding: 2px 8px; font-size: 11px;" title="Abrir chat de WhatsApp">
                             WhatsApp
                           </a>
                         </div>
                       ` : ''}
-                      ${c.email ? `<span class="text-xs text-muted">${c.email}</span>` : ''}
+                      ${c.email ? `<span class="text-xs text-muted">${escapeHtml(c.email)}</span>` : ''}
                     </div>
                   </td>
                   <td>
-                    <span class="badge badge-neutral text-xs">${c.sourceChannel}</span>
+                    <span class="badge badge-neutral text-xs">${escapeHtml(c.sourceChannel)}</span>
                   </td>
                   <td>
                     <span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-neutral'}">
@@ -176,13 +176,13 @@ export function renderCustomersView(container) {
                     ${oppsCount > 0 ? `<span class="badge badge-warning text-xs">${oppsCount} asociadas</span>` : '<span class="text-muted text-xs">0</span>'}
                   </td>
                   <td style="text-align: right;">
-                    <button class="btn btn-ghost btn-sm btn-edit-customer" data-customer-id="${c.id}" title="Editar cliente">
+                    <button class="btn btn-ghost btn-sm btn-edit-customer" data-customer-id="${escapeHtml(c.id)}" title="Editar cliente">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9"></path>
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                       </svg>
                     </button>
-                    <button class="btn btn-ghost btn-sm btn-delete-customer" data-customer-id="${c.id}" title="Eliminar cliente">
+                    <button class="btn btn-ghost btn-sm btn-delete-customer" data-customer-id="${escapeHtml(c.id)}" title="Eliminar cliente">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -212,21 +212,21 @@ export function renderCustomersView(container) {
               <div class="adaptive-item-card">
                 <div class="adaptive-card-header">
                   <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">${c.firstName} ${c.lastName || ''}</div>
-                    ${c.company ? `<div class="text-xs text-secondary font-medium" style="margin-top: 2px;">🏢 ${c.company}</div>` : ''}
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName || '')}</div>
+                    ${c.company ? `<div class="text-xs text-secondary font-medium" style="margin-top: 2px;">🏢 ${escapeHtml(c.company)}</div>` : ''}
                   </div>
                   <span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-neutral'}">
                     ${c.status === 'active' ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>
                 <div class="adaptive-card-body">
-                  ${c.phone ? `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600;"><span>📱</span> <span>${c.phone}</span></div>` : ''}
-                  ${c.email ? `<div style="display: flex; align-items: center; gap: 6px;"><span>✉️</span> <span class="text-muted">${c.email}</span></div>` : ''}
-                  ${locationText ? `<div style="display: flex; align-items: center; gap: 6px;"><span>📍</span> <span>${locationText}</span></div>` : ''}
-                  ${c.address ? `<div style="display: flex; align-items: center; gap: 6px;"><span>🏠</span> <span>${c.address}</span></div>` : ''}
-                  ${c.rut ? `<div class="text-xs text-muted"><strong>RUT:</strong> ${c.rut}</div>` : ''}
-                  <div class="text-xs text-muted"><strong>Origen:</strong> ${c.sourceChannel}</div>
-                  ${c.notes ? `<div style="margin-top: 4px; padding: 8px 10px; background: var(--bg-surface-secondary); border-radius: 6px; font-size: 12px; font-style: italic;">"${c.notes}"</div>` : ''}
+                  ${c.phone ? `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600;"><span>📱</span> <span>${escapeHtml(c.phone)}</span></div>` : ''}
+                  ${c.email ? `<div style="display: flex; align-items: center; gap: 6px;"><span>✉️</span> <span class="text-muted">${escapeHtml(c.email)}</span></div>` : ''}
+                  ${locationText ? `<div style="display: flex; align-items: center; gap: 6px;"><span>📍</span> <span>${escapeHtml(locationText)}</span></div>` : ''}
+                  ${c.address ? `<div style="display: flex; align-items: center; gap: 6px;"><span>🏠</span> <span>${escapeHtml(c.address)}</span></div>` : ''}
+                  ${c.rut ? `<div class="text-xs text-muted"><strong>RUT:</strong> ${escapeHtml(c.rut)}</div>` : ''}
+                  <div class="text-xs text-muted"><strong>Origen:</strong> ${escapeHtml(c.sourceChannel)}</div>
+                  ${c.notes ? `<div style="margin-top: 4px; padding: 8px 10px; background: var(--bg-surface-secondary); border-radius: 6px; font-size: 12px; font-style: italic;">"${escapeHtml(c.notes)}"</div>` : ''}
                 </div>
                 <div class="adaptive-card-footer" style="flex-wrap: wrap; gap: 8px;">
                   <div style="display: flex; gap: 6px; flex-wrap: wrap;">
@@ -240,10 +240,10 @@ export function renderCustomersView(container) {
                     ` : ''}
                   </div>
                   <div style="display: flex; gap: 6px; margin-left: auto;">
-                    <button class="btn btn-secondary btn-sm btn-edit-customer" data-customer-id="${c.id}">
+                    <button class="btn btn-secondary btn-sm btn-edit-customer" data-customer-id="${escapeHtml(c.id)}">
                       Editar
                     </button>
-                    <button class="btn btn-ghost btn-sm btn-delete-customer" data-customer-id="${c.id}" style="color: var(--danger);">
+                    <button class="btn btn-ghost btn-sm btn-delete-customer" data-customer-id="${escapeHtml(c.id)}" style="color: var(--danger);">
                       Eliminar
                     </button>
                   </div>

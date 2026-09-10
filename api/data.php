@@ -1,24 +1,30 @@
 <?php
 /**
- * MI HUMM - CONTROLADOR DE LECTURA DE DATOS (DATA PROVIDER)
- * Retorna el estado sincronizado de la plataforma según el rol y workspace del usuario
+ * MI HUMM - CONTROLADOR DE LECTURA DE DATOS (DATA PROVIDER SEGURO)
+ * Aislamiento multitenant estricto basado en sesión server-side.
+ * Cero accesos cruzados entre empresas o roles.
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/security.php';
 
-setApiHeaders();
+Security::setSecurityHeaders();
+Security::initSession();
+
+// Exigir autenticación obligatoria: sin sesión server-side -> HTTP 401
+$authUser = Security::requireAuth();
+$role = $authUser['role'];
+$userEmail = $authUser['email'];
 $pdo = DB::getConnection();
-
-$userId = $_GET['user_id'] ?? '';
-$workspaceId = $_GET['workspace_id'] ?? '';
-$role = $_GET['role'] ?? 'entrepreneur';
 
 try {
     $data = [];
 
-    // 1. Catálogo común siempre disponible (Herramientas, Descuentos y Planes)
+    // -------------------------------------------------------------------------
+    // 1. CATÁLOGO COMÚN PÚBLICO DE LA PLATAFORMA (Herramientas, Convenios, Planes)
+    // -------------------------------------------------------------------------
     $stmtTools = $pdo->query('SELECT * FROM tools ORDER BY sort_order ASC');
     $rawTools = $stmtTools->fetchAll();
     $tools = [];
@@ -40,7 +46,6 @@ try {
     }
     $data['tools'] = $tools;
 
-    // 2. Alianzas y Descuentos
     $stmtDiscounts = $pdo->query('SELECT * FROM company_discounts ORDER BY is_featured DESC, created_at DESC');
     $rawDiscounts = $stmtDiscounts->fetchAll();
     $discounts = [];
@@ -77,7 +82,6 @@ try {
     }
     $data['company_discounts'] = $discounts;
 
-    // 3. Planes de Suscripción
     $stmtPlans = $pdo->query('SELECT * FROM subscription_plans ORDER BY sort_order ASC');
     $plans = $stmtPlans->fetchAll();
     foreach ($plans as &$p) {
@@ -88,7 +92,6 @@ try {
     }
     $data['subscription_plans'] = $plans;
 
-    // 3.1 Difusión y Comunicados
     $stmtBc = $pdo->query('SELECT * FROM broadcasts ORDER BY created_at DESC');
     $rawBc = $stmtBc->fetchAll();
     $broadcasts = [];
@@ -107,19 +110,12 @@ try {
     }
     $data['broadcasts'] = $broadcasts;
 
-    // 4. Gestión Global para Administradores
-    if ($role === 'admin') {
-        // Auto-reparar cualquier usuario emprendedor que no tenga workspace_id pero exista un workspace con su mismo correo
-        try {
-            $pdo->exec('UPDATE users u 
-                        JOIN workspaces w ON LOWER(TRIM(u.email)) = LOWER(TRIM(w.email)) 
-                        SET u.workspace_id = w.id 
-                        WHERE (u.workspace_id IS NULL OR u.workspace_id = "") 
-                          AND u.role = "entrepreneur"');
-        } catch (Exception $e) {
-            // Silencioso
-        }
+    // -------------------------------------------------------------------------
+    // 2. SEGMENTACIÓN POR ROL Y AISLAMIENTO MULTITENANT
+    // -------------------------------------------------------------------------
 
+    // CASO A: ADMINISTRADOR GENERAL DE HUMM
+    if ($role === 'admin') {
         $stmtUsers = $pdo->query('SELECT id, workspace_id, name, email, phone, role, specialty, avatar, theme, is_active, assigned_tool_ids, advisor_name, advisor_email, last_access, must_change_password, created_at FROM users ORDER BY name ASC');
         $rawUsers = $stmtUsers->fetchAll();
         $users = [];
@@ -162,6 +158,7 @@ try {
                 'region' => $w['region'] ?? '',
                 'industry' => $w['industry'] ?? '',
                 'description' => $w['description'] ?? '',
+                'kanbanColumns' => !empty($w['kanban_columns']) ? json_decode($w['kanban_columns'], true) : null,
                 'membershipStatus' => $w['membership_status'] ?? 'active',
                 'membershipType' => $w['membership_type'] ?? 'Membresía Humm Co-Creation',
                 'advisorName' => $w['advisor_name'] ?? null,
@@ -251,25 +248,16 @@ try {
         }
         $data['benefit_requests'] = $benefitRequests;
 
-        $stmtSalesAll = $pdo->query('SELECT * FROM sales ORDER BY sale_date DESC, created_at DESC');
-        $rawSalesAll = $stmtSalesAll->fetchAll();
-        $salesAll = [];
-        foreach ($rawSalesAll as $s) {
-            $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
-            $saleDate = $s['sale_date'] ?? null;
-            $year = null;
-            $month = null;
-            if (!empty($saleDate)) {
-                $parts = explode('-', $saleDate);
-                if (count($parts) >= 2) {
-                    $year = (int)$parts[0];
-                    $month = (int)$parts[1];
-                }
-            } elseif (!empty($s['created_at'])) {
-                $year = (int)date('Y', strtotime($s['created_at']));
-                $month = (int)date('n', strtotime($s['created_at']));
-            }
+        // Si el admin está auditando un workspace en particular, filtrar datos privados
+        $filterWs = trim((string)($_GET['workspace_id'] ?? ''));
+        $wsCondition = !empty($filterWs) ? 'WHERE workspace_id = :ws' : '';
+        $wsParams = !empty($filterWs) ? [':ws' => $filterWs] : [];
 
+        $stmtSalesAll = $pdo->prepare("SELECT * FROM sales {$wsCondition} ORDER BY sale_date DESC, created_at DESC");
+        $stmtSalesAll->execute($wsParams);
+        $salesAll = [];
+        foreach ($stmtSalesAll->fetchAll() as $s) {
+            $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
             $salesAll[] = [
                 'id' => $s['id'],
                 'workspaceId' => $s['workspace_id'],
@@ -277,298 +265,332 @@ try {
                 'customerName' => $s['customer_name'] ?? '',
                 'amount' => $salesAmount,
                 'totalAmount' => $salesAmount,
-                'saleDate' => $saleDate,
-                'date' => $saleDate,
-                'year' => $year,
-                'month' => $month,
-                'dueDate' => $s['due_date'] ?? null,
+                'saleDate' => $s['sale_date'],
+                'date' => $s['sale_date'],
                 'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
                 'paymentStatus' => $s['payment_status'] ?? 'pagado',
-                'status' => $s['payment_status'] ?? 'pagado',
                 'notes' => $s['notes'] ?? '',
-                'description' => $s['notes'] ?? '',
                 'createdAt' => $s['created_at'] ?? null
             ];
         }
         $data['sales'] = $salesAll;
 
-        $stmtTasksAll = $pdo->query('SELECT * FROM tasks ORDER BY due_date ASC, created_at DESC');
-        $rawTasksAll = $stmtTasksAll->fetchAll();
+        $stmtTasksAll = $pdo->prepare("SELECT * FROM tasks {$wsCondition} ORDER BY due_date ASC, created_at DESC");
+        $stmtTasksAll->execute($wsParams);
         $tasksAll = [];
-        foreach ($rawTasksAll as $t) {
-            $rawStatus = $t['status'] ?? 'todo';
-            if ($rawStatus === '' || $rawStatus === 'pendiente') $rawStatus = 'todo';
-            elseif ($rawStatus === 'en_proceso' || $rawStatus === 'en_progreso') $rawStatus = 'in_progress';
-            elseif ($rawStatus === 'completada') $rawStatus = 'done';
-
+        foreach ($stmtTasksAll->fetchAll() as $t) {
             $tasksAll[] = [
                 'id' => $t['id'],
                 'workspaceId' => $t['workspace_id'],
                 'title' => $t['title'],
                 'description' => $t['description'] ?? '',
-                'startDate' => $t['start_date'] ?? null,
-                'dueDate' => $t['due_date'] ?? null,
                 'priority' => $t['priority'] ?? 'media',
-                'status' => $rawStatus,
-                'tag' => $t['tag'] ?? '',
-                'customerId' => $t['customer_id'] ?? null,
-                'opportunityId' => $t['opportunity_id'] ?? null,
-                'completedAt' => $t['completed_at'] ?? null,
+                'status' => $t['status'] ?? 'todo',
+                'dueDate' => $t['due_date'] ?? null,
                 'createdAt' => $t['created_at'] ?? null
             ];
         }
         $data['tasks'] = $tasksAll;
-    } elseif (!empty($workspaceId)) {
-        // Si no es admin pero tiene workspace asignado
-        $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
-        $stmtWs->execute([':ws' => $workspaceId]);
-        $w = $stmtWs->fetch();
-        if ($w) {
-            $data['workspaces'] = [[
+
+    // CASO B: ASESOR ASIGNADO (advisor)
+    } elseif ($role === 'advisor') {
+        // Un asesor solo puede ver los workspaces que tiene asignados explícitamente por su email
+        $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE LOWER(TRIM(advisor_email)) = LOWER(TRIM(:email)) ORDER BY name ASC');
+        $stmtWs->execute([':email' => $userEmail]);
+        $rawWorkspaces = $stmtWs->fetchAll();
+        $assignedWsIds = array_column($rawWorkspaces, 'id');
+
+        $workspaces = [];
+        foreach ($rawWorkspaces as $w) {
+            $workspaces[] = [
                 'id' => $w['id'],
                 'name' => $w['name'],
                 'ownerName' => $w['owner_name'] ?? '',
-                'ownerFirstName' => $w['owner_first_name'] ?? ($w['owner_name'] ?? ''),
-                'ownerLastName' => $w['owner_last_name'] ?? '',
                 'email' => $w['email'] ?? '',
                 'phone' => $w['phone'] ?? '',
                 'city' => $w['city'] ?? '',
-                'comuna' => $w['city'] ?? '',
                 'region' => $w['region'] ?? '',
-                'industry' => $w['industry'] ?? '',
-                'description' => $w['description'] ?? '',
-                'kanbanColumns' => !empty($w['kanban_columns']) ? json_decode($w['kanban_columns'], true) : null,
                 'membershipStatus' => $w['membership_status'] ?? 'active',
-                'membershipType' => $w['membership_type'] ?? 'Membresía Humm Co-Creation',
-                'advisorName' => $w['advisor_name'] ?? null,
-                'advisorEmail' => $w['advisor_email'] ?? null,
-                'assignedTools' => [],
-                'createdAt' => $w['created_at'] ?? null
-            ]];
-        }
-    }
-
-    // 5. Si hay Workspace activo: cargar datos específicos del negocio
-    if (!empty($workspaceId)) {
-        $stmtCustomers = $pdo->prepare('SELECT * FROM customers WHERE workspace_id = :ws ORDER BY name ASC');
-        $stmtCustomers->execute([':ws' => $workspaceId]);
-        $rawCust = $stmtCustomers->fetchAll();
-        $customers = [];
-        foreach ($rawCust as $c) {
-            $firstName = $c['name'];
-            $lastName = $c['last_name'] ?? '';
-            if (empty($lastName) && strpos($c['name'], ' ') !== false) {
-                $parts = explode(' ', $c['name'], 2);
-                $firstName = $parts[0];
-                $lastName = $parts[1] ?? '';
-            }
-            $customers[] = [
-                'id' => $c['id'],
-                'workspaceId' => $c['workspace_id'],
-                'name' => $c['name'],
-                'firstName' => $firstName,
-                'lastName' => $lastName,
-                'company' => $c['company'] ?? '',
-                'rut' => $c['rut'] ?? '',
-                'email' => $c['email'] ?? '',
-                'phone' => $c['phone'] ?? '',
-                'region' => $c['region'] ?? '',
-                'comuna' => $c['comuna'] ?? '',
-                'city' => $c['city'] ?? '',
-                'address' => $c['address'] ?? '',
-                'sourceChannel' => $c['source_channel'] ?? 'Recomendación',
-                'status' => (!empty($c['status']) && $c['status'] !== 'inactivo' && $c['status'] !== 'inactive') ? 'active' : ($c['status'] === 'inactive' || $c['status'] === 'inactivo' ? 'inactive' : 'active'),
-                'totalPurchases' => (float)($c['total_purchases'] ?? 0),
-                'lastPurchaseDate' => $c['last_purchase_date'] ?? null,
-                'notes' => $c['notes'] ?? '',
-                'createdAt' => $c['created_at'] ?? null
+                'advisorEmail' => $w['advisor_email'] ?? null
             ];
         }
-        $data['customers'] = $customers;
+        $data['workspaces'] = $workspaces;
 
-        $stmtSales = $pdo->prepare('SELECT * FROM sales WHERE workspace_id = :ws ORDER BY sale_date DESC, created_at DESC');
-        $stmtSales->execute([':ws' => $workspaceId]);
-        $rawSales = $stmtSales->fetchAll();
-        $sales = [];
-        foreach ($rawSales as $s) {
-            $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
-            $saleDate = $s['sale_date'] ?? null;
-            $year = null;
-            $month = null;
-            if (!empty($saleDate)) {
-                $parts = explode('-', $saleDate);
-                if (count($parts) >= 2) {
-                    $year = (int)$parts[0];
-                    $month = (int)$parts[1];
+        // Determinar workspace activo del asesor
+        $activeWs = trim((string)($_GET['workspace_id'] ?? ''));
+        if (empty($activeWs) || !in_array($activeWs, $assignedWsIds, true)) {
+            $activeWs = $assignedWsIds[0] ?? null;
+        }
+
+        if (!empty($activeWs)) {
+            // Cargar datos del workspace asignado
+            $stmtCust = $pdo->prepare('SELECT * FROM customers WHERE workspace_id = :ws ORDER BY name ASC');
+            $stmtCust->execute([':ws' => $activeWs]);
+            $data['customers'] = $stmtCust->fetchAll();
+
+            $stmtSales = $pdo->prepare('SELECT * FROM sales WHERE workspace_id = :ws ORDER BY sale_date DESC');
+            $stmtSales->execute([':ws' => $activeWs]);
+            $data['sales'] = $stmtSales->fetchAll();
+
+            $stmtTasks = $pdo->prepare('SELECT * FROM tasks WHERE workspace_id = :ws ORDER BY due_date ASC');
+            $stmtTasks->execute([':ws' => $activeWs]);
+            $data['tasks'] = $stmtTasks->fetchAll();
+
+            $stmtNotes = $pdo->prepare('SELECT * FROM quick_notes WHERE workspace_id = :ws ORDER BY is_pinned DESC, updated_at DESC');
+            $stmtNotes->execute([':ws' => $activeWs]);
+            $data['notes'] = $stmtNotes->fetchAll();
+            $data['quick_notes'] = $data['notes'];
+        } else {
+            $data['customers'] = [];
+            $data['sales'] = [];
+            $data['tasks'] = [];
+            $data['notes'] = [];
+        }
+
+    // CASO C: EMPRENDEDOR (entrepreneur) — AISLAMIENTO TOTAL AL WORKSPACE DE LA SESIÓN
+    } else {
+        // El workspace ID se extrae EXCLUSIVAMENTE de la sesión autenticada en el servidor.
+        // Cualquier workspace_id enviado en la URL por el cliente es completamente ignorado.
+        $workspaceId = $authUser['workspace_id'];
+
+        if (!empty($workspaceId)) {
+            $stmtWs = $pdo->prepare('SELECT * FROM workspaces WHERE id = :ws LIMIT 1');
+            $stmtWs->execute([':ws' => $workspaceId]);
+            $w = $stmtWs->fetch();
+            if ($w) {
+                $data['workspaces'] = [[
+                    'id' => $w['id'],
+                    'name' => $w['name'],
+                    'ownerName' => $w['owner_name'] ?? '',
+                    'ownerFirstName' => $w['owner_first_name'] ?? ($w['owner_name'] ?? ''),
+                    'ownerLastName' => $w['owner_last_name'] ?? '',
+                    'email' => $w['email'] ?? '',
+                    'phone' => $w['phone'] ?? '',
+                    'city' => $w['city'] ?? '',
+                    'comuna' => $w['city'] ?? '',
+                    'region' => $w['region'] ?? '',
+                    'industry' => $w['industry'] ?? '',
+                    'description' => $w['description'] ?? '',
+                    'kanbanColumns' => !empty($w['kanban_columns']) ? json_decode($w['kanban_columns'], true) : null,
+                    'membershipStatus' => $w['membership_status'] ?? 'active',
+                    'membershipType' => $w['membership_type'] ?? 'Membresía Humm Co-Creation',
+                    'advisorName' => $w['advisor_name'] ?? null,
+                    'advisorEmail' => $w['advisor_email'] ?? null,
+                    'assignedTools' => [],
+                    'createdAt' => $w['created_at'] ?? null
+                ]];
+            } else {
+                $data['workspaces'] = [];
+            }
+
+            // Clientes (CRM) del emprendimiento
+            $stmtCust = $pdo->prepare('SELECT * FROM customers WHERE workspace_id = :ws ORDER BY name ASC');
+            $stmtCust->execute([':ws' => $workspaceId]);
+            $rawCust = $stmtCust->fetchAll();
+            $customers = [];
+            foreach ($rawCust as $c) {
+                $firstName = $c['name'];
+                $lastName = $c['last_name'] ?? '';
+                if (empty($lastName) && strpos($c['name'], ' ') !== false) {
+                    $parts = explode(' ', $c['name'], 2);
+                    $firstName = $parts[0];
+                    $lastName = $parts[1] ?? '';
                 }
-            } elseif (!empty($s['created_at'])) {
-                $year = (int)date('Y', strtotime($s['created_at']));
-                $month = (int)date('n', strtotime($s['created_at']));
+                $customers[] = [
+                    'id' => $c['id'],
+                    'workspaceId' => $c['workspace_id'],
+                    'name' => $c['name'],
+                    'firstName' => $firstName,
+                    'lastName' => $lastName,
+                    'company' => $c['company'] ?? '',
+                    'rut' => $c['rut'] ?? '',
+                    'email' => $c['email'] ?? '',
+                    'phone' => $c['phone'] ?? '',
+                    'region' => $c['region'] ?? '',
+                    'comuna' => $c['comuna'] ?? '',
+                    'city' => $c['city'] ?? '',
+                    'address' => $c['address'] ?? '',
+                    'sourceChannel' => $c['source_channel'] ?? 'Recomendación',
+                    'status' => $c['status'] ?? 'active',
+                    'totalPurchases' => (float)($c['total_purchases'] ?? 0),
+                    'lastPurchaseDate' => $c['last_purchase_date'] ?? null,
+                    'notes' => $c['notes'] ?? '',
+                    'createdAt' => $c['created_at'] ?? null
+                ];
             }
+            $data['customers'] = $customers;
 
-            $sales[] = [
-                'id' => $s['id'],
-                'workspaceId' => $s['workspace_id'],
-                'customerId' => $s['customer_id'] ?? null,
-                'customerName' => $s['customer_name'] ?? '',
-                'amount' => $salesAmount,
-                'totalAmount' => $salesAmount,
-                'saleDate' => $saleDate,
-                'date' => $saleDate,
-                'year' => $year,
-                'month' => $month,
-                'dueDate' => $s['due_date'] ?? null,
-                'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
-                'paymentStatus' => $s['payment_status'] ?? 'pagado',
-                'status' => $s['payment_status'] ?? 'pagado',
-                'notes' => $s['notes'] ?? '',
-                'description' => $s['notes'] ?? '',
-                'createdAt' => $s['created_at'] ?? null
-            ];
+            // Ventas
+            $stmtSales = $pdo->prepare('SELECT * FROM sales WHERE workspace_id = :ws ORDER BY sale_date DESC, created_at DESC');
+            $stmtSales->execute([':ws' => $workspaceId]);
+            $sales = [];
+            foreach ($stmtSales->fetchAll() as $s) {
+                $salesAmount = (float)($s['total_amount'] ?? ($s['amount'] ?? 0));
+                $sales[] = [
+                    'id' => $s['id'],
+                    'workspaceId' => $s['workspace_id'],
+                    'customerId' => $s['customer_id'] ?? null,
+                    'customerName' => $s['customer_name'] ?? '',
+                    'amount' => $salesAmount,
+                    'totalAmount' => $salesAmount,
+                    'saleDate' => $s['sale_date'],
+                    'date' => $s['sale_date'],
+                    'dueDate' => $s['due_date'] ?? null,
+                    'paymentMethod' => $s['payment_method'] ?? 'Transferencia',
+                    'paymentStatus' => $s['payment_status'] ?? 'pagado',
+                    'status' => $s['payment_status'] ?? 'pagado',
+                    'notes' => $s['notes'] ?? '',
+                    'createdAt' => $s['created_at'] ?? null
+                ];
+            }
+            $data['sales'] = $sales;
+
+            // Tareas
+            $stmtTasks = $pdo->prepare('SELECT * FROM tasks WHERE workspace_id = :ws ORDER BY due_date ASC, created_at DESC');
+            $stmtTasks->execute([':ws' => $workspaceId]);
+            $tasks = [];
+            foreach ($stmtTasks->fetchAll() as $t) {
+                $tasks[] = [
+                    'id' => $t['id'],
+                    'workspaceId' => $t['workspace_id'],
+                    'title' => $t['title'],
+                    'description' => $t['description'] ?? '',
+                    'startDate' => $t['start_date'] ?? null,
+                    'dueDate' => $t['due_date'] ?? null,
+                    'priority' => $t['priority'] ?? 'media',
+                    'status' => $t['status'] ?? 'todo',
+                    'tag' => $t['tag'] ?? '',
+                    'customerId' => $t['customer_id'] ?? null,
+                    'opportunityId' => $t['opportunity_id'] ?? null,
+                    'completedAt' => $t['completed_at'] ?? null,
+                    'createdAt' => $t['created_at'] ?? null
+                ];
+            }
+            $data['tasks'] = $tasks;
+
+            // Calendario
+            $stmtEvents = $pdo->prepare('SELECT * FROM calendar_events WHERE workspace_id = :ws ORDER BY event_date ASC, event_time ASC');
+            $stmtEvents->execute([':ws' => $workspaceId]);
+            $events = [];
+            foreach ($stmtEvents->fetchAll() as $ev) {
+                $events[] = [
+                    'id' => $ev['id'],
+                    'workspaceId' => $ev['workspace_id'],
+                    'title' => $ev['title'],
+                    'date' => $ev['event_date'],
+                    'eventDate' => $ev['event_date'],
+                    'startTime' => !empty($ev['event_time']) ? substr($ev['event_time'], 0, 5) : '09:00',
+                    'endTime' => !empty($ev['end_time']) ? substr($ev['end_time'], 0, 5) : '10:00',
+                    'type' => $ev['event_type'] ?? 'reunion',
+                    'eventType' => $ev['event_type'] ?? 'reunion',
+                    'customerId' => $ev['customer_id'] ?? null,
+                    'location' => $ev['location'] ?? '',
+                    'meetUrl' => $ev['meeting_link'] ?? '',
+                    'notes' => $ev['notes'] ?? '',
+                    'status' => $ev['status'] ?? 'programado',
+                    'createdAt' => $ev['created_at'] ?? null
+                ];
+            }
+            $data['calendar_events'] = $events;
+            $data['events'] = $events;
+
+            // Bloc de notas
+            $stmtNotes = $pdo->prepare('SELECT * FROM quick_notes WHERE workspace_id = :ws ORDER BY is_pinned DESC, updated_at DESC');
+            $stmtNotes->execute([':ws' => $workspaceId]);
+            $notes = [];
+            foreach ($stmtNotes->fetchAll() as $n) {
+                $notes[] = [
+                    'id' => $n['id'],
+                    'workspaceId' => $n['workspace_id'],
+                    'title' => $n['title'] ?? '',
+                    'content' => $n['content'] ?? '',
+                    'category' => $n['category'] ?? 'general',
+                    'color' => $n['color'] ?? 'yellow',
+                    'isPinned' => (bool)($n['is_pinned'] ?? 0),
+                    'pinned' => (bool)($n['is_pinned'] ?? 0),
+                    'createdAt' => $n['created_at'] ?? null,
+                    'updatedAt' => $n['updated_at'] ?? null
+                ];
+            }
+            $data['quick_notes'] = $notes;
+            $data['notes'] = $notes;
+
+            // Oportunidades
+            $stmtOpp = $pdo->prepare('SELECT * FROM opportunities WHERE workspace_id = :ws ORDER BY created_at DESC');
+            $stmtOpp->execute([':ws' => $workspaceId]);
+            $opps = [];
+            foreach ($stmtOpp->fetchAll() as $o) {
+                $opps[] = [
+                    'id' => $o['id'],
+                    'workspaceId' => $o['workspace_id'],
+                    'title' => $o['title'],
+                    'contactName' => $o['contact_name'] ?? '',
+                    'customerName' => $o['customer_name'] ?? '',
+                    'phone' => $o['phone'] ?? '',
+                    'email' => $o['email'] ?? '',
+                    'productInterest' => $o['product_interest'] ?? '',
+                    'estimatedAmount' => (int)($o['estimated_amount'] ?? 0),
+                    'estimatedValue' => (int)($o['estimated_amount'] ?? 0),
+                    'status' => $o['status'] ?? 'nuevo',
+                    'stage' => $o['stage'] ?? 'prospecto',
+                    'nextAction' => $o['next_action'] ?? '',
+                    'followUpDate' => $o['follow_up_date'] ?? null,
+                    'expectedCloseDate' => $o['expected_close_date'] ?? null,
+                    'sourceChannel' => $o['source_channel'] ?? 'Otro',
+                    'notes' => $o['notes'] ?? '',
+                    'customerId' => $o['customer_id'] ?? null,
+                    'createdAt' => $o['created_at'] ?? null
+                ];
+            }
+            $data['opportunities'] = $opps;
+
+            // Solicitudes de soporte propias
+            $stmtSupp = $pdo->prepare('SELECT * FROM support_requests WHERE workspace_id = :ws ORDER BY created_at DESC');
+            $stmtSupp->execute([':ws' => $workspaceId]);
+            $data['support_requests'] = $stmtSupp->fetchAll();
+
+            // Solicitudes de beneficios propias
+            $stmtBReq = $pdo->prepare('SELECT * FROM benefit_requests WHERE workspace_id = :ws ORDER BY requested_at DESC');
+            $stmtBReq->execute([':ws' => $workspaceId]);
+            $data['benefit_requests'] = $stmtBReq->fetchAll();
+
+            // Suscripción propia
+            $stmtSub = $pdo->prepare('SELECT * FROM subscriptions WHERE workspace_id = :ws LIMIT 1');
+            $stmtSub->execute([':ws' => $workspaceId]);
+            $sub = $stmtSub->fetch();
+            $data['subscriptions'] = $sub ? [$sub] : [];
+
+        } else {
+            // Usuario sin workspace asignado
+            $data['workspaces'] = [];
+            $data['customers'] = [];
+            $data['sales'] = [];
+            $data['tasks'] = [];
+            $data['events'] = [];
+            $data['calendar_events'] = [];
+            $data['notes'] = [];
+            $data['quick_notes'] = [];
+            $data['opportunities'] = [];
+            $data['support_requests'] = [];
+            $data['benefit_requests'] = [];
+            $data['subscriptions'] = [];
         }
-        $data['sales'] = $sales;
 
-        $stmtTasks = $pdo->prepare('SELECT * FROM tasks WHERE workspace_id = :ws ORDER BY due_date ASC, created_at DESC');
-        $stmtTasks->execute([':ws' => $workspaceId]);
-        $rawTasks = $stmtTasks->fetchAll();
-        $tasks = [];
-        foreach ($rawTasks as $t) {
-            $rawStatus = $t['status'] ?? 'todo';
-            if ($rawStatus === '' || $rawStatus === 'pendiente') $rawStatus = 'todo';
-            elseif ($rawStatus === 'en_proceso' || $rawStatus === 'en_progreso') $rawStatus = 'in_progress';
-            elseif ($rawStatus === 'completada') $rawStatus = 'done';
-
-            $tasks[] = [
-                'id' => $t['id'],
-                'workspaceId' => $t['workspace_id'],
-                'title' => $t['title'],
-                'description' => $t['description'] ?? '',
-                'startDate' => $t['start_date'] ?? null,
-                'dueDate' => $t['due_date'] ?? null,
-                'priority' => $t['priority'] ?? 'media',
-                'status' => $rawStatus,
-                'tag' => $t['tag'] ?? '',
-                'customerId' => $t['customer_id'] ?? null,
-                'opportunityId' => $t['opportunity_id'] ?? null,
-                'completedAt' => $t['completed_at'] ?? null,
-                'createdAt' => $t['created_at'] ?? null
-            ];
+        // Datos del usuario propio autenticado
+        $stmtMe = $pdo->prepare('SELECT id, workspace_id, name, email, phone, role, specialty, avatar, theme, is_active, assigned_tool_ids, advisor_name, advisor_email FROM users WHERE id = :id LIMIT 1');
+        $stmtMe->execute([':id' => $authUser['id']]);
+        $me = $stmtMe->fetch();
+        if ($me) {
+            $me['assignedToolIds'] = !empty($me['assigned_tool_ids']) ? json_decode($me['assigned_tool_ids'], true) : [];
+            $data['users'] = [$me];
+        } else {
+            $data['users'] = [];
         }
-        $data['tasks'] = $tasks;
-
-        $stmtEvents = $pdo->prepare('SELECT * FROM calendar_events WHERE workspace_id = :ws ORDER BY event_date ASC, event_time ASC');
-        $stmtEvents->execute([':ws' => $workspaceId]);
-        $rawEvents = $stmtEvents->fetchAll();
-        $events = [];
-        foreach ($rawEvents as $ev) {
-            $startTime = !empty($ev['event_time']) ? substr($ev['event_time'], 0, 5) : '09:00';
-            $endTime = !empty($ev['end_time']) ? substr($ev['end_time'], 0, 5) : '10:00';
-            $events[] = [
-                'id' => $ev['id'],
-                'workspaceId' => $ev['workspace_id'],
-                'title' => $ev['title'],
-                'date' => $ev['event_date'],
-                'eventDate' => $ev['event_date'],
-                'startTime' => $startTime,
-                'endTime' => $endTime,
-                'eventTime' => $ev['event_time'] ?? '',
-                'type' => $ev['event_type'] ?? 'reunion',
-                'eventType' => $ev['event_type'] ?? 'reunion',
-                'customerId' => $ev['customer_id'] ?? null,
-                'location' => $ev['location'] ?? '',
-                'meetUrl' => $ev['meeting_link'] ?? '',
-                'meetingLink' => $ev['meeting_link'] ?? '',
-                'description' => $ev['notes'] ?? '',
-                'notes' => $ev['notes'] ?? '',
-                'status' => $ev['status'] ?? 'programado',
-                'createdAt' => $ev['created_at'] ?? null
-            ];
-        }
-        $data['calendar_events'] = $events;
-        $data['events'] = $events;
-
-        $stmtNotes = $pdo->prepare('SELECT * FROM quick_notes WHERE workspace_id = :ws ORDER BY is_pinned DESC, updated_at DESC');
-        $stmtNotes->execute([':ws' => $workspaceId]);
-        $rawNotes = $stmtNotes->fetchAll();
-        $notes = [];
-        foreach ($rawNotes as $n) {
-            $isPinned = (bool)($n['is_pinned'] ?? 0);
-            $notes[] = [
-                'id' => $n['id'],
-                'workspaceId' => $n['workspace_id'],
-                'title' => $n['title'] ?? '',
-                'content' => $n['content'] ?? '',
-                'category' => $n['category'] ?? 'general',
-                'color' => $n['color'] ?? 'yellow',
-                'pinned' => $isPinned,
-                'isPinned' => $isPinned,
-                'updatedAt' => $n['updated_at'] ?? null,
-                'createdAt' => $n['created_at'] ?? null
-            ];
-        }
-        $data['quick_notes'] = $notes;
-        $data['notes'] = $notes;
-
-        $stmtOpps = $pdo->prepare('SELECT * FROM opportunities WHERE workspace_id = :ws ORDER BY created_at DESC');
-        $stmtOpps->execute([':ws' => $workspaceId]);
-        $rawOpps = $stmtOpps->fetchAll();
-        $opps = [];
-        foreach ($rawOpps as $o) {
-            $oppAmount = (float)($o['estimated_amount'] ?? ($o['estimated_value'] ?? 0));
-            $opps[] = [
-                'id' => $o['id'],
-                'workspaceId' => $o['workspace_id'],
-                'title' => $o['title'],
-                'contactName' => $o['contact_name'] ?? ($o['customer_name'] ?? ''),
-                'customerName' => $o['customer_name'] ?? ($o['contact_name'] ?? ''),
-                'phone' => $o['phone'] ?? '',
-                'email' => $o['email'] ?? '',
-                'productInterest' => $o['product_interest'] ?? '',
-                'estimatedAmount' => $oppAmount,
-                'estimatedValue' => $oppAmount,
-                'value' => $oppAmount,
-                'status' => $o['status'] ?? ($o['stage'] ?? 'nuevo'),
-                'stage' => $o['stage'] ?? ($o['status'] ?? 'prospecto'),
-                'nextAction' => $o['next_action'] ?? '',
-                'followUpDate' => $o['follow_up_date'] ?? ($o['expected_close_date'] ?? null),
-                'expectedCloseDate' => $o['expected_close_date'] ?? ($o['follow_up_date'] ?? null),
-                'sourceChannel' => $o['source_channel'] ?? 'Otro',
-                'notes' => $o['notes'] ?? '',
-                'customerId' => $o['customer_id'] ?? null,
-                'createdAt' => $o['created_at'] ?? null
-            ];
-        }
-        $data['opportunities'] = $opps;
-
-        $stmtWsReqs = $pdo->prepare('SELECT * FROM benefit_requests WHERE workspace_id = :ws ORDER BY requested_at DESC');
-        $stmtWsReqs->execute([':ws' => $workspaceId]);
-        $rawWsReqs = $stmtWsReqs->fetchAll();
-        $wsBenefitRequests = [];
-        foreach ($rawWsReqs as $br) {
-            $wsBenefitRequests[] = [
-                'id' => $br['id'],
-                'discountId' => $br['discount_id'],
-                'userId' => $br['user_id'],
-                'workspaceId' => $br['workspace_id'],
-                'personalCode' => $br['personal_code'],
-                'channel' => $br['channel'] ?? 'whatsapp',
-                'status' => $br['status'] ?? 'contact_started',
-                'requestedAt' => $br['requested_at'] ?? null,
-                'lastContactAt' => $br['last_contact_at'] ?? null,
-                'usedAt' => $br['used_at'] ?? null,
-                'purchaseAmount' => $br['purchase_amount'] !== null ? (int)$br['purchase_amount'] : null,
-                'discountAmount' => $br['discount_amount'] !== null ? (int)$br['discount_amount'] : null,
-                'memberComment' => $br['member_comment'] ?? '',
-                'memberRating' => $br['member_rating'] !== null ? (int)$br['member_rating'] : null,
-                'notCompletedReason' => $br['not_completed_reason'] ?? '',
-                'adminNotes' => $br['admin_notes'] ?? '',
-                'createdAt' => $br['created_at'] ?? null
-            ];
-        }
-        $data['benefit_requests'] = $wsBenefitRequests;
     }
 
-    DB::jsonResponse(true, $data);
-} catch (Exception $e) {
-    DB::jsonResponse(false, null, 'Error al consultar datos: ' . $e->getMessage(), 500);
+    Security::jsonResponse(true, $data);
+
+} catch (Throwable $e) {
+    error_log("Error en data.php: " . $e->getMessage());
+    Security::jsonResponse(false, null, 'Error al recuperar los datos del sistema.', 500);
 }

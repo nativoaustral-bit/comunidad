@@ -31,15 +31,14 @@ class DB {
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $e) {
-                // Si la conexión falla, responder JSON claro sin filtrar contraseñas
-                setApiHeaders();
-                http_response_code(500);
-                echo json_encode([
-                    'success' => false,
-                    'error' => 'Error al conectar con la base de datos MySQL en HostGator.',
-                    'details' => $e->getMessage()
-                ], JSON_UNESCAPED_UNICODE);
-                exit;
+                error_log("Error de conexión MySQL en HostGator: " . $e->getMessage());
+                $isProd = (isset($_SERVER['HTTP_HOST']) && !in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1', 'localhost:8080', 'localhost:3000'], true));
+                Security::jsonResponse(
+                    false,
+                    null,
+                    'Error al conectar con la base de datos MySQL en HostGator.',
+                    500
+                );
             }
         }
 
@@ -47,16 +46,10 @@ class DB {
     }
 
     /**
-     * Helper para enviar respuestas JSON estándar
+     * Helper para enviar respuestas JSON estándar delegando a la capa de seguridad
      */
     public static function jsonResponse(bool $success, mixed $data = null, ?string $error = null, int $statusCode = 200): void {
-        setApiHeaders();
-        http_response_code($statusCode);
-        $payload = ['success' => $success];
-        if ($data !== null) $payload['data'] = $data;
-        if ($error !== null) $payload['error'] = $error;
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE);
-        exit;
+        Security::jsonResponse($success, $data, $error, $statusCode);
     }
 
     /**

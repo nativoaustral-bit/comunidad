@@ -4,7 +4,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, formatCLP } from '../store.js';
+import { store, formatDateCL, formatCLP, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 
 let currentAlertFilter = 'all';  // 'all', 'critical', 'warning', 'info'
@@ -544,15 +544,15 @@ export function renderAdminMembersView(container) {
             return `
               <tr>
                 <td>
-                  <div style="font-weight: 700; color: var(--text-primary);">${ws.name}</div>
-                  ${ws.rut ? `<div class="text-xs" style="color: var(--text-secondary); font-family: monospace; font-size: 11px;">RUT: ${ws.rut}</div>` : ''}
-                  <div class="text-xs text-muted" style="margin-top: 2px;">📍 ${locationText} • ${ws.industry || 'Emprendimiento'}</div>
-                  ${ws.address ? `<div class="text-xs text-muted" style="font-size: 11px;">🏠 ${ws.address}</div>` : ''}
+                  <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(ws.name)}</div>
+                  ${ws.rut ? `<div class="text-xs" style="color: var(--text-secondary); font-family: monospace; font-size: 11px;">RUT: ${escapeHtml(ws.rut)}</div>` : ''}
+                  <div class="text-xs text-muted" style="margin-top: 2px;">📍 ${escapeHtml(locationText)} • ${escapeHtml(ws.industry || 'Emprendimiento')}</div>
+                  ${ws.address ? `<div class="text-xs text-muted" style="font-size: 11px;">🏠 ${escapeHtml(ws.address)}</div>` : ''}
                 </td>
                 <td>
-                  <div style="font-weight: 700;">${ownerDisplay}</div>
-                  <div class="text-xs text-secondary">${wsUser.email}</div>
-                  ${ws.phone ? `<div class="text-xs text-muted" style="font-size: 11px;">📞 ${ws.phone}</div>` : ''}
+                  <div style="font-weight: 700;">${escapeHtml(ownerDisplay)}</div>
+                  <div class="text-xs text-secondary">${escapeHtml(wsUser.email)}</div>
+                  ${ws.phone ? `<div class="text-xs text-muted" style="font-size: 11px;">📞 ${escapeHtml(ws.phone)}</div>` : ''}
                   <div class="text-xs text-secondary" style="font-size: 11px; margin-top: 2px;">
                     Último acceso: ${wsUser.lastAccess ? formatDateCL(wsUser.lastAccess) : 'Sin ingresos'}
                   </div>
@@ -560,10 +560,10 @@ export function renderAdminMembersView(container) {
                 <td>
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
                     <div>
-                      <div style="font-weight: 600; font-size: var(--font-size-xs); color: ${ws.advisorName ? 'var(--text-primary)' : 'var(--text-muted)'};">${advisorName}</div>
-                      ${advisorEmail ? `<div style="font-size: 11px; color: var(--humm-red-primary);">${advisorEmail}</div>` : ''}
+                      <div style="font-weight: 600; font-size: var(--font-size-xs); color: ${ws.advisorName ? 'var(--text-primary)' : 'var(--text-muted)'};">${escapeHtml(advisorName)}</div>
+                      ${advisorEmail ? `<div style="font-size: 11px; color: var(--humm-red-primary);">${escapeHtml(advisorEmail)}</div>` : ''}
                     </div>
-                    <button class="btn btn-ghost btn-sm btn-edit-ws-advisor" data-ws-id="${ws.id}" data-ws-name="${ws.name}" data-advisor-name="${ws.advisorName || ''}" data-advisor-email="${ws.advisorEmail || ''}" title="Editar tutor asignado">
+                    <button class="btn btn-ghost btn-sm btn-edit-ws-advisor" data-ws-id="${escapeHtml(ws.id)}" data-ws-name="${escapeHtml(ws.name)}" data-advisor-name="${escapeHtml(ws.advisorName || '')}" data-advisor-email="${escapeHtml(ws.advisorEmail || '')}" title="Editar tutor asignado">
                       ✏️
                     </button>
                   </div>
@@ -577,7 +577,7 @@ export function renderAdminMembersView(container) {
                   </div>
                 </td>
                 <td>
-                  <span class="badge badge-neutral text-xs">${ws.membershipType}</span>
+                  <span class="badge badge-neutral text-xs">${escapeHtml(ws.membershipType)}</span>
                 </td>
                 <td>
                   <span class="badge ${wsUser.isActive ? 'badge-success' : 'badge-danger'}">
@@ -586,19 +586,19 @@ export function renderAdminMembersView(container) {
                   </span>
                 </td>
                 <td>
-                  <button class="btn btn-ghost btn-sm btn-manage-ws-tools" data-ws-id="${ws.id}" style="font-size: var(--font-size-xs);">
+                  <button class="btn btn-ghost btn-sm btn-manage-ws-tools" data-ws-id="${escapeHtml(ws.id)}" style="font-size: var(--font-size-xs);">
                     ⚙️ ${assignedCount} activas
                   </button>
                 </td>
                 <td style="text-align: right;">
                   <div style="display: flex; justify-content: flex-end; gap: 4px;">
-                    <button class="btn btn-secondary btn-sm btn-audit-ws" data-ws-id="${ws.id}" title="Ver como emprendedor">
+                    <button class="btn btn-secondary btn-sm btn-audit-ws" data-ws-id="${escapeHtml(ws.id)}" title="Ver como emprendedor">
                       Ver espacio
                     </button>
-                    <button class="btn btn-ghost btn-sm btn-toggle-user-status" data-user-id="${wsUser.id}" title="${wsUser.isActive ? 'Suspender cuenta' : 'Reactivar cuenta'}">
+                    <button class="btn btn-ghost btn-sm btn-toggle-user-status" data-user-id="${escapeHtml(wsUser.id)}" title="${wsUser.isActive ? 'Suspender cuenta' : 'Reactivar cuenta'}">
                       ${wsUser.isActive ? '⏸️' : '▶️'}
                     </button>
-                    <button class="btn btn-ghost btn-sm btn-reset-pass" data-user-id="${wsUser.id}" data-email="${wsUser.email}" title="Restablecer clave">
+                    <button class="btn btn-ghost btn-sm btn-reset-pass" data-user-id="${escapeHtml(wsUser.id)}" data-email="${escapeHtml(wsUser.email)}" title="Restablecer clave">
                       🔑
                     </button>
                   </div>
@@ -2440,22 +2440,22 @@ export function renderAdminUsersView(container) {
                 <td>
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: ${u.isActive ? 'var(--humm-red-primary)' : '#94A3B8'}; color: #FFF; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;">
-                      ${u.avatar || u.name.substring(0, 2).toUpperCase()}
+                      ${escapeHtml(u.avatar || (u.name ? u.name.substring(0, 2).toUpperCase() : 'U'))}
                     </div>
                     <div>
                       <div style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                        ${u.name}
+                        ${escapeHtml(u.name)}
                         ${!u.isActive ? '<span class="badge badge-danger text-xs" style="padding: 1px 6px; font-size: 10px;">Bloqueado</span>' : ''}
                       </div>
-                      <div class="text-xs text-muted">${u.email}</div>
+                      <div class="text-xs text-muted">${escapeHtml(u.email)}</div>
                     </div>
                   </div>
                 </td>
                 <td>${roleBadge}</td>
                 <td>
                   ${ws ? `
-                    <div style="font-weight: 600; color: var(--text-primary);">${ws.name}</div>
-                    <div class="text-xs text-muted">${ws.industry || 'Comunidad Humm'}</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(ws.name)}</div>
+                    <div class="text-xs text-muted">${escapeHtml(ws.industry || 'Comunidad Humm')}</div>
                   ` : `
                     <span class="text-xs text-muted">Staff Central</span>
                   `}
@@ -2468,13 +2468,13 @@ export function renderAdminUsersView(container) {
                       </span>
                     ` : assignedTools.map(tId => {
                       const t = tools.find(item => item.id === tId);
-                      return t ? `<span class="badge badge-neutral text-xs" style="font-size: 10.5px; padding: 2px 6px;">${t.name}</span>` : '';
+                      return t ? `<span class="badge badge-neutral text-xs" style="font-size: 10.5px; padding: 2px 6px;">${escapeHtml(t.name)}</span>` : '';
                     }).join('')}
                   </div>
                 </td>
                 <td>
                   <!-- UN SOLO BOTÓN INTERACTIVO DE ESTADO (ACTIVAR / DESACTIVAR) -->
-                  <button class="btn btn-sm btn-toggle-user-active" data-user-id="${u.id}" title="Haz clic para ${u.isActive ? 'desactivar' : 'activar'} la cuenta" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: var(--radius-sm); border: 1.5px solid ${u.isActive ? 'var(--success)' : 'var(--danger)'}; background: ${u.isActive ? 'var(--success-bg)' : 'var(--danger-bg)'}; color: ${u.isActive ? 'var(--success)' : 'var(--danger)'}; cursor: pointer;">
+                  <button class="btn btn-sm btn-toggle-user-active" data-user-id="${escapeHtml(u.id)}" title="Haz clic para ${u.isActive ? 'desactivar' : 'activar'} la cuenta" style="font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: var(--radius-sm); border: 1.5px solid ${u.isActive ? 'var(--success)' : 'var(--danger)'}; background: ${u.isActive ? 'var(--success-bg)' : 'var(--danger-bg)'}; color: ${u.isActive ? 'var(--success)' : 'var(--danger)'}; cursor: pointer;">
                     ${u.isActive ? '🟢 Activo (Desactivar)' : '🔴 Inactivo (Activar)'}
                   </button>
                 </td>

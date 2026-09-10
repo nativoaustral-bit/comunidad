@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, isDateOverdue, formatMonthName } from '../store.js';
+import { store, formatCLP, formatDateCL, isDateOverdue, formatMonthName, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 import { SalesChart } from '../chart.js';
 
@@ -66,15 +66,15 @@ export function renderDashboard(container) {
   const renderCard = (task) => {
     const overdue = task.dueDate && isDateOverdue(task.dueDate) && task.status !== 'done';
     return `
-      <div class="kanban-card ${overdue ? 'card-overdue' : ''}" data-task-id="${task.id}">
+      <div class="kanban-card ${overdue ? 'card-overdue' : ''}" data-task-id="${escapeHtml(task.id)}">
         <div class="kanban-card-top">
-          <span class="badge priority-${task.priority}">
+          <span class="badge priority-${escapeHtml(task.priority)}">
             <span class="badge-dot"></span>
-            ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+            ${escapeHtml(task.priority.charAt(0).toUpperCase() + task.priority.slice(1))}
           </span>
-          ${task.tag ? `<span class="badge badge-neutral">${task.tag}</span>` : ''}
+          ${task.tag ? `<span class="badge badge-neutral">${escapeHtml(task.tag)}</span>` : ''}
         </div>
-        <div class="kanban-card-title">${task.title}</div>
+        <div class="kanban-card-title">${escapeHtml(task.title)}</div>
         <div class="kanban-card-meta">
           <div class="card-date-badge ${overdue ? 'is-overdue' : ''}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,13 +87,13 @@ export function renderDashboard(container) {
           </div>
           <div class="card-quick-actions">
             ${task.status !== 'done' ? `
-              <button class="card-btn-action btn-mark-done" title="Marcar como terminada" data-task-id="${task.id}">
+              <button class="card-btn-action btn-mark-done" title="Marcar como terminada" data-task-id="${escapeHtml(task.id)}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
               </button>
             ` : ''}
-            <button class="card-btn-action btn-edit-task" title="Editar tarea" data-task-id="${task.id}">
+            <button class="card-btn-action btn-edit-task" title="Editar tarea" data-task-id="${escapeHtml(task.id)}">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
@@ -102,9 +102,9 @@ export function renderDashboard(container) {
           </div>
         </div>
         <!-- Selector rápido para teléfonos -->
-        <select class="mobile-status-select" data-task-id="${task.id}">
+        <select class="mobile-status-select" data-task-id="${escapeHtml(task.id)}">
           ${kanbanCols.map(c => `
-            <option value="${c.id}" ${task.status === c.id ? 'selected' : ''}>${c.name}</option>
+            <option value="${escapeHtml(c.id)}" ${task.status === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>
           `).join('')}
         </select>
       </div>
@@ -119,11 +119,11 @@ export function renderDashboard(container) {
     <div class="view-header" style="margin-bottom: 20px;">
       <div class="view-title-group">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <h2>Hola, ${ws.ownerName || 'Emprendedor/a'} 👋</h2>
+          <h2>Hola, ${escapeHtml(ws.ownerName || 'Emprendedor/a')} 👋</h2>
           <span class="badge badge-success text-xs">Comunidad Activa</span>
         </div>
         <p style="margin-top: 4px; color: var(--text-secondary);">
-          Bienvenido/a al escritorio digital de <strong>${ws.name}</strong>. Resumen de tu avance y herramientas.
+          Bienvenido/a al escritorio digital de <strong>${escapeHtml(ws.name)}</strong>. Resumen de tu avance y herramientas.
         </p>
       </div>
     </div>
@@ -136,8 +136,8 @@ export function renderDashboard(container) {
         </div>
         <div>
           <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--humm-red-primary);">Tu Tutor / Ejecutivo Humm Asignado</div>
-          <div style="font-size: var(--font-size-md); font-weight: 700; color: var(--text-primary);">${advisorName}</div>
-          <div style="font-size: var(--font-size-xs); color: var(--text-muted);">${advisorEmail} • Soporte y asesoría personalizada para tu negocio</div>
+          <div style="font-size: var(--font-size-md); font-weight: 700; color: var(--text-primary);">${escapeHtml(advisorName)}</div>
+          <div style="font-size: var(--font-size-xs); color: var(--text-muted);">${escapeHtml(advisorEmail)} • Soporte y asesoría personalizada para tu negocio</div>
         </div>
       </div>
       <button class="btn btn-secondary btn-sm" id="btn-dash-request-support" style="background-color: var(--bg-surface); border-color: var(--border-strong);">
@@ -181,13 +181,13 @@ export function renderDashboard(container) {
                 <div style="background: var(--bg-surface-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 16px;">
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <span class="badge ${categoryBadge} text-xs">${bc.category}</span>
-                      <strong style="font-size: var(--font-size-sm); color: var(--text-primary);">${bc.title}</strong>
+                      <span class="badge ${categoryBadge} text-xs">${escapeHtml(bc.category)}</span>
+                      <strong style="font-size: var(--font-size-sm); color: var(--text-primary);">${escapeHtml(bc.title)}</strong>
                     </div>
                     <span class="text-xs text-muted">📅 ${formatDateCL(bc.createdAt)}</span>
                   </div>
                   <div style="font-size: var(--font-size-xs); color: var(--text-secondary); line-height: 1.45; white-space: pre-line;">
-                    ${bc.content}
+                    ${escapeHtml(bc.content)}
                   </div>
                 </div>
               `;
@@ -315,11 +315,11 @@ export function renderDashboard(container) {
         ${kanbanCols.map(col => {
           const colTasks = tasks.filter(t => t.status === col.id);
           return `
-            <div class="kanban-column" data-status="${col.id}">
+            <div class="kanban-column" data-status="${escapeHtml(col.id)}">
               <div class="kanban-column-header">
                 <div class="column-title-wrap">
                   <div class="column-indicator-dot ${col.dotClass || 'dot-todo'}"></div>
-                  <span class="kanban-column-title">${col.name}</span>
+                  <span class="kanban-column-title">${escapeHtml(col.name)}</span>
                 </div>
                 <span class="kanban-counter-pill">${colTasks.length}</span>
               </div>

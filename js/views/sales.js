@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, formatMonthName, isDateOverdue } from '../store.js';
+import { store, formatCLP, formatDateCL, formatMonthName, isDateOverdue, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 import { SalesChart } from '../chart.js';
 
@@ -135,10 +135,10 @@ export function renderSalesView(container) {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
           <div>
             <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
-              ${customer ? `👤 ${customer.firstName} ${customer.lastName || ''}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${sale.customerName}` : '🏪 Venta General')}
+              ${customer ? `👤 ${escapeHtml(customer.firstName)} ${escapeHtml(customer.lastName || '')}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${escapeHtml(sale.customerName)}` : '🏪 Venta General')}
             </div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-              📅 ${saleDate} ${sale.notes ? `• <em>${sale.notes}</em>` : ''}
+              📅 ${escapeHtml(saleDate)} ${sale.notes ? `• <em>${escapeHtml(sale.notes)}</em>` : ''}
             </div>
           </div>
           <div style="font-weight: 800; color: var(--humm-red-primary); font-size: 1.15rem;">
@@ -150,11 +150,11 @@ export function renderSalesView(container) {
           <div>${statusBadge}</div>
           <div style="display: flex; gap: 6px;">
             ${(isPending || isToInvoice) ? `
-              <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${sale.id}" style="font-size: 11px; padding: 4px 10px; color: var(--success); font-weight: 700;">
+              <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${escapeHtml(sale.id)}" style="font-size: 11px; padding: 4px 10px; color: var(--success); font-weight: 700;">
                 💰 Pagado
               </button>
             ` : ''}
-            <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${sale.id}" style="padding: 4px 8px;" title="Editar">
+            <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${escapeHtml(sale.id)}" style="padding: 4px 8px;" title="Editar">
               ✏️
             </button>
           </div>
@@ -427,18 +427,18 @@ export function renderSalesView(container) {
             return `
               <tr>
                 <td>
-                  <strong style="color: var(--text-primary); font-size: var(--font-size-sm);">${saleDate}</strong>
+                  <strong style="color: var(--text-primary); font-size: var(--font-size-sm);">${escapeHtml(saleDate)}</strong>
                 </td>
 
                 <td>
                   ${customer ? `
                     <div style="font-weight: 600; color: var(--text-primary);">
-                      👤 ${customer.firstName} ${customer.lastName || ''}
+                      👤 ${escapeHtml(customer.firstName)} ${escapeHtml(customer.lastName || '')}
                     </div>
-                    ${customer.company ? `<div class="text-xs text-muted">${customer.company}</div>` : ''}
+                    ${customer.company ? `<div class="text-xs text-muted">${escapeHtml(customer.company)}</div>` : ''}
                   ` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `
                     <div style="font-weight: 600; color: var(--text-primary);">
-                      👤 ${sale.customerName}
+                      👤 ${escapeHtml(sale.customerName)}
                     </div>
                   ` : `
                     <span class="text-xs text-muted">🏪 Público general</span>
@@ -462,30 +462,30 @@ export function renderSalesView(container) {
                 </td>
 
                 <td class="text-secondary text-xs" style="max-width: 200px;">
-                  ${sale.notes || '<span class="text-muted">—</span>'}
+                  ${sale.notes ? escapeHtml(sale.notes) : '<span class="text-muted">—</span>'}
                 </td>
 
                 <td style="text-align: right; white-space: nowrap;">
                   ${isToInvoice ? `
-                    <button class="btn btn-secondary btn-sm btn-mark-sale-billed" data-sale-id="${sale.id}" style="font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Marcar como emitida / pasar a cobro">
+                    <button class="btn btn-secondary btn-sm btn-mark-sale-billed" data-sale-id="${escapeHtml(sale.id)}" style="font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Marcar como emitida / pasar a cobro">
                       🧾 Emitir
                     </button>
                   ` : ''}
 
                   ${isPending || isToInvoice ? `
-                    <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${sale.id}" style="font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Marcar venta como pagada">
+                    <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${escapeHtml(sale.id)}" style="font-size: 11px; padding: 4px 8px; margin-right: 4px;" title="Marcar venta como pagada">
                       💰 Marcar Pagado
                     </button>
                   ` : ''}
 
-                  <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${sale.id}" title="Editar venta">
+                  <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${escapeHtml(sale.id)}" title="Editar venta">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M12 20h9"></path>
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                     </svg>
                   </button>
 
-                  <button class="btn btn-ghost btn-sm btn-delete-sale" data-sale-id="${sale.id}" title="Eliminar registro">
+                  <button class="btn btn-ghost btn-sm btn-delete-sale" data-sale-id="${escapeHtml(sale.id)}" title="Eliminar registro">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -528,9 +528,9 @@ export function renderSalesView(container) {
             <div class="adaptive-item-card" style="padding: 16px;">
               <div class="adaptive-card-header" style="margin-bottom: 8px;">
                 <div>
-                  <strong>${saleDate}</strong>
+                  <strong>${escapeHtml(saleDate)}</strong>
                   <div style="font-size: var(--font-size-xs); color: var(--text-muted);">
-                    ${customer ? `👤 ${customer.firstName} ${customer.lastName || ''}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${sale.customerName}` : '🏪 Público general')}
+                    ${customer ? `👤 ${escapeHtml(customer.firstName)} ${escapeHtml(customer.lastName || '')}` : (sale.customerName && sale.customerName !== 'Venta General' && sale.customerName !== 'Público general' ? `👤 ${escapeHtml(sale.customerName)}` : '🏪 Público general')}
                   </div>
                 </div>
                 <div style="font-weight: 800; color: var(--humm-red-primary); font-size: 1.15rem;">
@@ -543,23 +543,23 @@ export function renderSalesView(container) {
                 ${statusBadge}
               </div>
 
-              ${sale.notes ? `<div class="adaptive-card-body" style="font-size: var(--font-size-xs); margin-bottom: 10px;">${sale.notes}</div>` : ''}
+              ${sale.notes ? `<div class="adaptive-card-body" style="font-size: var(--font-size-xs); margin-bottom: 10px;">${escapeHtml(sale.notes)}</div>` : ''}
 
               <div class="adaptive-card-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
                 ${isToInvoice ? `
-                  <button class="btn btn-secondary btn-sm btn-mark-sale-billed" data-sale-id="${sale.id}">
+                  <button class="btn btn-secondary btn-sm btn-mark-sale-billed" data-sale-id="${escapeHtml(sale.id)}">
                     🧾 Emitir
                   </button>
                 ` : ''}
                 ${isPending || isToInvoice ? `
-                  <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${sale.id}">
+                  <button class="btn btn-secondary btn-sm btn-mark-sale-paid" data-sale-id="${escapeHtml(sale.id)}">
                     💰 Pagado
                   </button>
                 ` : ''}
-                <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${sale.id}">
+                <button class="btn btn-ghost btn-sm btn-edit-sale" data-sale-id="${escapeHtml(sale.id)}">
                   Editar
                 </button>
-                <button class="btn btn-ghost btn-sm btn-delete-sale" data-sale-id="${sale.id}" style="color: var(--danger);">
+                <button class="btn btn-ghost btn-sm btn-delete-sale" data-sale-id="${escapeHtml(sale.id)}" style="color: var(--danger);">
                   Eliminar
                 </button>
               </div>

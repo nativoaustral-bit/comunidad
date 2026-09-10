@@ -151,7 +151,20 @@ const INITIAL_STATE = {
 class Store {
   constructor() {
     this.listeners = [];
+    this.csrfToken = null;
     this.data = this.loadState();
+  }
+
+  setCsrfToken(token) {
+    this.csrfToken = token;
+  }
+
+  getCsrfToken() {
+    if (this.csrfToken) return this.csrfToken;
+    if (typeof window !== 'undefined' && window.MiHummAuth && typeof window.MiHummAuth.getCsrfToken === 'function') {
+      return window.MiHummAuth.getCsrfToken();
+    }
+    return '';
   }
 
   // Carga el estado desde LocalStorage o inicia con la semilla limpia
@@ -253,7 +266,13 @@ class Store {
     if (typeof window === 'undefined' || !window.fetch) return;
     try {
       const url = `api/data.php?role=${encodeURIComponent(role)}&workspace_id=${encodeURIComponent(workspaceId || '')}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'same-origin' });
+      if (res.status === 401) {
+        if (typeof window !== 'undefined' && window.MiHummAuth && typeof window.MiHummAuth.logout === 'function') {
+          window.MiHummAuth.logout(true, 'Tu sesión ha caducado en el servidor. Por favor, inicia sesión nuevamente.');
+        }
+        return;
+      }
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
@@ -332,18 +351,43 @@ class Store {
     }
   }
 
-  // Mutación en background hacia MySQL en HostGator
+  // Mutación protegida con sesión y token CSRF hacia MySQL en HostGator
   async apiSave(entity, item, action = 'save') {
     if (typeof window === 'undefined' || !window.fetch) return;
     try {
-      await fetch('api/save.php', {
+      const headers = { 'Content-Type': 'application/json' };
+      const csrf = this.getCsrfToken();
+      if (csrf) {
+        headers['X-CSRF-Token'] = csrf;
+      }
+      const res = await fetch('api/save.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers,
         body: JSON.stringify({ entity, item, action })
       });
+      if (res.status === 401) {
+        if (typeof window !== 'undefined' && window.MiHummAuth && typeof window.MiHummAuth.logout === 'function') {
+          window.MiHummAuth.logout(true, 'Tu sesión ha caducado en el servidor.');
+        }
+      }
     } catch (e) {
       // Offline fallback
     }
+  }
+
+  // Limpieza total y segura de datos locales al cerrar sesión
+  clearAllUserData() {
+    this.data = JSON.parse(JSON.stringify(INITIAL_STATE));
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('mi_humm_db_prod_v1');
+      localStorage.removeItem('mi_humm_db_v1');
+      localStorage.removeItem('mi_humm_db_v0');
+      localStorage.removeItem('mi_humm_active_session_v1');
+      sessionStorage.removeItem('mi_humm_active_session_v1');
+    } catch (e) {}
+    this.notify();
   }
 
   // Reinicia los datos a los de fábrica
@@ -1104,12 +1148,16 @@ class Store {
       // Continúa con código provisional si está offline
     }
 
-    // Enviar notificación por correo a Humm en background
+    // Enviar notificación por correo a Humm en background con credenciales y CSRF
     try {
       if (typeof window !== 'undefined' && window.fetch) {
+        const mailHeaders = { 'Content-Type': 'application/json' };
+        const csrf = this.getCsrfToken();
+        if (csrf) mailHeaders['X-CSRF-Token'] = csrf;
         fetch('api/mail.php', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          headers: mailHeaders,
           body: JSON.stringify({
             action: 'benefit_request_notification',
             userName: userName || 'Miembro Humm',
@@ -1274,35 +1322,8 @@ class Store {
     return newUser;
   }
 
-  async resetUserPassword(email, newPassword) {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const cleanPass = (newPassword || '').trim();
-
-    try {
-      const res = await fetch('api/auth.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'reset_password_direct',
-          email: cleanEmail,
-          new_password: cleanPass
-        })
-      });
-      const json = await res.json();
-      if (json.success) {
-        const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
-        if (user) {
-          user.password = cleanPass;
-          user.mustChangePassword = 0;
-          this.saveState();
-        }
-        return { success: true, message: json.data?.message || 'Contraseña actualizada con éxito.' };
-      } else {
-        return { success: false, message: json.error || 'Error al actualizar contraseña.' };
-      }
-    } catch (e) {
-      return { success: false, message: 'Error de conexión al restablecer contraseña.' };
-    }
+  async resetUserPassword() {
+    return { success: false, message: 'Operación deshabilitada por motivos de seguridad. Utilice el flujo de recuperación con token firmado.' };
   }
 
   toggleUserStatus(userId) {
@@ -2349,3 +2370,24 @@ export const sanitizeWhatsAppPhone = (phone) => {
 };
 
 export const store = new Store();
+if (typeof window !== 'undefined') {
+  window.store = store;
+}
+
+/**
+ * Función robusta de saneamiento de cadenas para prevenir XSS en interpolaciones HTML.
+ * Para inserciones de sólo texto, siempre se debe preferir element.textContent.
+ */
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}

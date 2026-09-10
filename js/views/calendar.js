@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatDateCL, formatMonthName, isDateOverdue } from '../store.js';
+import { store, formatDateCL, formatMonthName, isDateOverdue, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 
 let currentCalDate = new Date();
@@ -449,23 +449,23 @@ function renderAgendaView(year, month, events, tasks, customers) {
                 <div style="flex: 1;">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     ${typeBadge}
-                    <strong style="font-size: var(--font-size-sm); color: var(--text-primary);">${item.title}</strong>
+                    <strong style="font-size: var(--font-size-sm); color: var(--text-primary);">${escapeHtml(item.title)}</strong>
                   </div>
-                  ${item.location ? `<div class="text-xs text-muted">📍 ${item.location}</div>` : ''}
-                  ${item.meetUrl ? `<div class="text-xs"><a href="${item.meetUrl}" target="_blank" style="color: #2563EB; font-weight: 600;">🔗 Unirse a Google Meet</a></div>` : ''}
+                  ${item.location ? `<div class="text-xs text-muted">📍 ${escapeHtml(item.location)}</div>` : ''}
+                  ${item.meetUrl ? `<div class="text-xs"><a href="${escapeHtml(item.meetUrl)}" target="_blank" rel="noopener noreferrer" style="color: #2563EB; font-weight: 600;">🔗 Unirse a Google Meet</a></div>` : ''}
                 </div>
               </div>
 
               <div style="display: flex; gap: 6px; align-items: center;">
                 ${!isTask ? `
-                  <button class="btn btn-ghost btn-sm btn-export-google" data-id="${item.id}" title="Añadir a Google Calendar" style="padding: 6px 8px;">
+                  <button class="btn btn-ghost btn-sm btn-export-google" data-id="${escapeHtml(item.id)}" title="Añadir a Google Calendar" style="padding: 6px 8px;">
                     📅 Google
                   </button>
-                  <button class="btn btn-ghost btn-sm btn-download-single-ics" data-id="${item.id}" title="Descargar .ICS para Apple / Outlook" style="padding: 6px 8px;">
+                  <button class="btn btn-ghost btn-sm btn-download-single-ics" data-id="${escapeHtml(item.id)}" title="Descargar .ICS para Apple / Outlook" style="padding: 6px 8px;">
                     📥 .ICS
                   </button>
                 ` : ''}
-                <button class="btn btn-secondary btn-sm btn-view-item-detail" data-id="${item.id}" data-type="${item.itemType}">
+                <button class="btn btn-secondary btn-sm btn-view-item-detail" data-id="${escapeHtml(item.id)}" data-type="${escapeHtml(item.itemType)}">
                   Ver Detalle
                 </button>
               </div>
@@ -534,10 +534,10 @@ function renderEventChip(item, isFull = false) {
   }
 
   return `
-    <div class="calendar-chip ${chipClass} btn-view-item-detail" data-id="${item.id}" data-type="${item.itemType}" title="${item.title} (${item.startTime || ''})">
+    <div class="calendar-chip ${chipClass} btn-view-item-detail" data-id="${escapeHtml(item.id)}" data-type="${escapeHtml(item.itemType)}" title="${escapeHtml(item.title)} (${escapeHtml(item.startTime || '')})">
       <span>${icon}</span>
       <span style="overflow: hidden; text-overflow: ellipsis;">
-        ${item.startTime && item.itemType !== 'task' ? `<strong>${item.startTime}</strong> ` : ''}${item.title}
+        ${item.startTime && item.itemType !== 'task' ? `<strong>${escapeHtml(item.startTime)}</strong> ` : ''}${escapeHtml(item.title)}
       </span>
     </div>
   `;

@@ -47,8 +47,11 @@ class App {
       this.handleHashChange();
     });
 
-    // Iniciar con la vista actual según URL o inicio
-    this.handleHashChange();
+    // Validar sesión real con cookies en el servidor al cargar
+    auth.checkServerSession().finally(() => {
+      this.checkAuthenticationState();
+      this.handleHashChange();
+    });
   }
 
   // =========================================================================
@@ -249,15 +252,30 @@ class App {
   // ENRUTADOR (ROUTER)
   // =========================================================================
   handleHashChange() {
-    if (window.location.hash.startsWith('#cambiar-clave')) {
-      const parts = window.location.hash.split('?');
-      if (parts.length > 1) {
-        const urlParams = new URLSearchParams(parts[1]);
-        const emailParam = urlParams.get('email') || '';
-        const emailInput = document.getElementById('reset-pass-email');
-        if (emailInput && emailParam) emailInput.value = emailParam;
+    if (window.location.hash.startsWith('#cambiar-clave') || window.location.hash.includes('reset-token=') || window.location.hash.includes('token=')) {
+      const hashStr = window.location.hash;
+      let token = '';
+      if (hashStr.includes('reset-token=')) {
+        token = hashStr.split('reset-token=')[1]?.split('&')[0] || '';
+      } else if (hashStr.includes('token=')) {
+        token = hashStr.split('token=')[1]?.split('&')[0] || '';
       }
-      this.openModal('modal-reset-password');
+
+      if (token) {
+        auth.verifyResetToken(token).then(verify => {
+          if (verify && verify.success) {
+            const tokenInput = document.getElementById('reset-pass-token');
+            if (tokenInput) tokenInput.value = token;
+            this.openModal('modal-reset-password');
+          } else {
+            this.showToast(verify?.error || 'El enlace de restablecimiento ha expirado o no es válido.', 'danger');
+            window.location.hash = '';
+          }
+        });
+      } else {
+        this.showToast('Enlace de restablecimiento incompleto.', 'danger');
+        window.location.hash = '';
+      }
       return;
     }
 
@@ -1017,9 +1035,14 @@ class App {
             }
             if (descEl) descEl.innerHTML = `Despachando correo de bienvenida a <strong>${email}</strong>...`;
 
+            const mailHeaders = { 'Content-Type': 'application/json' };
+            const csrf = auth.getCsrfToken();
+            if (csrf) mailHeaders['X-CSRF-Token'] = csrf;
+
             fetch('api/mail.php', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              headers: mailHeaders,
               body: JSON.stringify({
                 action: 'welcome',
                 email,
@@ -1458,14 +1481,20 @@ class App {
 
           // Enviar correo de bienvenida si está marcado
           if (sendWelcome && window.fetch) {
+            const advisorPass = password || ('Humm!' + Math.random().toString(36).substring(2, 8) + '26#');
+            const mailHeaders = { 'Content-Type': 'application/json' };
+            const csrf = auth.getCsrfToken();
+            if (csrf) mailHeaders['X-CSRF-Token'] = csrf;
+
             fetch('api/mail.php', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              headers: mailHeaders,
               body: JSON.stringify({
                 action: 'welcome_user',
                 to: email,
                 name: name,
-                tempPassword: password || 'humm2026',
+                tempPassword: advisorPass,
                 mustChangePassword: !!mustChangePass,
                 loginUrl: window.location.origin
               })
@@ -2679,40 +2708,35 @@ class App {
       }
     });
 
-    // Formulario de cambio directo de contraseña desde enlace de correo
+    // Formulario de restablecimiento seguro de contraseña mediante token firmado
     document.getElementById('form-reset-password')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = (document.getElementById('reset-pass-email')?.value || '').trim();
+      const token = (document.getElementById('reset-pass-token')?.value || '').trim();
       const passNew = (document.getElementById('reset-pass-new')?.value || '').trim();
       const passConfirm = (document.getElementById('reset-pass-confirm')?.value || '').trim();
+
+      if (!token) {
+        this.showToast('El token de restablecimiento no es válido.', 'danger');
+        return;
+      }
 
       if (passNew !== passConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifica.', 'danger');
         return;
       }
 
-      if (passNew.length < 4) {
-        this.showToast('La nueva contraseña debe tener al menos 4 caracteres.', 'danger');
+      if (passNew.length < 8) {
+        this.showToast('La nueva contraseña debe tener al menos 8 caracteres.', 'danger');
         return;
       }
 
-      const res = await store.resetUserPassword(email, passNew);
+      const res = await auth.applyResetPassword(token, passNew);
       if (res.success) {
-        this.showToast('¡Contraseña actualizada exitosamente! Iniciando sesión...', 'success');
+        this.showToast('¡Contraseña actualizada exitosamente! Por favor ingresa con tus nuevas credenciales.', 'success');
         this.closeAllModals();
-        const loginRes = await auth.login(email, passNew, true);
-        if (loginRes.success) {
-          const targetHash = loginRes.user.role === 'admin' ? '#admin-dashboard' : '#inicio';
-          window.location.hash = targetHash;
-          this.checkAuthenticationState();
-          this.handleHashChange();
-        } else {
-          window.location.hash = '#inicio';
-          this.checkAuthenticationState();
-          this.handleHashChange();
-        }
+        window.location.hash = '';
       } else {
-        this.showToast(res.message || 'Error al actualizar contraseña', 'danger');
+        this.showToast(res.message || res.error || 'Error al actualizar contraseña', 'danger');
       }
     });
 
@@ -2732,33 +2756,16 @@ class App {
       const message = (document.getElementById('auth-help-message')?.value || '').trim();
       const btnSubmit = document.getElementById('btn-submit-auth-help');
 
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Enviando alerta...';
-      }
+      const mailtoSubject = encodeURIComponent(`Solicitud de Asistencia Mi Humm - ${name || 'Usuario'}`);
+      const mailtoBody = encodeURIComponent(`Nombre: ${name}\nCorreo de acceso: ${email}\n\nDetalle de la solicitud:\n${message}\n\n(Enviado desde https://comunidad.humm.cl)`);
+      window.location.href = `mailto:contacto@humm.cl?subject=${mailtoSubject}&body=${mailtoBody}`;
 
-      try {
-        const res = await fetch('api/mail.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'auth_help_alert',
-            name,
-            email,
-            message
-          })
-        });
-        const json = await res.json();
-        this.showToast('🚨 Alerta enviada a contacto@humm.cl. Te contactaremos a la brevedad.', 'success');
-        this.closeAllModals();
-        e.target.reset();
-      } catch (err) {
-        this.showToast('Error al enviar la alerta. Puedes escribir directamente a contacto@humm.cl.', 'danger');
-      } finally {
-        if (btnSubmit) {
-          btnSubmit.disabled = false;
-          btnSubmit.textContent = '🚨 Enviar Alerta a Soporte';
-        }
+      this.showToast('📧 Redirigiendo a tu cliente de correo para enviar la solicitud a contacto@humm.cl', 'info');
+      this.closeAllModals();
+      e.target.reset();
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = '🚨 Enviar Alerta a Soporte';
       }
     });
 

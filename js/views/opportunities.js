@@ -3,7 +3,7 @@
  * Comunidad Humm Co-Creation
  */
 
-import { store, formatCLP, formatDateCL, isDateOverdue, sanitizeWhatsAppPhone } from '../store.js';
+import { store, formatCLP, formatDateCL, isDateOverdue, sanitizeWhatsAppPhone, escapeHtml } from '../store.js';
 import { auth } from '../auth.js';
 
 export function renderOpportunitiesView(container) {
@@ -151,19 +151,19 @@ export function renderOpportunitiesView(container) {
                 <tr style="${isOver ? 'background-color: rgba(239, 68, 68, 0.03);' : ''}">
                   <td>
                     <div style="font-weight: 700; color: var(--text-primary);">
-                      ${opp.title}
+                      ${escapeHtml(opp.title)}
                     </div>
-                    ${opp.productInterest ? `<div class="text-xs text-secondary">📦 ${opp.productInterest}</div>` : ''}
+                    ${opp.productInterest ? `<div class="text-xs text-secondary">📦 ${escapeHtml(opp.productInterest)}</div>` : ''}
                   </td>
                   <td>
-                    <div style="font-weight: 600;">${opp.contactName}</div>
+                    <div style="font-weight: 600;">${escapeHtml(opp.contactName)}</div>
                     <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
                       ${opp.phone ? `
                         <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp btn-sm" style="padding: 2px 7px; font-size: 11px;">
                           WhatsApp
                         </a>
                       ` : ''}
-                      ${opp.email ? `<span class="text-xs text-muted">${opp.email}</span>` : ''}
+                      ${opp.email ? `<span class="text-xs text-muted">${escapeHtml(opp.email)}</span>` : ''}
                     </div>
                   </td>
                   <td>
@@ -174,11 +174,11 @@ export function renderOpportunitiesView(container) {
                   <td>
                     <span class="badge ${statusCfg.badge}">
                       <span class="badge-dot"></span>
-                      ${statusCfg.text}
+                      ${escapeHtml(statusCfg.text)}
                     </span>
                   </td>
                   <td>
-                    <div>${opp.nextAction || '<span class="text-muted">Sin acción anotada</span>'}</div>
+                    <div>${opp.nextAction ? escapeHtml(opp.nextAction) : '<span class="text-muted">Sin acción anotada</span>'}</div>
                     <div class="text-xs ${isOver ? 'text-danger font-bold' : 'text-muted'}" style="margin-top: 2px;">
                       📅 ${opp.followUpDate ? (isOver ? 'Atrasado: ' : '') + formatDateCL(opp.followUpDate) : 'Sin fecha'}
                     </div>
@@ -186,22 +186,22 @@ export function renderOpportunitiesView(container) {
                   <td style="text-align: right;">
                     <div style="display: flex; justify-content: flex-end; gap: 4px;">
                       ${opp.status !== 'ganada' ? `
-                        <button class="btn btn-primary btn-sm btn-mark-won" data-opp-id="${opp.id}" title="Marcar como venta lograda">
+                        <button class="btn btn-primary btn-sm btn-mark-won" data-opp-id="${escapeHtml(opp.id)}" title="Marcar como venta lograda">
                           ✓ Ganada
                         </button>
                       ` : ''}
                       ${!opp.customerId ? `
-                        <button class="btn btn-secondary btn-sm btn-convert-customer" data-opp-id="${opp.id}" title="Convertir a Cliente">
+                        <button class="btn btn-secondary btn-sm btn-convert-customer" data-opp-id="${escapeHtml(opp.id)}" title="Convertir a Cliente">
                           + Cliente
                         </button>
                       ` : ''}
-                      <button class="btn btn-ghost btn-sm btn-edit-opp" data-opp-id="${opp.id}" title="Editar">
+                      <button class="btn btn-ghost btn-sm btn-edit-opp" data-opp-id="${escapeHtml(opp.id)}" title="Editar">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M12 20h9"></path>
                           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                         </svg>
                       </button>
-                      <button class="btn btn-ghost btn-sm btn-delete-opp" data-opp-id="${opp.id}" title="Eliminar">
+                      <button class="btn btn-ghost btn-sm btn-delete-opp" data-opp-id="${escapeHtml(opp.id)}" title="Eliminar">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
                           <polyline points="3 6 5 6 21 6"></polyline>
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -232,15 +232,15 @@ export function renderOpportunitiesView(container) {
               <div class="adaptive-item-card" style="${isOver ? 'border-left: 3px solid var(--danger);' : ''}">
                 <div class="adaptive-card-header">
                   <div>
-                    <div style="font-weight: 700; font-size: var(--font-size-base);">${opp.title}</div>
-                    <div class="text-xs text-secondary">${opp.contactName}</div>
+                    <div style="font-weight: 700; font-size: var(--font-size-base);">${escapeHtml(opp.title)}</div>
+                    <div class="text-xs text-secondary">${escapeHtml(opp.contactName)}</div>
                   </div>
-                  <span class="badge ${statusCfg.badge}">${statusCfg.text}</span>
+                  <span class="badge ${statusCfg.badge}">${escapeHtml(statusCfg.text)}</span>
                 </div>
                 <div class="adaptive-card-body">
                   ${opp.estimatedAmount ? `<div><strong>Monto estimado:</strong> ${formatCLP(opp.estimatedAmount)}</div>` : ''}
-                  ${opp.productInterest ? `<div><strong>Interés:</strong> ${opp.productInterest}</div>` : ''}
-                  <div><strong>Próxima acción:</strong> ${opp.nextAction || 'Seguimiento'}</div>
+                  ${opp.productInterest ? `<div><strong>Interés:</strong> ${escapeHtml(opp.productInterest)}</div>` : ''}
+                  <div><strong>Próxima acción:</strong> ${opp.nextAction ? escapeHtml(opp.nextAction) : 'Seguimiento'}</div>
                   <div class="${isOver ? 'text-danger font-bold' : ''}"><strong>Fecha:</strong> ${opp.followUpDate ? formatDateCL(opp.followUpDate) : 'Sin fecha'}</div>
                 </div>
                 <div class="adaptive-card-footer">
@@ -251,16 +251,16 @@ export function renderOpportunitiesView(container) {
                       </a>
                     ` : ''}
                     ${opp.status !== 'ganada' ? `
-                      <button class="btn btn-primary btn-sm btn-mark-won" data-opp-id="${opp.id}">
+                      <button class="btn btn-primary btn-sm btn-mark-won" data-opp-id="${escapeHtml(opp.id)}">
                         ✓ Ganada
                       </button>
                     ` : ''}
                   </div>
                   <div style="display: flex; gap: 6px;">
-                    <button class="btn btn-secondary btn-sm btn-edit-opp" data-opp-id="${opp.id}">
+                    <button class="btn btn-secondary btn-sm btn-edit-opp" data-opp-id="${escapeHtml(opp.id)}">
                       Editar
                     </button>
-                    <button class="btn btn-outline-danger btn-sm btn-delete-opp" data-opp-id="${opp.id}">
+                    <button class="btn btn-outline-danger btn-sm btn-delete-opp" data-opp-id="${escapeHtml(opp.id)}">
                       Eliminar
                     </button>
                   </div>
