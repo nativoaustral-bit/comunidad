@@ -533,6 +533,7 @@ try {
                 ]);
                 $item['id'] = $userId;
                 unset($item['password']);
+                $item['must_change_password'] = $mustChangePass;
                 if ($generatedTempPass !== null) {
                     $item['temp_password'] = $generatedTempPass;
                 }
