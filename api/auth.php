@@ -209,7 +209,7 @@ switch ($action) {
         // Enviar correo con el token firmado en la URL
         $resetUrl = "https://comunidad.humm.cl/#cambiar-clave?token=" . urlencode($rawToken);
         $subject = "Restablece tu Contraseña - Mi Humm";
-        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'comunidad@humm.cl';
+        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'contacto@humm.cl';
         $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Comunidad Humm Co-Creation';
         $headers = [
             'MIME-Version: 1.0',

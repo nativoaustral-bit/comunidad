@@ -983,6 +983,7 @@ class App {
         const name = document.getElementById('admin-user-name').value.trim();
         const email = document.getElementById('admin-user-email').value.trim();
         const password = document.getElementById('admin-user-password').value.trim();
+        const role = document.getElementById('admin-user-role') ? document.getElementById('admin-user-role').value : 'entrepreneur';
         let workspaceId = document.getElementById('admin-user-workspace').value || null;
         // Si no seleccionó workspace y es emprendedor, buscar coincidencia por email
         if (!workspaceId && role === 'entrepreneur' && email) {
@@ -999,6 +1000,11 @@ class App {
         if (submitBtn) submitBtn.disabled = true;
 
         if (editId) {
+          if (password && password.length < 8) {
+            this.showToast('La nueva contraseña debe tener al menos 8 caracteres', 'warning');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
           const updates = { name, email, role, workspaceId, isActive, assignedToolIds };
           if (password) updates.password = password;
           store.updateUser(editId, updates);

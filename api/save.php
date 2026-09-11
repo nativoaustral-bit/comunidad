@@ -513,7 +513,7 @@ try {
                         assigned_tool_ids = VALUES(assigned_tool_ids),
                         advisor_name = VALUES(advisor_name),
                         advisor_email = VALUES(advisor_email),
-                        must_change_password = VALUES(must_change_password)';
+                        must_change_password = IF(VALUES(password_hash) != "" AND VALUES(password_hash) IS NOT NULL, VALUES(must_change_password), must_change_password)';
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':id' => $userId,

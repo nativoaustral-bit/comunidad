@@ -47,7 +47,7 @@ if (!defined('DB_CHARSET')) define('DB_CHARSET', 'utf8mb4');
 if (!defined('SESSION_LIFETIME')) define('SESSION_LIFETIME', 86400 * 7);
 if (!defined('APP_SECRET')) define('APP_SECRET', getenv('APP_SECRET') ?: '');
 
-if (!defined('MAIL_FROM_EMAIL')) define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: 'comunidad@humm.cl');
+if (!defined('MAIL_FROM_EMAIL')) define('MAIL_FROM_EMAIL', getenv('MAIL_FROM_EMAIL') ?: 'contacto@humm.cl');
 if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Comunidad Humm Co-Creation');
 if (!defined('MAIL_USE_SMTP')) define('MAIL_USE_SMTP', filter_var(getenv('MAIL_USE_SMTP') ?: 'true', FILTER_VALIDATE_BOOLEAN));
 if (!defined('MAIL_SMTP_HOST')) define('MAIL_SMTP_HOST', getenv('MAIL_SMTP_HOST') ?: 'localhost');
