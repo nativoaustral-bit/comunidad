@@ -207,21 +207,17 @@ switch ($action) {
         $upToken->execute([':token_rec' => $tokenRecord, ':id' => $user['id']]);
 
         // Enviar correo con el token firmado en la URL
+        require_once __DIR__ . '/mailer.php';
+
         $resetUrl = "https://comunidad.humm.cl/#cambiar-clave?token=" . urlencode($rawToken);
         $subject = "Restablece tu Contraseña - Mi Humm";
-        $fromEmail = defined('MAIL_FROM_EMAIL') ? MAIL_FROM_EMAIL : 'contacto@humm.cl';
-        $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Comunidad Humm Co-Creation';
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-type: text/html; charset=UTF-8',
-            "From: {$fromName} <{$fromEmail}>",
-            "Reply-To: {$fromEmail}",
-            "Return-Path: <{$fromEmail}>",
-            'X-Mailer: PHP/' . phpversion()
-        ];
         $userName = htmlspecialchars((string)$user['name']);
         $html = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><title>Restablecer Contraseña</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;padding:20px;color:#1e293b;}.card{max-width:520px;margin:0 auto;background:#fff;padding:28px;border-radius:10px;border:1px solid #e2e8f0;}.btn{display:inline-block;background:#e5383b;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:700;margin:20px 0;}</style></head><body><div class='card'><h2 style='color:#0f172a;margin-top:0;'>Restablece tu Contraseña</h2><p>Hola, <strong>{$userName}</strong>:</p><p>Hemos recibido una solicitud para cambiar tu contraseña en <strong>Mi Humm</strong>. Este enlace es válido por 60 minutos:</p><div style='text-align:center;'><a href='{$resetUrl}' class='btn'>🔐 Restablecer mi Contraseña</a></div><p style='font-size:12px;color:#64748b;'>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p></div></body></html>";
-        @mail($user['email'], $subject, $html, implode("\r\n", $headers), "-f{$fromEmail}");
+        
+        $dispatch = HummMailer::send($user['email'], $subject, $html);
+        if (!$dispatch['sent']) {
+            error_log("Error enviando correo de recuperación a {$user['email']}: " . ($dispatch['error'] ?? 'desconocido'));
+        }
 
         Security::jsonResponse(true, ['message' => $genericMsg]);
         break;
